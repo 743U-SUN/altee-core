@@ -10,7 +10,7 @@ export default function Home() {
           </h2>
           <p className="text-green-700 dark:text-green-300">
             さくらVPS + Nginx + SSL + 自動デプロイが完全に設定されました。<br />
-            このページの更新はGitHub Actionsにより自動的にデプロイされています。
+            このページの更新はGitHub Actionsにより自動的にデプロイされています。。。
           </p>
           <div className="mt-3 text-sm text-green-600 dark:text-green-400">
             ✅ Docker環境構築完了<br />
