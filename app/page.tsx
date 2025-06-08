@@ -4,6 +4,20 @@ export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+        <div className="mb-8 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <h2 className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">
+            🚀 GitHub Actions自動デプロイ成功！
+          </h2>
+          <p className="text-green-700 dark:text-green-300">
+            さくらVPS + Nginx + SSL + 自動デプロイが完全に設定されました。<br />
+            このページの更新はGitHub Actionsにより自動的にデプロイされています。
+          </p>
+          <div className="mt-3 text-sm text-green-600 dark:text-green-400">
+            ✅ Docker環境構築完了<br />
+            ✅ Nginx + SSL証明書設定完了<br />
+            ✅ GitHub Actions自動デプロイ完了
+          </div>
+        </div>
         <Image
           className="dark:invert"
           src="/next.svg"
