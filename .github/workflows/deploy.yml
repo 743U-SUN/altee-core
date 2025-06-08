@@ -45,6 +45,14 @@ jobs:
           # Verify deployment
           if curl -f -s https://altee.me > /dev/null; then
             echo "✅ Deployment successful - https://altee.me is accessible"
+            
+            # Check health endpoint
+            HEALTH_RESPONSE=$(curl -s https://altee.me/api/health)
+            if echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"'; then
+              echo "✅ Health check passed"
+            else
+              echo "⚠️  Health check failed or returned unexpected response"
+            fi
           else
             echo "❌ Deployment failed - site not accessible"
             exit 1
