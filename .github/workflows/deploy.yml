@@ -35,8 +35,8 @@ jobs:
           # Stop current containers
           docker compose -f compose.nginx.yaml down
           
-          # Rebuild and start
-          docker compose -f compose.nginx.yaml build --no-cache
+          # Rebuild and start (force rebuild without cache)
+          docker compose -f compose.nginx.yaml build --no-cache --pull
           docker compose -f compose.nginx.yaml up -d
           
           # Health check
