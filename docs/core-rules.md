@@ -11,8 +11,9 @@
 1. コア原則
   - App Router を標準採用
   - TypeScript 必須（ESLint／型エラーは常にゼロ）
-  - 大原則としてサーバー処理は Server Actions で実装。API Routes は本当に必要な場合のみ。
-  - Dockerを使用している。
+  - 大原則としてサーバー処理は Server Actions で実装。API Routes は外部API使用など、本当に必要な場合のみ。
+  - YAGNI (You Aren't Gonna Need It): 必要になるまで作らない
+  - KISS (Keep It Simple, Stupid): シンプルさは複雑さに勝る
 
 2. ディレクトリレイアウト
 

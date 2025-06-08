@@ -1,0 +1,27 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: altee-core:dev
+    container_name: altee-core-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # ソースコードをマウント（ホットリロード対応）
+      - .:/app
+      # node_modulesは除外（コンテナ内のものを使用）
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    command: npm run dev
+    restart: unless-stopped
+    networks:
+      - altee-network
+
+networks:
+  altee-network:
+    driver: bridge
