@@ -4,12 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-**Development:**
+**Development (Local):**
 ```bash
-npm run dev      # Start development server with Turbopack
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint checks
+docker compose -f compose.dev.yaml up -d  # Start development environment
+npm run dev                                # Start development server with Turbopack
+npm run build                              # Build for production
+npm run lint                               # Run ESLint checks
+docker compose -f compose.dev.yaml down   # Stop development environment
+```
+
+**Production (VPS):**
+```bash
+docker compose -f compose.prod.yaml up -d    # Start production environment
+docker compose -f compose.prod.yaml down     # Stop production environment
+docker compose -f compose.prod.yaml restart  # Restart production environment
+docker compose -f compose.prod.yaml logs -f  # View logs
 ```
 
 ## Architecture Overview
