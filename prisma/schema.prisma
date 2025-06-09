@@ -35,3 +35,15 @@ model Post {
 
   @@map("posts")
 }
+
+// Product model for demo and testing purposes
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}

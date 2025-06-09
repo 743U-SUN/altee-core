@@ -81,6 +81,47 @@ export async function getAllUsers() {
   }
 }
 
+// テスト商品作成
+export async function createTestProduct() {
+  try {
+    console.log('🛍️ テスト商品作成開始...')
+    
+    const randomId = Math.random().toString(36).substring(2, 8)
+    
+    const product = await prisma.product.create({
+      data: {
+        name: `テスト商品 ${randomId}`,
+        price: Math.floor(Math.random() * 10000) + 1000, // 1000-11000円
+        description: `これはテスト用の商品です。ID: ${randomId}`,
+      },
+    })
+    
+    console.log('✅ 商品作成成功:', product)
+    console.log('🎉 テスト商品作成完了')
+  } catch (error) {
+    console.error('❌ 商品作成失敗:', error)
+    throw error
+  } finally {
+    redirect('/demo/database-test')
+  }
+}
+
+// 全商品取得
+export async function getAllProducts() {
+  try {
+    const products = await prisma.product.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+    
+    return products
+  } catch (error) {
+    console.error('❌ 商品取得失敗:', error)
+    return []
+  }
+}
+
 // テストデータ全削除
 export async function deleteAllTestUsers() {
   try {
@@ -113,6 +154,42 @@ export async function deleteAllTestUsers() {
     console.log('🎉 削除処理完了')
   } catch (error) {
     console.error('❌ 削除処理失敗:', error)
+    throw error
+  } finally {
+    redirect('/demo/database-test')
+  }
+}
+
+// テスト商品全削除
+export async function deleteAllTestProducts() {
+  try {
+    console.log('🗑️ テスト商品削除開始...')
+    
+    const testProducts = await prisma.product.findMany({
+      where: {
+        name: {
+          startsWith: 'テスト商品',
+        },
+      },
+    })
+    
+    console.log(`🔍 削除対象商品数: ${testProducts.length}`)
+    
+    if (testProducts.length > 0) {
+      const deleteResult = await prisma.product.deleteMany({
+        where: {
+          name: {
+            startsWith: 'テスト商品',
+          },
+        },
+      })
+      
+      console.log('✅ テスト商品削除完了:', deleteResult)
+    }
+    
+    console.log('🎉 商品削除処理完了')
+  } catch (error) {
+    console.error('❌ 商品削除処理失敗:', error)
     throw error
   } finally {
     redirect('/demo/database-test')
