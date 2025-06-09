@@ -40,6 +40,27 @@ services:
     networks:
       - altee-network
 
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: altee-core:dev
+    container_name: altee-core-prisma-studio
+    ports:
+      - "5555:5555"
+    volumes:
+      # ソースコードをマウント（prisma/schema.prismaアクセス用）
+      - .:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/altee_dev?schema=public
+    command: npx prisma studio --hostname 0.0.0.0 --port 5555
+    depends_on:
+      - db
+    networks:
+      - altee-network
+
 volumes:
   altee_dev_db_data:
 

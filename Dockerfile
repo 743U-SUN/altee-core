@@ -26,8 +26,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Generate Prisma Client
+RUN npx prisma generate
+
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
+# Skip database validation during build
+ENV SKIP_ENV_VALIDATION=1
 RUN npm run build
 
 # ========================================

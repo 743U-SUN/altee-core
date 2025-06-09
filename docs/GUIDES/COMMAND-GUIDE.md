@@ -59,5 +59,22 @@ Git:
 データベース (Prisma):
   - スキーマ同期: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push
   - マイグレーション: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate
-  - Studio起動: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio
+  - Studio起動(ローカル): DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio:local
+  - Studio起動(Docker): docker compose -f compose.dev.yaml exec app npm run db:studio
   - Client生成: npm run db:generate
+
+Prisma Studio アクセス:
+  - ローカル: http://localhost:5555 (ローカル起動時)
+  - Docker自動起動: http://localhost:5555 (docker compose up時に自動起動)
+
+本番データベース管理:
+  - 本番マイグレーション: ./scripts/migrate-production.sh
+  - データベースバックアップ: ./scripts/backup-database.sh [description]
+  - 手動バックアップ例: ./scripts/backup-database.sh "before-migration"
+
+本番Prisma Studio (SSH経由):
+  - SSH接続: ssh sakura-vps
+  - Studio起動: docker compose -f compose.prod.yaml exec app npx prisma studio
+  - アクセス: SSH接続中にブラウザで http://localhost:5555
+  - 一時起動: docker compose -f compose.prod.yaml run --rm -p 5555:5555 app npx prisma studio --hostname 0.0.0.0
+  - 注意: 本番データの操作は慎重に行うこと

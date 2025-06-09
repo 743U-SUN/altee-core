@@ -15,10 +15,11 @@ docker compose -f compose.dev.yaml down   # Stop development environment
 
 **Database (Prisma):**
 ```bash
-DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push     # Push schema changes to database
-DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate  # Create and run migrations
-DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio   # Open Prisma Studio
-npm run db:generate                        # Generate Prisma Client
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push        # Push schema changes to database
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate     # Create and run migrations
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio:local # Open Prisma Studio (local)
+docker compose -f compose.dev.yaml exec app npm run db:studio                                                # Open Prisma Studio (Docker)
+npm run db:generate                           # Generate Prisma Client
 ```
 
 **Production (VPS):**
@@ -27,6 +28,19 @@ docker compose -f compose.prod.yaml up -d    # Start production environment
 docker compose -f compose.prod.yaml down     # Stop production environment
 docker compose -f compose.prod.yaml restart  # Restart production environment
 docker compose -f compose.prod.yaml logs -f  # View logs
+```
+
+**Production Database Management:**
+```bash
+./scripts/migrate-production.sh              # Run production migrations with backup
+./scripts/backup-database.sh [description]   # Create database backup
+```
+
+**Production Prisma Studio (SSH Access):**
+```bash
+ssh sakura-vps                               # Connect to VPS
+docker compose -f compose.prod.yaml exec app npx prisma studio  # Start Prisma Studio
+# Access via browser: http://localhost:5555 (while SSH connected)
 ```
 
 ## Architecture Overview
