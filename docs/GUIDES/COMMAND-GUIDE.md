@@ -57,11 +57,10 @@ Git:
   - 型チェック: docker compose -f compose.dev.yaml exec app npm run typecheck
 
 データベース (Prisma):
-  - スキーマ同期: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push
-  - マイグレーション: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate
-  - Studio起動(ローカル): DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio:local
+  - スキーマ同期(Docker): docker compose -f compose.dev.yaml exec app npx prisma db push
+  - マイグレーション(Docker): docker compose -f compose.dev.yaml exec app npx prisma migrate dev --name migration_name
   - Studio起動(Docker): docker compose -f compose.dev.yaml exec app npm run db:studio
-  - Client生成: npm run db:generate
+  - Client生成(Docker): docker compose -f compose.dev.yaml exec app npx prisma generate
 
 Prisma Studio アクセス:
   - ローカル: http://localhost:5555 (ローカル起動時)
