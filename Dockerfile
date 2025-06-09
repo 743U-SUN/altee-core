@@ -13,6 +13,9 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
+# Copy Prisma schema for postinstall hook
+COPY prisma ./prisma
+
 # Install dependencies
 RUN npm ci
 
