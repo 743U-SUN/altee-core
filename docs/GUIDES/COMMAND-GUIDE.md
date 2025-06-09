@@ -55,3 +55,9 @@ Git:
   - ビルド: docker compose -f compose.dev.yaml exec app npm run build
   - リント: docker compose -f compose.dev.yaml exec app npm run lint
   - 型チェック: docker compose -f compose.dev.yaml exec app npm run typecheck
+
+データベース (Prisma):
+  - スキーマ同期: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push
+  - マイグレーション: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate
+  - Studio起動: DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio
+  - Client生成: npm run db:generate

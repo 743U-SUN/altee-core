@@ -13,6 +13,14 @@ npm run lint                               # Run ESLint checks
 docker compose -f compose.dev.yaml down   # Stop development environment
 ```
 
+**Database (Prisma):**
+```bash
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push     # Push schema changes to database
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate  # Create and run migrations
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio   # Open Prisma Studio
+npm run db:generate                        # Generate Prisma Client
+```
+
 **Production (VPS):**
 ```bash
 docker compose -f compose.prod.yaml up -d    # Start production environment

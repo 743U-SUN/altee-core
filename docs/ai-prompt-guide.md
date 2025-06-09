@@ -1,144 +1,102 @@
-# Docker環境構築からさくらVPSデプロイまでの作業チェックリスト
+# PostgreSQL + Prisma 統合実装チェックリスト
 
-## 🎯 本日の目標
-Next.jsアプリケーションのDocker環境を構築し、さくらVPSへデプロイ可能な状態にする
+## バージョン選定と理由
 
-## 📋 作業チェックリスト
+### PostgreSQL バージョン
+- **選択**: PostgreSQL 17.4
+- **理由**: 
+  - 現在のLTS版で安定性が高い
+  - パフォーマンス改善が多数実装済み
+  - セキュリティアップデートが継続的
+  - Docker公式イメージが利用可能
 
-### 1. Docker環境の基本構築
+### Prisma バージョン
+- **選択**: Prisma 6.7系（最新安定版）
+- **理由**:
+  - Next.js 15.3.3との互換性確認済み
+  - TypeScript 5系サポート
+  - PostgreSQL 17.4サポート
+  - Server Actionsとの統合が良好
 
-#### 1.1 Dockerfile作成
-- [x] マルチステージビルドを使用したDockerfile作成
-  - [x] 依存関係インストールステージ
-  - [x] ビルドステージ
-  - [x] 実行ステージ（軽量化）
-- [x] Node.js 22 (LTS) ベースイメージ使用
-- [x] セキュリティ考慮（non-rootユーザー実行）
+## 実装チェックリスト
 
-#### 1.2 compose.yaml作成（2024年最新仕様）
-- [x] 開発環境用設定（compose.dev.yaml）
-  - [x] ホットリロード対応
-  - [x] ボリュームマウント設定
-  - [x] ポート設定（3000）
-- [x] 本番環境用設定（compose.prod.yaml）
-  - [x] 最適化されたビルド設定
-  - [x] 環境変数設定
-  - [x] ヘルスチェック設定
+### 1. 環境構築フェーズ ✅
+- [x] package.json依存関係追加
+  - [x] `prisma` (開発依存)
+  - [x] `@prisma/client` (本体依存)
+  - [x] バージョン確認: Next.js 15.3.3互換性
+- [x] Docker Compose設定
+  - [x] compose.dev.yaml にPostgreSQL 17.4追加
+  - [x] compose.prod.yaml にPostgreSQL 17.4追加
+  - [x] データ永続化ボリューム設定
+  - [x] ネットワーク設定確認
 
-#### 1.3 .dockerignore作成
-- [x] node_modules除外
-- [x] .next除外
-- [x] .git除外
-- [x] その他不要ファイル除外
-
-### 2. 環境変数管理
-
-#### 2.1 環境変数ファイル作成
-- [x] .env.example作成（テンプレート）→ 削除済み
-- [x] .env.local（開発環境用）
-- [x] .env.production（本番環境用）
-
-#### 2.2 環境変数の定義
-- [x] NODE_ENV
-- [x] NEXT_PUBLIC_APP_URL
-- [x] データベース接続情報（将来用）
-- [x] その他必要な環境変数
-
-### 3. ローカル動作確認
-
-#### 3.1 Dockerビルド
-- [x] 開発環境でのビルド確認（932MB）
-  ```bash
-  docker compose -f compose.dev.yaml build
-  ```
-- [x] 本番環境でのビルド確認（224MB - 軽量化成功）
-  ```bash
-  docker compose -f compose.prod.yaml build
-  ```
-
-#### 3.2 動作テスト
-- [x] コンテナ起動確認
-- [x] アプリケーションアクセス確認（http://localhost:3001）
-- [x] ホットリロード動作確認（開発環境）
-- [x] ログ出力確認（HTTP 200 OK確認済み）
-
-### 4. さくらVPSデプロイ準備
-
-#### 4.1 デプロイスクリプト作成
-- [x] deploy.sh作成
-  - [x] SSHアクセス設定
-  - [x] Dockerイメージビルド
-  - [x] コンテナ停止・起動
-  - [x] ヘルスチェック
-
-#### 4.2 GitHub Actions設定（オプション）
-- [x] .github/workflows/deploy.yml作成
-- [x] 自動デプロイ設定
-- [x] シークレット設定
-
-### 5. さくらVPSセットアップ
-
-#### 5.1 VPS初期設定（必要な場合）
-- [x] Docker/Docker Compose インストール
-- [x] ファイアウォール設定（パケットフィルター）
-- [x] Nginx設定（リバースプロキシ）
-- [x] SSL証明書設定（Let's Encrypt）
-
-#### 5.2 アプリケーションデプロイ
-- [x] リポジトリクローン
+### 2. Prisma初期設定フェーズ ✅
+- [x] Prismaスキーマファイル作成
+  - [x] `prisma/schema.prisma` 作成
+  - [x] PostgreSQL provider設定
+  - [x] client generator設定
 - [x] 環境変数設定
-- [x] Dockerイメージビルド
-- [x] コンテナ起動
-- [x] 動作確認
+  - [x] `.env.example` 作成（開発用テンプレート）
+  - [x] `.env.local` DATABASE_URL設定例
+  - [ ] `.env.production` DATABASE_URL設定例
 
-### 6. 運用準備
+### 3. 統合設定フェーズ ✅
+- [x] Prisma Client設定
+  - [x] `lib/prisma.ts` 作成
+  - [x] シングルトンパターン実装
+  - [x] 開発環境での接続プール設定
+- [x] Docker統合
+  - [x] コンテナ内でのPrisma実行環境確認
+  - [x] マイグレーション実行方法確立
+  - [x] シード実行方法確立
 
-#### 6.1 監視・ログ設定
-- [x] ログローテーション設定
-- [x] ヘルスチェックエンドポイント作成
-- [x] エラー通知設定
+### 4. 開発フロー確立フェーズ ✅
+- [x] 開発コマンド追加
+  - [x] `package.json` scripts追加
+  - [x] `npm run db:migrate` (マイグレーション実行)
+  - [x] `npm run db:studio` (Prisma Studio起動)
+  - [x] `npm run db:seed` (シードデータ投入)
+- [x] ドキュメント更新
+  - [x] `CLAUDE.md` Prismaコマンド追加
+  - [x] `docs/GUIDES/COMMAND-GUIDE.md` データベース操作とPrismaコマンド追加
 
-#### 6.2 バックアップ設定(実装見送り: バックアップすべきデータがない)
-- [x] データバックアップスクリプト
-- [x] 定期バックアップ設定
+### 5. 本番環境準備フェーズ
+- [ ] 本番用設定
+  - [ ] 本番環境用環境変数設定
+  - [ ] マイグレーション自動実行設定
+  - [ ] バックアップ戦略検討
+- [ ] セキュリティ設定
+  - [ ] データベースユーザー権限設定
+  - [ ] 接続制限設定
+  - [ ] SSL設定（必要に応じて）
 
-## 🚀 推奨実行順序
+## 環境別設定戦略
 
-1. **Phase 1: ローカルDocker環境構築**（1〜3）
-   - 開発環境で動作確認を完了させる
-   - 問題があれば修正
+### 開発環境 (Local)
+- Docker Compose for PostgreSQL
+- ホストからの直接アクセス可能
+- Prisma Studio利用可能
+- マイグレーション自由実行
 
-2. **Phase 2: デプロイ準備**（4）
-   - スクリプト作成とテスト
+### 本番環境 (VPS)
+- Docker Compose for PostgreSQL
+- データ永続化重視
+- マイグレーション慎重実行
+- モニタリング設定
 
-3. **Phase 3: VPSデプロイ**（5〜6）
-   - 本番環境へのデプロイと運用準備
+## 実装順序
+1. PostgreSQL Docker設定
+2. Prisma依存関係インストール
+3. 基本スキーマ作成
+4. 接続確認
+5. 初期マイグレーション
+6. Client設定とテスト
+7. コマンド体系整備（COMMAND-GUIDE.md更新含む）
+8. ドキュメント更新
 
-## 📝 注意事項
-
-- 各ステップで動作確認を行う
-- エラーが発生した場合は原因を特定してから次に進む
-- セキュリティを考慮した設定を心がける
-- ドキュメント化を忘れない
-
-## 🔧 トラブルシューティング用コマンド
-
-```bash
-# Dockerログ確認
-docker-compose logs -f
-
-# コンテナ状態確認
-docker ps -a
-
-# コンテナ内部確認
-docker-compose exec app sh
-
-# イメージ削除（クリーンビルド用）
-docker-compose down --rmi all
-```
-
-## 📚 参考リンク
-
-- [Next.js Docker Example](https://github.com/vercel/next.js/tree/canary/examples/with-docker)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [さくらVPS ドキュメント](https://manual.sakura.ad.jp/vps/)
+## 注意事項
+- データベース設定変更前には必ずバックアップ
+- マイグレーション前にはスキーマ変更の影響範囲確認
+- 本番環境適用前には開発環境での十分なテスト
+- 環境変数の機密情報管理徹底

@@ -17,10 +17,31 @@ services:
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - DATABASE_URL=postgresql://postgres:password@db:5432/altee_dev?schema=public
     command: npm run dev
+    restart: unless-stopped
+    depends_on:
+      - db
+    networks:
+      - altee-network
+
+  db:
+    image: postgres:17.4
+    container_name: altee-core-db-dev
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=altee_dev
+    volumes:
+      - altee_dev_db_data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - altee-network
+
+volumes:
+  altee_dev_db_data:
 
 networks:
   altee-network:
