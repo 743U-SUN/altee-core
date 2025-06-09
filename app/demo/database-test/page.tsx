@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { testConnection, createTestUser, getAllUsers, deleteAllTestUsers } from './actions'
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic'
+
 export default async function DatabaseTestPage() {
   // 初期データ取得
   const users = await getAllUsers()
