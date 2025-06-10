@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { NavUserHeader } from "@/components/navigation/nav-user-header"
 import { HeaderConfig } from "@/lib/layout-config"
+import { ModeToggle } from "@/components/mode-toggle"
 
 interface HeaderProps {
   config: HeaderConfig
@@ -31,7 +32,8 @@ export function Header({ config }: HeaderProps) {
       )}
 
       {!config.hideUserMenu && !config.rightContent && (
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <ModeToggle />
           <NavUserHeader 
             user={{
               name: "shadcn",

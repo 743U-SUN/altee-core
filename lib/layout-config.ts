@@ -4,7 +4,7 @@ import { Home, Users, Settings, BarChart3, Shield, UserCircle, Command, Building
 export interface NavItem {
   title: string
   url: string
-  icon: any
+  icon: React.ComponentType<{ className?: string }>
   isActive?: boolean
 }
 
@@ -15,7 +15,7 @@ export interface UserData {
 }
 
 export interface BrandConfig {
-  icon: any
+  icon: React.ComponentType<{ className?: string }>
   iconBgColor?: string
   title: string
   subtitle: string
