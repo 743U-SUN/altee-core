@@ -13,11 +13,15 @@ interface HeaderProps {
 export function Header({ config }: HeaderProps) {
   return (
     <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator
-        orientation="vertical"
-        className="mr-2 data-[orientation=vertical]:h-4"
-      />
+      {!config.hideSidebarTrigger && (
+        <>
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+        </>
+      )}
       
       {config.title && (
         <div className="text-lg font-semibold">
@@ -33,7 +37,7 @@ export function Header({ config }: HeaderProps) {
 
       {!config.hideUserMenu && !config.rightContent && (
         <div className="ml-auto flex items-center gap-2">
-          <ModeToggle />
+          {!config.hideModeToggle && <ModeToggle />}
           <NavUserHeader 
             user={{
               name: "shadcn",
@@ -44,7 +48,7 @@ export function Header({ config }: HeaderProps) {
         </div>
       )}
 
-      {config.showNotifications && (
+      {!config.hideNotifications && (
         <div className="flex items-center gap-2">
           {/* 将来的に通知コンポーネントを追加 */}
         </div>

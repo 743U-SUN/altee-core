@@ -17,7 +17,7 @@ import { SidebarConfig, defaultBrand } from "@/lib/layout-config"
 
 interface SidebarProps extends React.ComponentProps<typeof SidebarPrimitive> {
   firstSidebarConfig: SidebarConfig
-  secondSidebarConfig: { content?: React.ReactNode; hide?: boolean }
+  secondSidebarConfig: { content?: React.ReactNode }
 }
 
 export function Sidebar({ 
@@ -103,17 +103,15 @@ export function Sidebar({
       </SidebarPrimitive>
 
       {/* Second Sidebar */}
-      {!secondSidebarConfig.hide && (
-        <SidebarPrimitive collapsible="none" className="hidden flex-1 md:flex">
-          <SidebarContent>
-            {secondSidebarConfig.content || (
-              <div className="p-4 text-muted-foreground text-sm">
-                カスタムコンテンツエリア
-              </div>
-            )}
-          </SidebarContent>
-        </SidebarPrimitive>
-      )}
+      <SidebarPrimitive collapsible="none" className="hidden flex-1 md:flex">
+        <SidebarContent>
+          {secondSidebarConfig.content || (
+            <div className="p-4 text-muted-foreground text-sm">
+              カスタムコンテンツエリア
+            </div>
+          )}
+        </SidebarContent>
+      </SidebarPrimitive>
     </SidebarPrimitive>
   )
 }

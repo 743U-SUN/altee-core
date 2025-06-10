@@ -34,14 +34,15 @@ export interface HeaderConfig {
   title?: string
   rightContent?: React.ReactNode
   hideUserMenu?: boolean
-  showNotifications?: boolean
+  hideNotifications?: boolean
+  hideSidebarTrigger?: boolean
+  hideModeToggle?: boolean
 }
 
 export interface LayoutConfig {
   firstSidebar: SidebarConfig
   secondSidebar: {
     content?: React.ReactNode
-    hide?: boolean
   }
   header: HeaderConfig
   sidebarWidth?: string
@@ -51,7 +52,7 @@ export type LayoutVariant = 'default' | 'admin' | 'user-profile' | 'public' | 'm
 
 export interface LayoutOverrides {
   firstSidebar?: Partial<SidebarConfig>
-  secondSidebar?: Partial<{ content?: React.ReactNode; hide?: boolean }>
+  secondSidebar?: Partial<{ content?: React.ReactNode }>
   header?: Partial<HeaderConfig>
   sidebarWidth?: string
 }
@@ -134,13 +135,13 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       user: defaultUser,
       hideUser: false,
     },
-    secondSidebar: {
-      hide: true,
-    },
+    secondSidebar: {},
     header: {
       title: "Dashboard",
       hideUserMenu: false,
-      showNotifications: true,
+      hideNotifications: false,
+      hideSidebarTrigger: false,
+      hideModeToggle: false,
     },
   },
 
@@ -158,18 +159,18 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       user: defaultUser,
       hideUser: false,
     },
-    secondSidebar: {
-      hide: true, // 後でAdminToolsコンポーネントを作成
-    },
+    secondSidebar: {},
     header: {
       title: "Admin Panel",
       hideUserMenu: false,
-      showNotifications: true,
+      hideNotifications: false,
+      hideSidebarTrigger: false,
+      hideModeToggle: false,
     },
   },
 
   "user-profile": {
-    sidebarWidth: "300px",
+    sidebarWidth: "48px",
     firstSidebar: {
       brand: {
         icon: UserCircle,
@@ -182,13 +183,13 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       user: defaultUser,
       hideUser: false,
     },
-    secondSidebar: {
-      hide: true, // 後でProfileSettingsコンポーネントを作成
-    },
+    secondSidebar: {},
     header: {
-      title: "My Profile",
+      title: "プロフィール",
       hideUserMenu: false,
-      showNotifications: true,
+      hideNotifications: false,
+      hideSidebarTrigger: false,
+      hideModeToggle: false,
     },
   },
 
@@ -212,13 +213,13 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       ],
       hideUser: true,
     },
-    secondSidebar: {
-      hide: true,
-    },
+    secondSidebar: {},
     header: {
       title: "Welcome",
       hideUserMenu: true,
-      showNotifications: false,
+      hideNotifications: true,
+      hideSidebarTrigger: true,
+      hideModeToggle: false,
     },
   },
 
@@ -227,13 +228,13 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     firstSidebar: {
       hide: true,
     },
-    secondSidebar: {
-      hide: true,
-    },
+    secondSidebar: {},
     header: {
       title: "",
       hideUserMenu: true,
-      showNotifications: false,
+      hideNotifications: true,
+      hideSidebarTrigger: true,
+      hideModeToggle: false,
     },
   },
 }
