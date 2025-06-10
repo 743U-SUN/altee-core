@@ -63,7 +63,7 @@ npm run db:generate
 
 ### 5. ローカルテスト
 - Prisma Studioで新テーブル確認: http://localhost:5555
-- アプリケーションコードでの動作確認
+- アプリケーションコードでの動作確認（`/demo/database-test`等）
 
 ---
 
@@ -114,9 +114,19 @@ git pull origin main
 
 # マイグレーション実行
 docker compose -f compose.prod.yaml exec app npx prisma migrate deploy
+```
 
-# 動作確認
-docker compose -f compose.prod.yaml exec app npx prisma studio
+### 5. 本番環境での動作確認
+```bash
+# マイグレーション状態確認
+docker compose -f compose.prod.yaml exec app npx prisma migrate status
+
+# データベース接続確認
+docker compose -f compose.prod.yaml exec app npx prisma db pull --print
+
+# 本番アプリケーションでの動作確認
+# → ブラウザで実際のWebアプリケーション機能をテスト
+# → 例: /demo/database-test ページでCRUD操作確認
 ```
 
 ---
