@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Altee Core",
   description: "Modern web application with Next.js and shadcn/ui",
+  manifest: '/manifest.json', // Next.jsが自動的にmanifest.tsを変換
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Altee Core',
+  },
 };
 
 export default function RootLayout({

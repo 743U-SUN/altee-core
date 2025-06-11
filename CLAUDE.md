@@ -183,3 +183,18 @@ demo/        # Manual test pages accessible from frontend
 4. **Performance**: Optimize with RSC, Suspense, dynamic imports
 5. **Forms & Validation**: Zod × react-hook-form
 6. **Quality Control**: Error handling → Accessibility → Dedicated Server Actions → Manual testing in demo/
+
+## File Encoding Guidelines
+
+**IMPORTANT**: Always use UTF-8 encoding when creating or editing files containing Japanese text.
+
+- **Markdown files**: Use UTF-8 encoding to prevent character corruption
+- **Source code files**: UTF-8 encoding is mandatory for Japanese comments/strings
+- **Configuration files**: Ensure UTF-8 encoding for any Japanese content
+
+**Common Issues**:
+- Japanese characters appearing as garbled text (文字化け)
+- Encoding mismatch between editor and file system
+- Invalid byte sequences in UTF-8 files
+
+**Solution**: When text appears corrupted, recreate the file with proper UTF-8 encoding.
