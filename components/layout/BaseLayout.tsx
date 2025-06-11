@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
+import { MobileFooter } from "./MobileFooter"
 import { getLayoutConfig, mergeLayoutConfig, LayoutVariant, LayoutOverrides } from "@/lib/layout-config"
 
 interface BaseLayoutProps {
@@ -34,10 +35,14 @@ export function BaseLayout({
       />
       <SidebarInset>
         <Header config={finalConfig.header} />
-        <main className="flex flex-1 flex-col gap-4 p-4">
+        <main className="flex flex-1 flex-col gap-4 p-4 pb-20 md:pb-4">
           {children}
         </main>
       </SidebarInset>
+      <MobileFooter 
+        sidebarConfig={finalConfig.firstSidebar} 
+        mobileFooterConfig={finalConfig.mobileFooter}
+      />
     </SidebarProvider>
   )
 }

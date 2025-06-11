@@ -42,38 +42,44 @@ export default function HomePage() {
 | バリアント | 用途 | ブランド | サイドバー幅 | 特徴 |
 |-----------|------|------|----------|------|
 | `default` | 一般ページ | Command（黒） | 350px | Homeアイコン、ユーザーメニュー |
-| `admin` | 管理者画面 | Shield（赤） | 400px | 管理者メニュー、広めレイアウト |
-| `user-profile` | プロフィール | UserCircle（青） | 300px | コンパクト設定画面 |
+| `admin` | 管理者画面 | Shield（赤） | 400px | 管理者メニュー、AdminSidebarContent表示 |
+| `user-profile` | プロフィール | UserCircle（青） | 48px | コンパクト設定画面 |
 | `public` | 公開ページ | Building（緑） | 280px | 最小限のナビゲーション |
-| `minimal` | 最小構成 | - | 250px | サイドバー・ユーザーメニュー非表示 |
+| `minimal` | 最小構成 | - | 250px | サイドバー・フッター非表示 |
 
-## レイアウト継承とオーバーライド
+## モバイル対応
 
-### 基本継承
-```
-app/
-├── admin/
-│   ├── layout.tsx          # BaseLayout variant="admin"（全admin配下に適用）
-│   ├── page.tsx            # 管理ダッシュボード
-│   └── users/
-│       └── page.tsx        # 自動的にadminバリアント継承
-```
+### モバイルフッター
+- PC版FirstSidebarのアイコンを下部固定で表示
+- 幅: 固定18rem（288px）
+- 制御: `mobileFooter.hide`で表示/非表示
 
-### 特別ページでのオーバーライド
+### モバイルSheet
+- ハンバーガーメニューでSecondSidebarの内容を表示
+- 幅: 固定18rem（288px）
+- トグル: SidebarTriggerで開閉
+
+## SecondSidebarコンテンツ管理
+
+### サイドバーコンテンツの追加
+
 ```tsx
-// app/admin/layout.tsx
-export default function AdminLayout({ children }) {
-  return (
-    <BaseLayout 
-      variant="admin"
-      overrides={{
-        header: { title: "カスタムタイトル" },
-        secondSidebar: { content: <AdminTools /> }
-      }}
-    >
-      {children}
-    </BaseLayout>
-  )
+// components/sidebar-content/CustomContent.tsx
+export function CustomContent() {
+  return <div>カスタムコンテンツ</div>
+}
+
+// lib/sidebar-content-registry.tsx
+export const sidebarContentRegistry = {
+  admin: () => <AdminSidebarContent />,
+  custom: () => <CustomContent />,  // 追加
+}
+
+// lib/layout-config.ts
+admin: {
+  secondSidebar: {
+    content: getSidebarContent("admin"),
+  },
 }
 ```
 
@@ -81,85 +87,66 @@ export default function AdminLayout({ children }) {
 
 ### ヘッダー
 - `title`: タイトル文字列
-- `rightContent`: カスタムコンテンツ（ボタンなど）
 - `hideUserMenu`: ユーザーメニューの非表示
+- `hideNotifications`: 通知エリアの非表示
+- `hideSidebarTrigger`: ハンバーガーメニューの非表示
+- `hideModeToggle`: テーマ切り替えボタンの非表示
 
-### サイドバー
+### FirstSidebar
 - `brand`: ブランドアイコン・ロゴ設定
-  - `icon`: アイコンコンポーネント
-  - `iconBgColor`: アイコン背景色（Tailwindクラス）
-  - `title`: タイトル文字列
-  - `subtitle`: サブタイトル文字列
-  - `url`: リンク先URL
 - `navItems`: ナビゲーション項目
+- `user`: ユーザー情報
 - `hideUser`: ユーザー情報の非表示
 - `hide`: サイドバー全体の非表示
 
-### セカンドサイドバー
-- `content`: カスタムコンテンツ
-- `hide`: 非表示設定
+### SecondSidebar
+- `content`: React.ReactNodeコンテンツ
+
+### モバイルフッター
+- `hide`: モバイルフッターの非表示
 
 ### 全体レイアウト
-- `sidebarWidth`: サイドバー全体幅（First + Second の合計）
+- `sidebarWidth`: サイドバー全体幅
 
 ## ファイル構成
 
 ```
-components/layout/
-├── BaseLayout.tsx    # メインコンポーネント
-├── Header.tsx        # ヘッダー
-└── Sidebar.tsx       # サイドバー
+components/
+├── layout/
+│   ├── BaseLayout.tsx          # メインコンポーネント
+│   ├── Header.tsx              # ヘッダー
+│   ├── Sidebar.tsx             # サイドバー
+│   ├── MobileFooter.tsx        # モバイルフッター
+│   └── MobileSidebarSheet.tsx  # モバイルSheet
+├── sidebar-content/
+│   └── AdminSidebarContent.tsx # 管理者用コンテンツ
+└── theme-provider.tsx          # テーマシステム
 
 lib/
-└── layout-config.ts  # バリアント設定
+├── layout-config.ts            # バリアント設定
+└── sidebar-content-registry.tsx # コンテンツ一元管理
 ```
 
 ## 実装例
 
-### ディレクトリ構成
-```
-app/
-├── layout.tsx              # ルートレイアウト
-├── page.tsx                # ホーム（BaseLayout直接使用）
-├── dashboard/
-│   ├── layout.tsx          # variant="default"
-│   └── page.tsx            # ダッシュボード内容
-├── admin/
-│   ├── layout.tsx          # variant="admin"
-│   ├── page.tsx            # 管理ダッシュボード
-│   └── users/
-│       └── page.tsx        # admin継承
-└── profile/
-    ├── layout.tsx          # variant="user-profile"
-    └── page.tsx            # プロフィール設定
-```
-
 ### カスタマイズ例
 ```tsx
 // app/admin/layout.tsx
-import { Star } from "lucide-react"
-
-export default function AdminLayout({ children }) {
-  return (
-    <BaseLayout 
-      variant="admin"
-      overrides={{
-        sidebarWidth: "450px",  // サイドバー全体幅 (First 48px + Second 402px)
-        firstSidebar: {
-          brand: {
-            icon: Star,
-            iconBgColor: "bg-yellow-500",
-            title: "Custom Admin",
-            subtitle: "v2.0"
-          }
-        },
-        secondSidebar: {
-          content: <AdminTools />  // Second Sidebarにコンテンツ表示
-        }
-      }}
-    >
-      {children}
-    </BaseLayout>
-  )
+const overrides: LayoutOverrides = {
+  header: { title: "カスタム管理画面" },
+  mobileFooter: { hide: true },  // モバイルフッター非表示
+  firstSidebar: {
+    brand: {
+      icon: Star,
+      iconBgColor: "bg-yellow-500",
+      title: "Custom Admin"
+    }
+  }
 }
+
+return (
+  <BaseLayout variant="admin" overrides={overrides}>
+    {children}
+  </BaseLayout>
+)
 ```

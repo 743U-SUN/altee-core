@@ -12,8 +12,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { SidebarConfig, defaultBrand } from "@/lib/layout-config"
+import { MobileSidebarSheet } from "./MobileSidebarSheet"
 
 interface SidebarProps extends React.ComponentProps<typeof SidebarPrimitive> {
   firstSidebarConfig: SidebarConfig
@@ -28,6 +30,7 @@ export function Sidebar({
   const [activeItem, setActiveItem] = React.useState(
     firstSidebarConfig.navItems?.[0]
   )
+  const { openMobile, setOpenMobile } = useSidebar()
 
   // First Sidebarが非表示の場合
   if (firstSidebarConfig.hide) {
@@ -112,6 +115,13 @@ export function Sidebar({
           )}
         </SidebarContent>
       </SidebarPrimitive>
+      
+      {/* Mobile Sidebar Sheet - Second Sidebar Content */}
+      <MobileSidebarSheet
+        open={openMobile}
+        onOpenChange={setOpenMobile}
+        secondSidebarContent={secondSidebarConfig.content}
+      />
     </SidebarPrimitive>
   )
 }

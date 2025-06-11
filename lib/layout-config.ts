@@ -1,4 +1,5 @@
 import { Home, Users, Settings, BarChart3, Shield, UserCircle, Command, Building } from "lucide-react"
+import { getSidebarContent } from "./sidebar-content-registry"
 
 // 型定義
 export interface NavItem {
@@ -39,12 +40,17 @@ export interface HeaderConfig {
   hideModeToggle?: boolean
 }
 
+export interface MobileFooterConfig {
+  hide?: boolean
+}
+
 export interface LayoutConfig {
   firstSidebar: SidebarConfig
   secondSidebar: {
     content?: React.ReactNode
   }
   header: HeaderConfig
+  mobileFooter: MobileFooterConfig
   sidebarWidth?: string
 }
 
@@ -54,6 +60,7 @@ export interface LayoutOverrides {
   firstSidebar?: Partial<SidebarConfig>
   secondSidebar?: Partial<{ content?: React.ReactNode }>
   header?: Partial<HeaderConfig>
+  mobileFooter?: Partial<MobileFooterConfig>
   sidebarWidth?: string
 }
 
@@ -143,6 +150,9 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       hideSidebarTrigger: false,
       hideModeToggle: false,
     },
+    mobileFooter: {
+      hide: false,
+    },
   },
 
   admin: {
@@ -159,13 +169,18 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       user: defaultUser,
       hideUser: false,
     },
-    secondSidebar: {},
+    secondSidebar: {
+      content: getSidebarContent("admin"),
+    },
     header: {
       title: "Admin Panel",
       hideUserMenu: false,
       hideNotifications: false,
       hideSidebarTrigger: false,
       hideModeToggle: false,
+    },
+    mobileFooter: {
+      hide: false,
     },
   },
 
@@ -190,6 +205,9 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       hideNotifications: false,
       hideSidebarTrigger: false,
       hideModeToggle: false,
+    },
+    mobileFooter: {
+      hide: false,
     },
   },
 
@@ -221,6 +239,9 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       hideSidebarTrigger: true,
       hideModeToggle: false,
     },
+    mobileFooter: {
+      hide: false,
+    },
   },
 
   minimal: {
@@ -235,6 +256,9 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       hideNotifications: true,
       hideSidebarTrigger: true,
       hideModeToggle: false,
+    },
+    mobileFooter: {
+      hide: true,
     },
   },
 }
@@ -271,5 +295,10 @@ export function mergeLayoutConfig(
       ...baseConfig.header,
       ...overrides.header,
     },
+    mobileFooter: {
+      ...baseConfig.mobileFooter,
+      ...overrides.mobileFooter,
+    },
+    sidebarWidth: overrides.sidebarWidth || baseConfig.sidebarWidth,
   }
 }
