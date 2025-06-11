@@ -1,10 +1,25 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { NavUserHeader } from "@/components/navigation/nav-user-header"
 import { HeaderConfig } from "@/lib/layout-config"
-import { ModeToggle } from "@/components/mode-toggle"
+
+const NavUserHeader = dynamic(
+  () => import("@/components/navigation/nav-user-header").then(mod => ({ default: mod.NavUserHeader })),
+  { 
+    loading: () => <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />,
+    ssr: false
+  }
+)
+
+const ModeToggle = dynamic(
+  () => import("@/components/mode-toggle").then(mod => ({ default: mod.ModeToggle })),
+  { 
+    loading: () => <div className="w-9 h-9 bg-muted rounded-md animate-pulse" />,
+    ssr: false
+  }
+)
 
 interface HeaderProps {
   config: HeaderConfig

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { NavUser } from "@/components/navigation/nav-user"
+import dynamic from "next/dynamic"
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -15,7 +15,22 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { SidebarConfig, defaultBrand } from "@/lib/layout-config"
-import { MobileSidebarSheet } from "./MobileSidebarSheet"
+
+const NavUser = dynamic(
+  () => import("@/components/navigation/nav-user").then(mod => ({ default: mod.NavUser })),
+  { 
+    loading: () => <div className="p-2 animate-pulse bg-muted rounded-md" />,
+    ssr: false
+  }
+)
+
+const MobileSidebarSheet = dynamic(
+  () => import("./MobileSidebarSheet").then(mod => ({ default: mod.MobileSidebarSheet })),
+  { 
+    loading: () => null,
+    ssr: false
+  }
+)
 
 interface SidebarProps extends React.ComponentProps<typeof SidebarPrimitive> {
   firstSidebarConfig: SidebarConfig

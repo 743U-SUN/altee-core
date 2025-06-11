@@ -1,11 +1,19 @@
 "use client"
 
 import { useMemo } from "react"
+import dynamic from "next/dynamic"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
-import { MobileFooter } from "./MobileFooter"
 import { getLayoutConfig, mergeLayoutConfig, LayoutVariant, LayoutOverrides } from "@/lib/layout-config"
+
+const MobileFooter = dynamic(
+  () => import("./MobileFooter").then(mod => ({ default: mod.MobileFooter })),
+  { 
+    loading: () => null,
+    ssr: false
+  }
+)
 
 interface BaseLayoutProps {
   variant?: LayoutVariant

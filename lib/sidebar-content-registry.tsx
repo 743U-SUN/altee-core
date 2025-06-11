@@ -1,5 +1,13 @@
 import React from "react"
-import { AdminSidebarContent } from "@/components/sidebar-content/AdminSidebarContent"
+import dynamic from "next/dynamic"
+
+const AdminSidebarContent = dynamic(
+  () => import("@/components/sidebar-content/AdminSidebarContent").then(mod => ({ default: mod.AdminSidebarContent })),
+  { 
+    loading: () => <div className="p-4 animate-pulse">Loading...</div>,
+    ssr: false
+  }
+)
 
 // サイドバーコンテンツのレジストリ
 export const sidebarContentRegistry = {
