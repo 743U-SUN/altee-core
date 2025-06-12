@@ -19,6 +19,7 @@ export function ImageUploader({
   rounded = false,
   className,
   disabled = false,
+  folder = 'images',
   value = [],
   onUpload,
   onDelete,
@@ -64,7 +65,7 @@ export function ImageUploader({
       const formData = new FormData()
       formData.append('file', processResult.processedFile!)
       
-      const uploadResult = await uploadImageAction(formData, 'images')
+      const uploadResult = await uploadImageAction(formData, folder)
 
       if (!uploadResult.success) {
         throw new Error(uploadResult.error)

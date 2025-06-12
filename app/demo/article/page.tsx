@@ -167,7 +167,7 @@ export default function ArticleDemoPage() {
         <section className="border rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Storage Initialization</h2>
           <p className="text-muted-foreground mb-4">
-            MinIOにバケット（dev-storage）とディレクトリ構造を作成します。
+            ConoHaにバケット（dev-storage）とディレクトリ構造を作成します。
           </p>
           
           <button
@@ -188,7 +188,7 @@ export default function ArticleDemoPage() {
         <section className="border rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">File Upload Test</h2>
           <p className="text-muted-foreground mb-4">
-            MinIOへのファイルアップロードをテストします。
+            ConoHaへのファイルアップロードをテストします。
           </p>
           
           <form ref={formRef} onSubmit={handleFileUpload} className="space-y-4">
@@ -230,7 +230,7 @@ export default function ArticleDemoPage() {
         <section className="border rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">File List Test</h2>
           <p className="text-muted-foreground mb-4">
-            MinIOからのファイル一覧取得をテストします。
+            ConoHaからのファイル一覧取得をテストします。
           </p>
           
           <button

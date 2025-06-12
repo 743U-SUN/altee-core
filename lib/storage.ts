@@ -11,7 +11,7 @@ const config = {
   forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE === 'true',
 }
 
-// S3互換クライアントを作成（MinIO/さくらオブジェクトストレージ両対応）
+// S3互換クライアントを作成（MinIO/ConoHa両対応）
 export const storageClient = new S3Client(config)
 
 // 設定値をexport（他のファイルで使用）

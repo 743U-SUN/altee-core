@@ -9,8 +9,7 @@
 components/image-uploader/
 ├── image-uploader.tsx      # メインコンポーネント
 ├── drop-zone.tsx          # ドラッグ&ドロップエリア
-├── image-preview.tsx      # プレビュー表示
-└── upload-progress.tsx    # アップロード進捗表示
+└── image-preview.tsx      # プレビュー表示
 
 lib/image-uploader/
 ├── image-validator.ts     # ファイル検証
@@ -39,7 +38,7 @@ types/
 | モード | 動作 |
 |--------|------|
 | immediate | ファイル選択時に即座アップロード（画像最適化実行） |
-| batch | プレビューのみ、送信時一括アップロード（画像最適化実行） |
+| batch | プレビューのみ表示、実際のアップロードは別途実装が必要 |
 
 ### プレビューサイズ
 | サイズ | 寸法 | 用途 |
@@ -84,14 +83,46 @@ import { ImageUploader } from '@/components/image-uploader/image-uploader'
 />
 ```
 
-### バッチアップロード
+### バッチアップロード（プレビューのみ）
 ```tsx
 <ImageUploader
   mode="batch"
   previewSize="large"
   maxFiles={10}
   value={batchFiles}
-  onUpload={setBatchFiles}
+  onUpload={setBatchFiles}  // プレビューファイル配列を受け取る
+/>
+
+// 実際のアップロード処理は別途実装
+const handleBatchUpload = async () => {
+  const filesToUpload = batchFiles.filter(f => f.key === '') // プレビューファイルのみ
+  const formData = new FormData()
+  filesToUpload.forEach(f => {
+    // File オブジェクトの再構築が必要
+  })
+  // uploadImagesAction() を呼び出し
+}
+```
+
+### フォルダ指定アップロード
+```tsx
+// ユーザーアイコン用
+<ImageUploader
+  mode="immediate"
+  previewSize="small"
+  folder="user-icons"
+  maxFiles={1}
+  rounded={true}
+  onUpload={setUserIcon}
+/>
+
+// 記事画像用
+<ImageUploader
+  mode="batch"
+  previewSize="medium"
+  folder="articles"
+  maxFiles={5}
+  onUpload={setArticleImages}
 />
 ```
 
@@ -108,6 +139,7 @@ interface ImageUploaderProps {
   rounded?: boolean                              // 円形表示
   className?: string
   disabled?: boolean
+  folder?: string                                // 保存先フォルダ（デフォルト: 'images'）
   value?: UploadedFile[]                         // 制御コンポーネント用
   onUpload?: (files: UploadedFile[]) => void
   onDelete?: (fileId: string) => void
@@ -118,7 +150,7 @@ interface ImageUploaderProps {
 ## セキュリティ機能
 
 ### SVGサニタイズ
-- DOMPurify + JSDOM を使用（サーバーサイド対応）
+- DOMPurify + JSDOM を使用（動的import対応）
 - JavaScriptコード、イベントハンドラーを検出・除去
 - 安全なSVGタグ・属性のみ許可
 - ブラウザ・Node.js両環境で動作
@@ -169,20 +201,38 @@ const result = await deleteImageAction(fileKey)
 
 ## ファイル保存先
 
+### デフォルト構造
 ```
-dev-storage/
-└── images/
+ConoHaオブジェクトストレージ/
+└── images/              # デフォルトコンテナ
     ├── {timestamp}_{random}.webp
     ├── {timestamp}_{random}.svg
     └── ...
 ```
+
+### フォルダ指定時の構造
+```
+ConoHaオブジェクトストレージ/
+├── images/              # 通常の画像
+├── user-icons/          # ユーザーアイコン
+├── articles/            # 記事画像
+├── profiles/            # プロフィール画像
+└── temp/                # 一時ファイル
+```
+
+### フォルダ名の推奨事項
+- **user-icons**: ユーザーアバター・アイコン
+- **articles**: ブログ記事・コンテンツ画像
+- **profiles**: プロフィール画像・カバー画像
+- **products**: 商品画像
+- **temp**: 一時的なアップロード
 
 ## デモページ
 
 `/demo/article` で以下のパターンをテスト可能:
 
 1. **即座アップロードモード(Large)** - 自動アップロード
-2. **バッチモード(Medium)** - プレビュー→一括送信
+2. **バッチモード(Medium)** - プレビュー表示のみ
 3. **プロフィール画像(Small・円形)** - 1ファイル限定
 4. **カスタムサイズ** - 200x150pxでテスト
 
@@ -191,7 +241,104 @@ dev-storage/
 - SVGファイルは悪意のあるコードを含む可能性があるため必ずサニタイズ
 - 大容量ファイルはブラウザでの処理に時間がかかる場合あり
 - WebP非対応ブラウザでは元形式のまま保存
-- プレビュー画像のURLは`/api/files/{key}`形式
+- プレビュー画像のURLはConoHa直接アクセス形式
 - **GIFアニメーション**: Canvas API制限により静止画に変換される
 - **プレビュー表示**: ファイル名・サイズ情報は表示されない（画像のみ）
 - **背景透過PNG**: 透過WebPに正しく変換される
+
+
+
+## 重要事項
+- ConoHaオブジェクトストレージは従量課金なしの定額制（転送量・リクエスト数無制限）
+- S3Proxy経由でS3互換APIを使用し、既存コードをそのまま活用
+- 開発・本番環境でConoHa統一により、環境差異によるトラブルを削減
+- 直接アクセス可能なため、プロキシ配信不要でシンプルな構成
+
+## アーキテクチャ設計
+### ファイルアクセスパターン
+#### ファイル操作（アップロード・削除）
+- **Server Actions**を使用してストレージ操作を統一
+- **開発・本番共通**: ブラウザ → Next.js Server Actions → S3Proxy → ConoHaオブジェクトストレージ
+
+#### ファイル配信（画像表示・ダウンロード）
+- **直接アクセス**によるシンプルな配信
+- **開発・本番共通**: ブラウザ → ConoHaオブジェクトストレージ → 画像返却（直接）
+- 転送量・リクエスト数無制限のため、プロキシ配信不要
+- CDN機能活用によるパフォーマンス向上
+
+
+### 画像最適化戦略
+#### 二段階最適化アプローチ
+1. **アップロード時最適化**（Server Actions内）
+   - リサイズ、WebP変換、品質調整
+   - オブジェクトストレージの容量圧迫を防止
+   - 最適化済み画像をオブジェクトストレージに保存
+
+2. **表示時最適化**（Next.js Image）
+   - `unoptimized={true}`で二重最適化を回避
+   - 遅延読み込み（lazy loading）機能を活用
+   - レスポンシブ対応（sizes、srcSet）を活用
+   - priority設定でLCP最適化
+   - placeholder機能でUX向上
+
+#### 使用例
+```jsx
+<Image 
+  src="https://object-storage.tyo2.conoha.io/v1/AUTH_tenant_id/images/sample.webp"
+  alt="sample"
+  width={800}
+  height={600}
+  unoptimized={true}
+  placeholder="blur"
+  priority={false} // 必要に応じてtrue
+/>
+```
+
+## 作成ファイル一覧
+
+### デモファイル
+| ファイル | 場所 | 説明 |
+|---------|------|------|
+| page.tsx | app/demo/article/ | ConoHaファイル操作のテスト用UI画面 |
+| actions.ts | app/demo/article/ | Server Actions（アップロード、一覧取得、削除） |
+
+### 設定ファイル
+| ファイル | 場所 | 説明 |
+|---------|------|------|
+| compose.dev.yaml | / | S3Proxyサービス追加済み（ポート8081） |
+| .env.local | / | ConoHa接続設定追加済み |
+| storage.ts | lib/ | S3Proxy経由ストレージクライアント |
+
+#### app/demo/article/page.tsx
+- ConoHaへのファイルアップロードテスト用UI
+- ファイル一覧取得テスト用UI
+- 画像表示テスト用UI
+- 基本的なフォームとボタンを配置
+
+#### app/demo/article/actions.ts
+- uploadFile: ファイルアップロード用Server Action
+- listFiles: ファイル一覧取得用Server Action
+- deleteFile: ファイル削除用Server Action
+- S3Proxy経由でConoHaにアクセス
+
+#### lib/storage.ts
+- S3Proxy経由のストレージクライアント（ConoHa対応）
+- 環境変数から設定を自動読み込み
+- STORAGE_BUCKET、STORAGE_ENDPOINTをexport
+- 設定値の検証機能付き
+
+## 導入完了項目
+✅ @aws-sdk/client-s3パッケージ追加
+✅ S3Proxy経由ストレージクライアント作成(lib/storage.ts)
+✅ 画像アップローダーコンポーネント実装
+✅ Server Actions実装
+✅ ConoHaオブジェクトストレージ統合完了
+✅ 画像アップロード・WebP変換動作確認済み
+✅ MinIO/さくらストレージ参照削除完了
+
+## ConoHa移行の利点
+- **コスト予測可能**: 従量課金なしの定額制
+- **開発・本番統一**: 環境差異によるトラブル削減
+- **シンプルアーキテクチャ**: プロキシ配信不要
+- **パフォーマンス向上**: 直接アクセスによる高速化
+- **運用コスト削減**: MinIOメンテナンス不要

@@ -1,15 +1,15 @@
-import { JSDOM } from 'jsdom'
-import createDOMPurify from 'dompurify'
-
 /**
- * 環境に応じてDOMPurifyインスタンスを取得
+ * 環境に応じてDOMPurifyインスタンスを取得（動的import）
  */
-function getDOMPurify() {
+async function getDOMPurify() {
   if (typeof window !== 'undefined') {
     // ブラウザ環境
+    const createDOMPurify = (await import('dompurify')).default
     return createDOMPurify(window)
   } else {
     // Node.js環境
+    const { JSDOM } = await import('jsdom')
+    const createDOMPurify = (await import('dompurify')).default
     const jsdomWindow = new JSDOM('').window
     return createDOMPurify(jsdomWindow as unknown as Window & typeof globalThis)
   }
@@ -56,10 +56,10 @@ const SVG_SANITIZE_CONFIG = {
 /**
  * SVGファイルの内容をサニタイズ
  */
-export function sanitizeSVG(svgContent: string): { success: boolean; sanitized?: string; error?: string } {
+export async function sanitizeSVG(svgContent: string): Promise<{ success: boolean; sanitized?: string; error?: string }> {
   try {
     // DOMPurifyインスタンスを取得
-    const domPurify = getDOMPurify()
+    const domPurify = await getDOMPurify()
     
     // DOMPurifyでサニタイズ
     const sanitized = domPurify.sanitize(svgContent, SVG_SANITIZE_CONFIG)
@@ -102,7 +102,7 @@ export async function sanitizeSVGFile(file: File): Promise<{ success: boolean; s
     const content = await file.text()
     
     // サニタイズ
-    const result = sanitizeSVG(content)
+    const result = await sanitizeSVG(content)
     
     if (!result.success) {
       return {

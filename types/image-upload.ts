@@ -24,12 +24,6 @@ export interface UploadedFile {
   uploadedAt: string
 }
 
-export interface UploadProgress {
-  fileId: string
-  progress: number
-  status: 'uploading' | 'completed' | 'error'
-  error?: string
-}
 
 export interface ImageUploaderProps {
   mode: UploadMode
@@ -40,6 +34,7 @@ export interface ImageUploaderProps {
   rounded?: boolean
   className?: string
   disabled?: boolean
+  folder?: string // 保存先フォルダ（デフォルト: 'images'）
   value?: UploadedFile[]
   onUpload?: (files: UploadedFile[]) => void
   onDelete?: (fileId: string) => void

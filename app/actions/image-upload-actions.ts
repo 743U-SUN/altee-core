@@ -82,30 +82,36 @@ export async function uploadImageAction(
 }
 
 /**
- * 複数の画像ファイルを一括アップロード
+ * 複数の画像ファイルを一括アップロード（並列処理）
  */
 export async function uploadImagesAction(
   files: File[],
   folder: string = 'images'
 ): Promise<{ success: boolean; files?: UploadedFile[]; errors?: string[] }> {
-  const results = []
-  const errors = []
-  
-  for (const file of files) {
+  // 並列処理でアップロード
+  const uploadPromises = files.map(async (file) => {
     const formData = new FormData()
     formData.append('file', file)
-    
-    const result = await uploadImageAction(formData, folder)
+    return uploadImageAction(formData, folder)
+  })
+  
+  const results = await Promise.all(uploadPromises)
+  
+  // 成功したファイルとエラーを分離
+  const successfulFiles: UploadedFile[] = []
+  const errors: string[] = []
+  
+  results.forEach((result) => {
     if (result.success && result.file) {
-      results.push(result.file)
+      successfulFiles.push(result.file)
     } else {
       errors.push(result.error || 'Unknown error')
     }
-  }
+  })
   
   return {
-    success: results.length > 0,
-    files: results,
+    success: successfulFiles.length > 0,
+    files: successfulFiles,
     errors: errors.length > 0 ? errors : undefined
   }
 }
@@ -136,22 +142,26 @@ export async function deleteImageAction(
 }
 
 /**
- * 複数の画像ファイルを一括削除
+ * 複数の画像ファイルを一括削除（並列処理）
  */
 export async function deleteImagesAction(
   fileKeys: string[]
 ): Promise<{ success: boolean; deletedKeys?: string[]; errors?: string[] }> {
-  const deletedKeys = []
-  const errors = []
+  // 並列処理で削除
+  const deletePromises = fileKeys.map(key => deleteImageAction(key))
+  const results = await Promise.all(deletePromises)
   
-  for (const key of fileKeys) {
-    const result = await deleteImageAction(key)
+  // 成功したキーとエラーを分離
+  const deletedKeys: string[] = []
+  const errors: string[] = []
+  
+  results.forEach((result, index) => {
     if (result.success) {
-      deletedKeys.push(key)
+      deletedKeys.push(fileKeys[index])
     } else {
       errors.push(result.error || 'Unknown error')
     }
-  }
+  })
   
   return {
     success: deletedKeys.length > 0,

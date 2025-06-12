@@ -4,7 +4,7 @@ import { PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
 import { initializeStorage } from '@/lib/storage-init'
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 
-// MinIO接続とファイル操作のServer Actions
+// ConoHa接続とファイル操作のServer Actions
 
 export async function initStorageAction() {
   console.log('Initializing storage...')
@@ -29,7 +29,7 @@ export async function uploadFile(formData: FormData) {
     // ファイルをBufferに変換
     const buffer = Buffer.from(await file.arrayBuffer())
     
-    // MinIOにアップロード
+    // ConoHaにアップロード
     await storageClient.send(new PutObjectCommand({
       Bucket: STORAGE_BUCKET,
       Key: key,

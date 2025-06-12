@@ -172,7 +172,7 @@ demo/        # Manual test pages accessible from frontend
 - Enable manual browser-based verification of all Server Actions and client functions
 
 ### Image Management
-- File storage: Sakura Internet Object Storage (S3-compatible, MinIO in development)
+- File storage: ConoHa Object Storage (S3-compatible, MinIO in development)
 - Unified system for image optimization, security, and upload processing
 - See docs/image-handling-guide.md and docs/image-upload-guide.md for details
 

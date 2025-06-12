@@ -15,7 +15,7 @@ export async function GET(
     
     console.log(`Fetching file: ${filePath}`)
     
-    // MinIOからファイルを取得
+    // ConoHaからファイルを取得
     const response = await storageClient.send(new GetObjectCommand({
       Bucket: STORAGE_BUCKET,
       Key: filePath,
