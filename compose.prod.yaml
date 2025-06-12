@@ -19,6 +19,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      s3proxy:
+        condition: service_started
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 30s
@@ -50,6 +52,41 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - altee-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  s3proxy:
+    image: andrewgaul/s3proxy:2.6.0
+    container_name: altee-core-s3proxy-prod
+    ports:
+      - "8081:80"  # S3Proxy API（本番環境）
+    environment:
+      - S3PROXY_AUTHORIZATION=aws-v2-or-v4
+      - S3PROXY_IDENTITY=${CONOHA_ACCESS_KEY}
+      - S3PROXY_CREDENTIAL=${CONOHA_SECRET_KEY}
+      - S3PROXY_IGNORE_UNKNOWN_HEADERS=true
+      - JCLOUDS_PROVIDER=openstack-swift
+      - JCLOUDS_ENDPOINT=https://identity.c3j1.conoha.io/v3
+      - JCLOUDS_IDENTITY=${CONOHA_TENANT_NAME}:${CONOHA_API_USER}
+      - JCLOUDS_CREDENTIAL=${CONOHA_API_PASSWORD}
+      - JCLOUDS_REGIONS=c3j1
+      - JCLOUDS_REGION=c3j1
+      - JCLOUDS_KEYSTONE_VERSION=3
+      - JCLOUDS_KEYSTONE_SCOPE=project:${CONOHA_TENANT_NAME}
+    env_file:
+      - .env.production
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - altee-network
     logging:
