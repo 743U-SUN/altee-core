@@ -7,6 +7,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react"
+import { signOut } from "@/auth"
 
 import {
   Avatar,
@@ -86,7 +87,11 @@ export function NavUserHeader({
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={async () => {
+            await signOut()
+          }}
+        >
           <LogOut />
           Log out
         </DropdownMenuItem>

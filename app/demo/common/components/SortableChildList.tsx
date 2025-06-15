@@ -61,7 +61,7 @@ export function SortableChildList<TParent extends SortableParentItem, TChild ext
       if (!childState.tempValues[item.id]) {
         tempValues[item.id] = {};
         config.childConfig.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as any)[field.key] || '';
+          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
         });
       }
     });
@@ -71,7 +71,7 @@ export function SortableChildList<TParent extends SortableParentItem, TChild ext
         tempValues: { ...childState.tempValues, ...tempValues }
       });
     }
-  }, [childItems.length, config.childConfig.editableFields]);
+  }, [childItems, config.childConfig.editableFields, childState.tempValues, onUpdateChildState, parentId]);
 
   // 子アイテムを追加
   const handleAddChildItem = async () => {

@@ -84,7 +84,7 @@ export function SortableItem<T extends SortableItemType>({
         }
       }
 
-      (updates as any)[field.key] = value;
+      (updates as Record<string, string>)[field.key] = value;
     }
 
     if (!hasError) {
@@ -92,14 +92,14 @@ export function SortableItem<T extends SortableItemType>({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, fieldKey: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       validateAndSave();
     } else if (e.key === 'Escape') {
       // 元の値に戻す
       config.editableFields.forEach(field => {
-        onUpdateTempValue(item.id, field.key, (item as any)[field.key] || '');
+        onUpdateTempValue(item.id, field.key, (item as Record<string, unknown>)[field.key] as string || '');
       });
       onToggleEdit(item.id);
     }
@@ -205,7 +205,7 @@ export function SortableItem<T extends SortableItemType>({
                   maxLength={field.maxLength}
                   rows={4}
                   className="mt-1 resize-none"
-                  onKeyDown={(e) => handleKeyDown(e, field.key)}
+                  onKeyDown={(e) => handleKeyDown(e)}
                 />
               ) : (
                 <Input
@@ -215,7 +215,7 @@ export function SortableItem<T extends SortableItemType>({
                   placeholder={field.placeholder}
                   maxLength={field.maxLength}
                   className="mt-1"
-                  onKeyDown={(e) => handleKeyDown(e, field.key)}
+                  onKeyDown={(e) => handleKeyDown(e)}
                 />
               )}
               

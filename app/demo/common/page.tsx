@@ -70,7 +70,7 @@ const initialQuestions: DemoQuestion[] = [
 export default function CommonDemoPage() {
   const [categories, setCategories] = useState<DemoCategory[]>(initialCategories);
   const [questions, setQuestions] = useState<DemoQuestion[]>(initialQuestions);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   // カテゴリ用の編集可能フィールド
   const categoryFields: EditableField[] = [

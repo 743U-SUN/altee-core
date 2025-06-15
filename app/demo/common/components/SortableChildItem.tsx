@@ -87,7 +87,7 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
         }
       }
 
-      (updates as any)[field.key] = value;
+      (updates as Record<string, string>)[field.key] = value;
     }
 
     if (!hasError) {
@@ -95,14 +95,14 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, fieldKey: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       validateAndSave();
     } else if (e.key === 'Escape') {
       // 元の値に戻す
       config.childConfig.editableFields.forEach(field => {
-        onUpdateTempValue(childItem.id, field.key, (childItem as any)[field.key] || '');
+        onUpdateTempValue(childItem.id, field.key, (childItem as Record<string, unknown>)[field.key] as string || '');
       });
       onToggleEdit(childItem.id);
     }
@@ -211,7 +211,7 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
                       maxLength={field.maxLength}
                       rows={4}
                       className="mt-1 resize-none"
-                      onKeyDown={(e) => handleKeyDown(e, field.key)}
+                      onKeyDown={(e) => handleKeyDown(e)}
                     />
                   ) : (
                     <Input
@@ -221,7 +221,7 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
                       placeholder={field.placeholder}
                       maxLength={field.maxLength}
                       className="mt-1"
-                      onKeyDown={(e) => handleKeyDown(e, field.key)}
+                      onKeyDown={(e) => handleKeyDown(e)}
                     />
                   )}
                   

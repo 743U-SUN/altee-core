@@ -83,7 +83,7 @@ export function ImageUploader({
       const errorMessage = `アップロードエラー: ${error instanceof Error ? error.message : 'Unknown error'}`
       addError(errorMessage)
     }
-  }, [uploadedFiles, addError, onUpload])
+  }, [uploadedFiles, addError, onUpload, folder])
 
   // ファイル選択時の処理
   const handleFilesSelected = useCallback(async (files: File[]) => {

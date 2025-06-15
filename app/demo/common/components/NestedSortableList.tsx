@@ -61,7 +61,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
       if (!parentState.tempValues[item.id]) {
         tempValues[item.id] = {};
         config.parentConfig.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as any)[field.key] || '';
+          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
         });
       }
     });
@@ -72,7 +72,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
         tempValues: { ...prev.tempValues, ...tempValues }
       }));
     }
-  }, [config.parentItems.length, config.parentConfig.editableFields]);
+  }, [config.parentItems, config.parentConfig.editableFields]);
 
   // 子アイテムの状態を初期化
   useEffect(() => {
@@ -92,7 +92,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
         childItems.forEach(childItem => {
           newChildStates[parentItem.id].tempValues[childItem.id] = {};
           config.childConfig.editableFields.forEach(field => {
-            newChildStates[parentItem.id].tempValues[childItem.id][field.key] = (childItem as any)[field.key] || '';
+            newChildStates[parentItem.id].tempValues[childItem.id][field.key] = (childItem as Record<string, unknown>)[field.key] as string || '';
           });
         });
       }
@@ -101,7 +101,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
     if (Object.keys(newChildStates).length > 0) {
       setChildStates(prev => ({ ...prev, ...newChildStates }));
     }
-  }, [config.parentItems, config.childConfig.editableFields]);
+  }, [config.parentItems, config.childConfig.editableFields, config.getChildItems, childStates]);
 
   // 親アイテムを追加
   const handleAddParentItem = async () => {

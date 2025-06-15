@@ -55,7 +55,7 @@ export function SortableList<T extends SortableItemType>({
       if (!itemState.tempValues[item.id]) {
         tempValues[item.id] = {};
         config.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as any)[field.key] || '';
+          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
         });
       }
     });
@@ -66,7 +66,7 @@ export function SortableList<T extends SortableItemType>({
         tempValues: { ...prev.tempValues, ...tempValues }
       }));
     }
-  }, [config.items.length, config.editableFields]);
+  }, [config.items, config.editableFields]);
 
   // アイテムを追加
   const handleAddItem = async () => {
