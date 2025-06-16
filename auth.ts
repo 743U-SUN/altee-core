@@ -7,6 +7,7 @@ import { extractOAuthImageUrl, updateUserImage, isEmailBlacklisted } from "@/ser
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  trustHost: true,
   session: {
     strategy: "database",
     maxAge: 30 * 24 * 60 * 60, // 30日
