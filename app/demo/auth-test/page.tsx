@@ -73,40 +73,23 @@ export default async function AuthTestPage() {
             <div className="mt-4">
               <p><strong className="text-gray-900">プロフィール画像:</strong></p>
               <div className="ml-4 space-y-1 text-gray-700">
-                <p>Google: {session.user.profileImages.google ? '✅ 設定済み' : '❌ なし'}</p>
-                <p>Discord: {session.user.profileImages.discord ? '✅ 設定済み' : '❌ なし'}</p>
-                <p>選択中: {session.user.profileImages.preferred || 'デフォルト'}</p>
-                {session.user.profileImages.custom && (
-                  <p>カスタム: ✅ 設定済み</p>
-                )}
+                <p>現在の画像: {session.user.image ? '✅ 設定済み' : '❌ なし'}</p>
               </div>
             </div>
 
             {/* 現在の画像を表示 */}
-            {(session.user.profileImages.google || session.user.profileImages.discord) && (
+            {session.user.image && (
               <div className="mt-4">
-                <p><strong className="text-gray-900">現在の画像:</strong></p>
+                <p><strong className="text-gray-900">現在のプロフィール画像:</strong></p>
                 <div className="flex gap-4 mt-2">
-                  {session.user.profileImages.google && (
-                    <div className="text-center">
-                      <img 
-                        src={session.user.profileImages.google} 
-                        alt="Google Profile" 
-                        className="w-16 h-16 rounded-full"
-                      />
-                      <p className="text-xs mt-1 text-gray-600">Google</p>
-                    </div>
-                  )}
-                  {session.user.profileImages.discord && (
-                    <div className="text-center">
-                      <img 
-                        src={session.user.profileImages.discord} 
-                        alt="Discord Profile" 
-                        className="w-16 h-16 rounded-full"
-                      />
-                      <p className="text-xs mt-1 text-gray-600">Discord</p>
-                    </div>
-                  )}
+                  <div className="text-center">
+                    <img 
+                      src={session.user.image} 
+                      alt="Profile Picture" 
+                      className="w-16 h-16 rounded-full"
+                    />
+                    <p className="text-xs mt-1 text-gray-600">最新ログイン</p>
+                  </div>
                 </div>
               </div>
             )}

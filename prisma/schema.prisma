@@ -19,8 +19,6 @@ model User {
   image         String?   // NextAuth v5 standard field
   
   // プロフィール画像戦略
-  googleImageUrl         String?
-  discordImageUrl        String?
   preferredImageProvider String? // "google" | "discord" | "custom"
   customImageKey         String? // ConoHa Object Storage key
   

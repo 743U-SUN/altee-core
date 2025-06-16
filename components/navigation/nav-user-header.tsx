@@ -7,7 +7,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react"
-import { signOut } from "@/auth"
+import { logoutAction } from "@/app/actions/auth"
 
 import {
   Avatar,
@@ -89,7 +89,7 @@ export function NavUserHeader({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
-            await signOut()
+            await logoutAction()
           }}
         >
           <LogOut />
