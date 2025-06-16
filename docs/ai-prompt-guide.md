@@ -101,7 +101,7 @@ if (session?.user?.role !== 'ADMIN') {
 - [x] `/auth/signin` ページ作成 - shadcn/ui使用、Google/Discordボタン
 - [x] `/auth/error` ページ作成 - エラー別メッセージ表示
 - [ ] 本番環境OAuth設定確認 - NEXTAUTH_URL等の環境変数
-- [ ] 本番環境認証テスト - Vercel/VPS環境での動作確認
+- [ ] 本番環境認証テスト - VPS環境での動作確認
 - [ ] ログアウト後リダイレクト設定 - UX改善
 
 ### Phase 2: ユーザー管理（Priority: Medium）
