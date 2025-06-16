@@ -51,43 +51,71 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true
     },
     async session({ session, user }) {
-      // 管理者権限の自動付与
-      if (session.user?.email) {
-        const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
-        if (adminEmails.includes(session.user.email)) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'ADMIN' }
-          }).catch(() => {}) // エラー無視（既にADMINの場合）
+      try {
+        // 管理者権限の自動付与
+        if (session.user?.email) {
+          const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
+          if (adminEmails.includes(session.user.email)) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { role: 'ADMIN' }
+            }).catch(() => {}) // エラー無視（既にADMINの場合）
+          }
         }
-      }
 
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: {
-          id: true,
-          role: true,
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            id: true,
+            role: true,
+            isActive: true,
+            image: true,
+          }
+        })
+
+        if (!dbUser) {
+          console.error('Database user not found during session callback:', user.id)
+          // デフォルト値を返す
+          session.user = {
+            ...session.user,
+            id: user.id,
+            role: 'USER',
+            isActive: true,
+            image: session.user.image,
+          }
+          return session
+        }
+
+        // セッション時点での画像同期処理（signInコールバックで処理されなかった場合のフォールバック）
+        if (session.user.image && session.user.image !== dbUser.image) {
+          try {
+            await updateUserImage(user.id, session.user.image)
+            dbUser.image = session.user.image
+          } catch (error) {
+            console.error('Failed to update user image in session callback:', error)
+          }
+        }
+
+        session.user = {
+          ...session.user,
+          id: user.id,
+          role: dbUser.role || 'USER',
+          isActive: dbUser.isActive,
+          image: dbUser.image,
+        }
+        
+        return session
+      } catch (error) {
+        console.error('Session callback error:', error)
+        // エラーが発生した場合もセッションを返す（最小限の情報で）
+        session.user = {
+          ...session.user,
+          id: user.id,
+          role: 'USER',
           isActive: true,
-          image: true,
         }
-      })
-
-      // セッション時点での画像同期処理（signInコールバックで処理されなかった場合のフォールバック）
-      if (session.user.image && dbUser && session.user.image !== dbUser.image) {
-        await updateUserImage(user.id, session.user.image)
-        // dbUserオブジェクトも更新
-        dbUser.image = session.user.image
+        return session
       }
-
-      session.user = {
-        ...session.user,
-        id: user.id,
-        role: dbUser?.role || 'USER',
-        isActive: dbUser?.isActive || false,
-        image: dbUser?.image,
-      }
-      
-      return session
     },
   },
   pages: {
