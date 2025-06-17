@@ -42,17 +42,18 @@ export async function createTestUser() {
     
     console.log('✅ ユーザー作成成功:', user)
     
-    // 関連Postも作成してリレーションをテスト
-    const post = await prisma.post.create({
+    // 関連Articleも作成してリレーションをテスト
+    const article = await prisma.article.create({
       data: {
-        title: `テスト投稿 by ${user.name}`,
-        content: `これは ${user.name} のテスト投稿です。`,
+        title: `テスト記事 by ${user.name}`,
+        slug: `test-article-${Date.now()}`,
+        content: `これは ${user.name} のテスト記事です。`,
         published: true,
         authorId: user.id,
       },
     })
     
-    console.log('✅ 関連Post作成成功:', post)
+    console.log('✅ 関連Article作成成功:', article)
     console.log('🎉 テストユーザー作成完了')
   } catch (error) {
     console.error('❌ ユーザー作成失敗:', error)
@@ -67,7 +68,7 @@ export async function getAllUsers() {
   try {
     const users = await prisma.user.findMany({
       include: {
-        posts: true, // 関連Postも含める
+        articles: true, // 関連Articleも含める
       },
       orderBy: {
         createdAt: 'desc',

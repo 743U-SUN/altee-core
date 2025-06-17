@@ -112,7 +112,8 @@ export async function getUserDetail(userId: string) {
           select: {
             sessions: true,
             accounts: true,
-            posts: true,
+            articles: true,
+            mediaFiles: true,
           },
         },
       },

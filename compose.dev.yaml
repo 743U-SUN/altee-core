@@ -14,10 +14,19 @@ services:
       # node_modulesは除外（コンテナ内のものを使用）
       - /app/node_modules
       - /app/.next
+    env_file:
+      - .env.local
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
       - DATABASE_URL=postgresql://postgres:password@db:5432/altee_dev?schema=public
+      - STORAGE_ENDPOINT=http://s3proxy:80
+      - STORAGE_ACCESS_KEY=altee-access-key
+      - STORAGE_SECRET_KEY=altee-secret-key-12345
+      - STORAGE_BUCKET=images
+      - STORAGE_REGION=c3j1
+      - STORAGE_FORCE_PATH_STYLE=true
+      - NEXT_PUBLIC_STORAGE_URL=http://localhost:3000/api/files
     command: npm run dev
     restart: unless-stopped
     depends_on:

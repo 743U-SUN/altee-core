@@ -2,6 +2,8 @@
 
 import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
+import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import type { UploadedFile } from '@/types/image-upload'
 import { sanitizeSVGFile } from '@/lib/image-uploader/svg-sanitizer'
 
@@ -54,16 +56,36 @@ export async function uploadImageAction(
       ContentLength: processedFile.size,
     }))
     
+    // ユーザー認証チェック
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, error: '認証が必要です' }
+    }
+
+    // MediaFileテーブルにレコード作成
+    const mediaFile = await prisma.mediaFile.create({
+      data: {
+        storageKey: key,
+        containerName: folder, // article-thumbnails など
+        originalName: fileName,
+        fileName: uniqueFileName,
+        fileSize: processedFile.size,
+        mimeType: processedFile.type,
+        uploadType: folder === 'article-thumbnails' ? 'THUMBNAIL' : 'CONTENT',
+        uploaderId: session.user.id,
+      }
+    })
+
     // アップロード済みファイル情報を作成
     const uploadedFile: UploadedFile = {
-      id: `${timestamp}_${randomString}`,
+      id: mediaFile.id, // データベースのIDを使用
       name: uniqueFileName,
       originalName: fileName,
       url: `/api/files/${key}`,
       key: key,
       size: processedFile.size,
       type: processedFile.type,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: mediaFile.createdAt.toISOString()
     }
     
     console.log(`Image uploaded: ${key}`)
@@ -123,11 +145,36 @@ export async function deleteImageAction(
   fileKey: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // MinIOからファイルを削除
+    // ユーザー認証チェック
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, error: '認証が必要です' }
+    }
+
+    // MediaFileレコードを取得
+    const mediaFile = await prisma.mediaFile.findUnique({
+      where: { storageKey: fileKey }
+    })
+
+    if (!mediaFile) {
+      return { success: false, error: 'ファイルが見つかりません' }
+    }
+
+    // 権限チェック（管理者または自分がアップロードしたファイル）
+    if (session.user.role !== 'ADMIN' && mediaFile.uploaderId !== session.user.id) {
+      return { success: false, error: '削除権限がありません' }
+    }
+
+    // オブジェクトストレージからファイルを削除
     await storageClient.send(new DeleteObjectCommand({
       Bucket: STORAGE_BUCKET,
       Key: fileKey,
     }))
+
+    // MediaFileレコードを削除
+    await prisma.mediaFile.delete({
+      where: { id: mediaFile.id }
+    })
     
     console.log(`Image deleted: ${fileKey}`)
     return { success: true }

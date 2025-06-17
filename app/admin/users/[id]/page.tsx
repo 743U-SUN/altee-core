@@ -193,8 +193,8 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                   <div className="text-sm text-muted-foreground">連携アカウント</div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{user._count.posts}</div>
-                  <div className="text-sm text-muted-foreground">投稿数</div>
+                  <div className="text-2xl font-bold">{user._count.articles}</div>
+                  <div className="text-sm text-muted-foreground">記事数</div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <div className="text-2xl font-bold">
