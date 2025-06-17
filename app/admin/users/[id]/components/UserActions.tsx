@@ -26,12 +26,14 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { 
   updateUserRole, 
   toggleUserActive, 
   deleteUser, 
   forceLogout 
 } from "@/app/actions/user-management"
+import { addBlacklistedEmail } from "@/app/actions/blacklist"
 import { UserRole } from "@prisma/client"
 import { Trash2, LogOut, Shield, Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -50,6 +52,7 @@ export function UserActions({ user }: UserActionsProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [deleteReason, setDeleteReason] = useState("")
+  const [addToBlacklist, setAddToBlacklist] = useState(false)
 
   const handleRoleChange = async (newRole: UserRole) => {
     if (newRole === user.role) return
@@ -103,8 +106,22 @@ export function UserActions({ user }: UserActionsProps) {
 
     setIsLoading(true)
     try {
+      // ユーザー削除実行
       await deleteUser(user.id, deleteReason.trim())
-      toast.success("ユーザーを削除しました")
+      
+      // ブラックリスト追加（選択された場合）
+      if (addToBlacklist && user.email) {
+        try {
+          await addBlacklistedEmail(user.email, deleteReason.trim())
+          toast.success("ユーザーを削除し、ブラックリストに追加しました")
+        } catch (blacklistError) {
+          console.error("Blacklist addition error:", blacklistError)
+          toast.success("ユーザーを削除しました（ブラックリスト追加は失敗）")
+        }
+      } else {
+        toast.success("ユーザーを削除しました")
+      }
+      
       router.push("/admin/users")
     } catch (error) {
       toast.error("ユーザー削除に失敗しました")
@@ -213,18 +230,40 @@ export function UserActions({ user }: UserActionsProps) {
                   この操作は取り消すことができません。
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <div className="py-4">
-                <Label htmlFor="delete-reason">削除理由（必須）</Label>
-                <Textarea
-                  id="delete-reason"
-                  placeholder="削除理由を入力してください（5文字以上）"
-                  value={deleteReason}
-                  onChange={(e) => setDeleteReason(e.target.value)}
-                  className="mt-2"
-                />
+              <div className="py-4 space-y-4">
+                <div>
+                  <Label htmlFor="delete-reason">削除理由（必須）</Label>
+                  <Textarea
+                    id="delete-reason"
+                    placeholder="削除理由を入力してください（5文字以上）"
+                    value={deleteReason}
+                    onChange={(e) => setDeleteReason(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+                  <Checkbox
+                    id="add-to-blacklist"
+                    checked={addToBlacklist}
+                    onCheckedChange={(checked) => setAddToBlacklist(checked === true)}
+                    disabled={!user.email}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="add-to-blacklist" className="text-sm font-medium cursor-pointer">
+                      メールアドレスをブラックリストに追加
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email ? `${user.email} を今後のサインアップから除外します` : "メールアドレスが不明のため使用できません"}
+                    </p>
+                  </div>
+                </div>
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setDeleteReason("")}>
+                <AlertDialogCancel onClick={() => {
+                  setDeleteReason("")
+                  setAddToBlacklist(false)
+                }}>
                   キャンセル
                 </AlertDialogCancel>
                 <AlertDialogAction

@@ -1,8 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { requireAdmin } from "@/lib/auth"
 import { UserRole } from "@prisma/client"
 
 // ユーザー一覧取得のフィルター・ページネーション型定義
@@ -19,17 +18,6 @@ export interface UserListPagination {
   limit: number
 }
 
-// 管理者権限チェック関数
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.email) {
-    redirect("/auth/signin")
-  }
-  if (session.user.role !== "ADMIN" || !session.user.isActive) {
-    redirect("/unauthorized")
-  }
-  return session
-}
 
 /**
  * ユーザー一覧を取得（フィルター・ページネーション対応）
@@ -269,5 +257,59 @@ export async function forceLogout(userId: string) {
   } catch (error) {
     console.error("forceLogout error:", error)
     throw new Error("強制ログアウトに失敗しました")
+  }
+}
+
+/**
+ * 一括ロール変更
+ */
+export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
+  await requireAdmin()
+
+  if (!userIds.length) {
+    throw new Error("変更するユーザーが選択されていません")
+  }
+
+  if (!["USER", "ADMIN", "GUEST"].includes(newRole)) {
+    throw new Error("無効なロールです")
+  }
+
+  try {
+    await prisma.user.updateMany({
+      where: {
+        id: { in: userIds }
+      },
+      data: {
+        role: newRole
+      }
+    })
+  } catch (error) {
+    console.error("Bulk role update error:", error)
+    throw new Error("一括ロール変更に失敗しました")
+  }
+}
+
+/**
+ * 一括状態変更
+ */
+export async function bulkToggleUserActive(userIds: string[], isActive: boolean) {
+  await requireAdmin()
+
+  if (!userIds.length) {
+    throw new Error("変更するユーザーが選択されていません")
+  }
+
+  try {
+    await prisma.user.updateMany({
+      where: {
+        id: { in: userIds }
+      },
+      data: {
+        isActive
+      }
+    })
+  } catch (error) {
+    console.error("Bulk active toggle error:", error)
+    throw new Error("一括状態変更に失敗しました")
   }
 }

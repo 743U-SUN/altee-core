@@ -1,5 +1,4 @@
 import { Home, Users, Settings, BarChart3, Shield, UserCircle, Command, Building } from "lucide-react"
-import { getSidebarContent } from "./sidebar-content-registry"
 
 // 型定義
 export interface NavItem {
@@ -169,9 +168,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       user: defaultUser,
       hideUser: false,
     },
-    secondSidebar: {
-      content: getSidebarContent("admin"),
-    },
+    secondSidebar: {},
     header: {
       title: "Admin Panel",
       hideUserMenu: false,

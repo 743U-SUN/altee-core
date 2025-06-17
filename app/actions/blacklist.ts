@@ -1,20 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
-
-// 管理者権限チェック関数
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.email) {
-    redirect("/auth/signin")
-  }
-  if (session.user.role !== "ADMIN" || !session.user.isActive) {
-    redirect("/unauthorized")
-  }
-  return session
-}
+import { requireAdmin } from "@/lib/auth"
 
 /**
  * ブラックリスト登録済みメールアドレスの一覧を取得

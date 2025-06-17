@@ -1,17 +1,10 @@
 import React from "react"
-import dynamic from "next/dynamic"
-
-const AdminSidebarContent = dynamic(
-  () => import("@/components/sidebar-content/AdminSidebarContent").then(mod => ({ default: mod.AdminSidebarContent })),
-  { 
-    loading: () => <div className="p-4 animate-pulse">Loading...</div>,
-    ssr: false
-  }
-)
+import { AdminSidebarContent } from "@/components/sidebar-content/AdminSidebarContent"
+import { AdminStats } from "@/app/actions/admin-stats"
 
 // サイドバーコンテンツのレジストリ
 export const sidebarContentRegistry = {
-  admin: () => <AdminSidebarContent />,
+  admin: (stats: AdminStats) => <AdminSidebarContent stats={stats} />,
   // 他のバリアント用コンテンツも追加可能
   // dashboard: () => <DashboardSidebarContent />,
   // userProfile: () => <UserProfileSidebarContent />,
@@ -19,8 +12,10 @@ export const sidebarContentRegistry = {
 
 export type SidebarContentKey = keyof typeof sidebarContentRegistry
 
-// ヘルパー関数
-export function getSidebarContent(key: SidebarContentKey): React.ReactNode {
-  const contentFactory = sidebarContentRegistry[key]
-  return contentFactory ? contentFactory() : null
+// ヘルパー関数 - adminのみサポート
+export function getSidebarContent(key: "admin", stats: AdminStats): React.ReactNode {
+  if (key === "admin") {
+    return sidebarContentRegistry.admin(stats)
+  }
+  return null
 }

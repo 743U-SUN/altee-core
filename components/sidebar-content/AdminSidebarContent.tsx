@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { UserStatsCard } from "./UserStatsCard"
+import { AdminStats } from "@/app/actions/admin-stats"
 import { 
   Server, 
   Users, 
@@ -17,7 +19,11 @@ import {
   BarChart3
 } from "lucide-react"
 
-export function AdminSidebarContent() {
+interface AdminSidebarContentProps {
+  stats: AdminStats
+}
+
+export function AdminSidebarContent({ stats }: AdminSidebarContentProps) {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
@@ -54,29 +60,8 @@ export function AdminSidebarContent() {
           </CardContent>
         </Card>
 
-        {/* ユーザー統計 */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="size-4" />
-              ユーザー統計
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">総ユーザー数</span>
-              <span className="text-sm font-medium">1,234</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">アクティブ</span>
-              <span className="text-sm font-medium">856</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">新規（今日）</span>
-              <span className="text-sm font-medium">12</span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* ユーザー統計 - 実データ表示 */}
+        <UserStatsCard stats={stats} />
 
         {/* データベース情報 */}
         <Card>

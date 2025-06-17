@@ -1,7 +1,8 @@
-export function BlacklistTable() {
-  return (
-    <div className="text-center py-8 text-muted-foreground">
-      ブラックリスト管理機能は実装中です
-    </div>
-  )
+import { getBlacklistedEmails } from "@/app/actions/blacklist"
+import { BlacklistTableClient } from "./BlacklistTableClient"
+
+export async function BlacklistTable() {
+  const blacklistedEmails = await getBlacklistedEmails()
+
+  return <BlacklistTableClient blacklistedEmails={blacklistedEmails} />
 }
