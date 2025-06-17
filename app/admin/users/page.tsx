@@ -1,7 +1,13 @@
 import { Suspense } from "react"
 import { UserList } from "./components/UserList"
 import { UserSearch } from "./components/UserSearch"
-import { UserFilters } from "./components/UserFilters"
+import { CsvExportButton } from "./components/CsvExportButton"
+import dynamic from "next/dynamic"
+
+// Dynamic import for UserFilters to reduce initial bundle size
+const UserFilters = dynamic(() => import("./components/UserFilters").then(mod => ({ default: mod.UserFilters })), {
+  loading: () => <div className="h-10 w-20 bg-gray-200 rounded-md animate-pulse" />
+})
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserRole } from "@prisma/client"
 
@@ -30,6 +36,13 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>登録ユーザー一覧</CardTitle>
           <div className="flex gap-2">
+            <CsvExportButton
+              search={search}
+              role={role}
+              isActive={isActive}
+              createdFrom={createdFrom}
+              createdTo={createdTo}
+            />
             <UserSearch />
             <UserFilters />
           </div>

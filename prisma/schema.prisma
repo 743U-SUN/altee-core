@@ -23,6 +23,11 @@ model User {
   posts                  Post[]
   sessions               Session[]
 
+  // Performance optimization indexes
+  @@index([createdAt])
+  @@index([isActive])
+  @@index([role])
+  @@index([email, name])
   @@map("users")
 }
 

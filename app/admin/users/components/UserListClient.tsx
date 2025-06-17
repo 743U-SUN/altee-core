@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import {
   Table,
   TableBody,
@@ -13,7 +13,12 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserPagination } from "./UserPagination"
-import { BulkActionsBar } from "./BulkActionsBar"
+import dynamic from "next/dynamic"
+
+// Dynamic import for BulkActionsBar - only loaded when users are selected
+const BulkActionsBar = dynamic(() => import("./BulkActionsBar").then(mod => ({ default: mod.BulkActionsBar })), {
+  loading: () => <div className="h-16 bg-blue-50 rounded-lg animate-pulse" />
+})
 import { UserRole } from "@prisma/client"
 import Link from "next/link"
 
@@ -55,26 +60,37 @@ export function UserListClient({
 }: UserListClientProps) {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = useCallback((checked: boolean) => {
     if (checked) {
       setSelectedUsers(new Set(users.map(user => user.id)))
     } else {
       setSelectedUsers(new Set())
     }
-  }
+  }, [users])
 
-  const handleSelectUser = (userId: string, checked: boolean) => {
-    const newSelected = new Set(selectedUsers)
-    if (checked) {
-      newSelected.add(userId)
-    } else {
-      newSelected.delete(userId)
+  const handleSelectUser = useCallback((userId: string, checked: boolean) => {
+    setSelectedUsers(prev => {
+      const newSelected = new Set(prev)
+      if (checked) {
+        newSelected.add(userId)
+      } else {
+        newSelected.delete(userId)
+      }
+      return newSelected
+    })
+  }, [])
+
+  const { isAllSelected, isIndeterminate, selectedUsersArray, filteredSelectedUsers } = useMemo(() => {
+    const selectedArray = Array.from(selectedUsers)
+    const filteredSelected = users.filter(user => selectedUsers.has(user.id))
+    
+    return {
+      isAllSelected: users.length > 0 && selectedUsers.size === users.length,
+      isIndeterminate: selectedUsers.size > 0 && selectedUsers.size < users.length,
+      selectedUsersArray: selectedArray,
+      filteredSelectedUsers: filteredSelected
     }
-    setSelectedUsers(newSelected)
-  }
-
-  const isAllSelected = users.length > 0 && selectedUsers.size === users.length
-  const isIndeterminate = selectedUsers.size > 0 && selectedUsers.size < users.length
+  }, [users, selectedUsers])
 
   if (users.length === 0) {
     return (
@@ -89,8 +105,8 @@ export function UserListClient({
       {/* 一括操作バー */}
       {selectedUsers.size > 0 && (
         <BulkActionsBar
-          selectedUserIds={Array.from(selectedUsers)}
-          selectedUsers={users.filter(user => selectedUsers.has(user.id))}
+          selectedUserIds={selectedUsersArray}
+          selectedUsers={filteredSelectedUsers}
           onComplete={() => setSelectedUsers(new Set())}
         />
       )}

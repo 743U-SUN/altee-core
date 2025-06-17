@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { bulkUpdateUserRole, bulkToggleUserActive } from "@/app/actions/user-management"
 import { UserRole } from "@prisma/client"
-import { Users, Settings, X, Loader2 } from "lucide-react"
+import { Users, X } from "lucide-react"
 import { toast } from "sonner"
 
 interface User {
@@ -129,7 +129,7 @@ export function BulkActionsBar({ selectedUserIds, selectedUsers, onComplete }: B
           <div className="flex items-center gap-2">
             {/* ロール一括変更 */}
             <div className="flex items-center gap-2">
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole | "")}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="ロール変更" />
                 </SelectTrigger>
@@ -170,7 +170,7 @@ export function BulkActionsBar({ selectedUserIds, selectedUsers, onComplete }: B
 
             {/* 状態一括変更 */}
             <div className="flex items-center gap-2">
-              <Select value={selectedActiveState} onValueChange={setSelectedActiveState}>
+              <Select value={selectedActiveState} onValueChange={(value) => setSelectedActiveState(value as "active" | "inactive" | "")}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="状態変更" />
                 </SelectTrigger>

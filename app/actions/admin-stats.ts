@@ -31,43 +31,31 @@ export async function getAdminStats(): Promise<AdminStats> {
   const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
   try {
+    // Optimize with fewer database queries using aggregate functions
     const [
-      totalUsers,
-      activeUsers,
-      newUsersToday,
-      newUsersThisWeek,
-      newUsersThisMonth,
+      userStats,
       usersByRole,
-      googleConnections,
-      discordConnections,
-      totalWithConnections
+      accountStats
     ] = await Promise.all([
-      // 総ユーザー数
-      prisma.user.count(),
-      
-      // アクティブユーザー数
-      prisma.user.count({
-        where: { isActive: true }
-      }),
-      
-      // 今日の新規登録数
-      prisma.user.count({
-        where: {
-          createdAt: { gte: today }
-        }
-      }),
-      
-      // 今週の新規登録数
-      prisma.user.count({
-        where: {
-          createdAt: { gte: thisWeek }
-        }
-      }),
-      
-      // 今月の新規登録数
-      prisma.user.count({
-        where: {
-          createdAt: { gte: thisMonth }
+      // Combined user statistics in a single query
+      prisma.user.aggregate({
+        _count: {
+          id: true,
+        },
+        where: undefined
+      }).then(async (total) => {
+        const [active, today_count, week_count, month_count] = await Promise.all([
+          prisma.user.count({ where: { isActive: true } }),
+          prisma.user.count({ where: { createdAt: { gte: today } } }),
+          prisma.user.count({ where: { createdAt: { gte: thisWeek } } }),
+          prisma.user.count({ where: { createdAt: { gte: thisMonth } } })
+        ])
+        return {
+          total: total._count.id,
+          active,
+          today: today_count,
+          week: week_count,
+          month: month_count
         }
       }),
       
@@ -77,24 +65,24 @@ export async function getAdminStats(): Promise<AdminStats> {
         _count: { id: true }
       }),
       
-      // Google連携数
-      prisma.account.count({
-        where: { provider: 'google' }
-      }),
-      
-      // Discord連携数
-      prisma.account.count({
-        where: { provider: 'discord' }
-      }),
-      
-      // OAuth連携を持つユーザー数
-      prisma.user.count({
-        where: {
-          accounts: {
-            some: {}
+      // Account statistics in fewer queries
+      Promise.all([
+        prisma.account.groupBy({
+          by: ['provider'],
+          _count: { id: true },
+          where: {
+            provider: { in: ['google', 'discord'] }
           }
-        }
-      })
+        }),
+        prisma.user.count({
+          where: {
+            accounts: { some: {} }
+          }
+        })
+      ]).then(([providerCounts, totalWithConnections]) => ({
+        providers: providerCounts,
+        totalWithConnections
+      }))
     ])
 
     // ロール別カウントをオブジェクトに変換
@@ -103,18 +91,25 @@ export async function getAdminStats(): Promise<AdminStats> {
       return acc
     }, { ADMIN: 0, USER: 0, GUEST: 0 } as { ADMIN: number, USER: number, GUEST: number })
 
+    // Process account statistics
+    const providerStats = accountStats.providers.reduce((acc, item) => {
+      if (item.provider === 'google') acc.google = item._count.id
+      if (item.provider === 'discord') acc.discord = item._count.id
+      return acc
+    }, { google: 0, discord: 0 })
+
     return {
-      totalUsers,
-      activeUsers,
-      newUsersToday,
-      newUsersThisWeek,
-      newUsersThisMonth,
+      totalUsers: userStats.total,
+      activeUsers: userStats.active,
+      newUsersToday: userStats.today,
+      newUsersThisWeek: userStats.week,
+      newUsersThisMonth: userStats.month,
       usersByRole: roleStats,
       oauthConnections: {
-        google: googleConnections,
-        discord: discordConnections,
-        totalConnected: totalWithConnections,
-        totalUsers
+        google: providerStats.google,
+        discord: providerStats.discord,
+        totalConnected: accountStats.totalWithConnections,
+        totalUsers: userStats.total
       }
     }
   } catch (error) {

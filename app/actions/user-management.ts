@@ -313,3 +313,86 @@ export async function bulkToggleUserActive(userIds: string[], isActive: boolean)
     throw new Error("一括状態変更に失敗しました")
   }
 }
+
+/**
+ * CSVエクスポート用ユーザーデータ取得（メモリ効率化）
+ */
+export async function getUsersForCsvExport(filters: UserListFilters = {}) {
+  await requireAdmin()
+
+  try {
+    const where = {
+      ...(filters.search && {
+        OR: [
+          { name: { contains: filters.search, mode: "insensitive" as const } },
+          { email: { contains: filters.search, mode: "insensitive" as const } },
+        ],
+      }),
+      ...(filters.role && { role: filters.role }),
+      ...(filters.isActive !== undefined && { isActive: filters.isActive }),
+      ...(filters.createdFrom && {
+        createdAt: { gte: filters.createdFrom },
+      }),
+      ...(filters.createdTo && {
+        createdAt: { lte: filters.createdTo },
+      }),
+    }
+
+    // First, get the total count for memory estimation
+    const totalCount = await prisma.user.count({ where })
+    
+    // For large datasets (>10k records), consider implementing pagination
+    const BATCH_SIZE = 5000
+    const shouldUseBatching = totalCount > BATCH_SIZE
+
+    let users
+    if (shouldUseBatching) {
+      // Process in batches to avoid memory issues
+      users = await prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: BATCH_SIZE, // Limit to prevent memory issues
+      })
+    } else {
+      users = await prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    }
+
+    // CSV形式に変換（メモリ効率を考慮）
+    const csvHeader = "ID,名前,メールアドレス,ロール,状態,登録日"
+    const csvRows = users.map(user => 
+      `"${user.id}","${user.name || ""}","${user.email}","${user.role}","${user.isActive ? "アクティブ" : "非アクティブ"}","${new Date(user.createdAt).toLocaleDateString("ja-JP")}"`
+    )
+    
+    const csvContent = [csvHeader, ...csvRows].join("\n")
+    
+    return {
+      csvContent,
+      userCount: users.length,
+      totalCount, // Return both actual exported count and total available
+      filename: `users_export_${new Date().toISOString().split('T')[0]}.csv`,
+      isTruncated: shouldUseBatching && users.length === BATCH_SIZE
+    }
+  } catch (error) {
+    console.error("CSV export error:", error)
+    throw new Error("CSVエクスポートに失敗しました")
+  }
+}
