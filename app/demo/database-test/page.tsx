@@ -15,7 +15,7 @@ export default async function DatabaseTestPage() {
     <div className="container mx-auto p-8 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">PostgreSQL + Prisma 動作テスト</h1>
-        <p className="text-gray-600">開発環境でのデータベース接続と基本操作をテストします</p>
+        <p className="text-gray-600">開発環境でのデータベース接続と、基本操作をテストします</p>
       </div>
 
       <div className="grid gap-6">
