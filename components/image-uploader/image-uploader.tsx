@@ -156,14 +156,19 @@ export function ImageUploader({
         throw new Error(deleteResult.error)
       }
 
-      setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
+      setUploadedFiles(prev => {
+        const newFiles = prev.filter(f => f.id !== fileId)
+        // 削除後の状態を親コンポーネントにも通知
+        onUpload?.(newFiles)
+        return newFiles
+      })
       onDelete?.(fileId)
 
     } catch (error) {
       const errorMessage = `削除エラー: ${error instanceof Error ? error.message : 'Unknown error'}`
       addError(errorMessage)
     }
-  }, [uploadedFiles, addError, onDelete])
+  }, [uploadedFiles, addError, onDelete, onUpload])
 
   const isSingleFile = maxFiles === 1
   const hasFiles = uploadedFiles.length > 0

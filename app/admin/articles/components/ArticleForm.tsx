@@ -76,6 +76,7 @@ export function ArticleForm({ article }: ArticleFormProps) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: 'onBlur', // フィールドからフォーカスが外れた時にバリデーション
     defaultValues: {
       title: article?.title || '',
       slug: article?.slug || '',
