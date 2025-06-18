@@ -182,9 +182,20 @@ export async function deleteImageAction(
     }
 
     // オブジェクトストレージからファイルを削除
+    // storageKeyの形式: "container/path/file.ext" または "file.ext"
+    const storageKeyParts = fileKey.split('/')
+    let bucket = STORAGE_BUCKET
+    let objectKey = fileKey
+    
+    // 専用コンテナの場合（例: "article-thumbnails/2024/12/file.webp"）
+    if (storageKeyParts.length > 1) {
+      bucket = storageKeyParts[0] // "article-thumbnails"
+      objectKey = storageKeyParts.slice(1).join('/') // "2024/12/file.webp"
+    }
+    
     await storageClient.send(new DeleteObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: fileKey,
+      Bucket: bucket,
+      Key: objectKey,
     }))
 
     // MediaFileレコードを削除
