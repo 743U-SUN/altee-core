@@ -42,6 +42,10 @@ export interface ImageUploaderProps {
   onError?: (error: string) => void
 }
 
+export interface ImageUploaderRef {
+  getFiles: () => UploadedFile[]
+}
+
 export interface ImageProcessingOptions {
   maxWidth?: number
   maxHeight?: number

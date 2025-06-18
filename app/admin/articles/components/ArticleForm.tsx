@@ -28,6 +28,7 @@ const formSchema = z.object({
 })
 
 type FormValues = z.infer<typeof formSchema>
+// Note: サムネイル画像は独立管理（thumbnailステート）
 
 interface Article {
   id: string
@@ -76,7 +77,6 @@ export function ArticleForm({ article }: ArticleFormProps) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    mode: 'onBlur', // フィールドからフォーカスが外れた時にバリデーション
     defaultValues: {
       title: article?.title || '',
       slug: article?.slug || '',

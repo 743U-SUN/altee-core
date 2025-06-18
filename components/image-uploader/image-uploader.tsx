@@ -73,8 +73,9 @@ export function ImageUploader({
 
       // 成功
       const newFile = uploadResult.file!
-      setUploadedFiles(prev => [...prev, newFile])
-      onUpload?.([...uploadedFiles, newFile])
+      const newFiles = [...uploadedFiles, newFile]
+      setUploadedFiles(newFiles)
+      onUpload?.(newFiles)
       
       // 成功トースト
       toast.success(`${file.name} をアップロードしました`)
@@ -131,8 +132,9 @@ export function ImageUploader({
         file: file // 元のFileオブジェクトを保持
       }))
       
-      setUploadedFiles(prev => [...prev, ...previewFiles])
-      onUpload?.([...uploadedFiles, ...previewFiles])
+      const newFiles = [...uploadedFiles, ...previewFiles]
+      setUploadedFiles(newFiles)
+      onUpload?.(newFiles)
     }
   }, [disabled, maxFiles, maxSize, uploadedFiles, mode, addError, processAndUploadFile, onUpload])
 
@@ -156,12 +158,9 @@ export function ImageUploader({
         throw new Error(deleteResult.error)
       }
 
-      setUploadedFiles(prev => {
-        const newFiles = prev.filter(f => f.id !== fileId)
-        // 削除後の状態を親コンポーネントにも通知
-        onUpload?.(newFiles)
-        return newFiles
-      })
+      const newFiles = uploadedFiles.filter(f => f.id !== fileId)
+      setUploadedFiles(newFiles)
+      onUpload?.(newFiles)
       onDelete?.(fileId)
 
     } catch (error) {
@@ -169,6 +168,8 @@ export function ImageUploader({
       addError(errorMessage)
     }
   }, [uploadedFiles, addError, onDelete, onUpload])
+
+  // Note: フォーム状態分離により、変更通知は必要に応じてのみ実行
 
   const isSingleFile = maxFiles === 1
   const hasFiles = uploadedFiles.length > 0
