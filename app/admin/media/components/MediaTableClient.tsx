@@ -66,6 +66,7 @@ interface MediaTableClientProps {
   containerName?: string
   uploadType?: MediaType
   month?: string
+  storageUrl: string
 }
 
 export function MediaTableClient({
@@ -74,7 +75,8 @@ export function MediaTableClient({
   search,
   containerName,
   uploadType,
-  month
+  month,
+  storageUrl
 }: MediaTableClientProps) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null)
@@ -241,12 +243,12 @@ export function MediaTableClient({
                 <TableCell>
                   <div 
                     className="relative h-12 w-12 bg-muted rounded overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_STORAGE_URL}/${file.storageKey}`, '_blank')}
+                    onClick={() => window.open(`${storageUrl}/${file.storageKey}`, '_blank')}
                     title="クリックして画像を表示"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`${process.env.NEXT_PUBLIC_STORAGE_URL}/${file.storageKey}`}
+                      src={`${storageUrl}/${file.storageKey}`}
                       alt={file.originalName}
                       className="h-full w-full object-cover"
                       onError={(e) => {

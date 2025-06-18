@@ -37,6 +37,7 @@ export async function MediaTable({
         containerName={containerName}
         uploadType={uploadType}
         month={month}
+        storageUrl={process.env.NEXT_PUBLIC_STORAGE_URL || ''}
       />
     )
   } catch (error) {
