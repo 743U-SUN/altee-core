@@ -17,6 +17,14 @@ interface OrphanFile {
   storageKey: string
 }
 
+interface DeletedFile {
+  id: string
+  originalName: string
+  deletedAt: Date | null
+  scheduledDeletionAt?: Date | null
+  containerName: string
+}
+
 interface Stats {
   storageFiles: number
   dbFiles: number
@@ -31,7 +39,7 @@ interface Stats {
 
 export default function CleanupPage() {
   const [orphanFiles, setOrphanFiles] = useState<OrphanFile[]>([])
-  const [deletedFiles, setDeletedFiles] = useState<any[]>([])
+  const [deletedFiles, setDeletedFiles] = useState<DeletedFile[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(false)
   const [cleanupLoading, setCleanupLoading] = useState(false)
@@ -328,7 +336,7 @@ export default function CleanupPage() {
             論理削除ファイル物理削除
           </CardTitle>
           <CardDescription>
-            30日経過した論理削除ファイルを完全に削除
+            5分経過した論理削除ファイルを完全に削除（テスト用）
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -338,12 +346,12 @@ export default function CleanupPage() {
               <span className="font-semibold text-blue-800">論理削除システムについて</span>
             </div>
             <p className="text-blue-700 text-sm mb-3">
-              ファイル削除時は即座に物理削除されず、30日間の猶予期間があります。
+              ファイル削除時は即座に物理削除されず、5分間の猶予期間があります（テスト用）。
               この機能では期限切れファイルを完全削除します。
             </p>
             <div className="text-xs text-blue-600 space-y-1">
-              <div>• 削除されたファイルは30日間復旧可能</div>
-              <div>• 30日経過後、このボタンで物理削除実行</div>
+              <div>• 削除されたファイルは5分間復旧可能（テスト用）</div>
+              <div>• 5分経過後、このボタンで物理削除実行</div>
               <div>• 物理削除後は復旧不可能</div>
             </div>
           </div>
@@ -372,12 +380,12 @@ export default function CleanupPage() {
               <h3 className="font-semibold">削除済みファイル一覧 ({deletedFiles.length}件)</h3>
               <div className="max-h-64 overflow-y-auto border rounded-lg">
                 <div className="divide-y">
-                  {deletedFiles.map((file: any) => (
+                  {deletedFiles.map((file: DeletedFile) => (
                     <div key={file.id} className="p-3 flex items-center justify-between text-sm">
                       <div className="flex-1">
                         <div className="font-mono">{file.originalName}</div>
                         <div className="text-muted-foreground text-xs">
-                          削除日時: {new Date(file.deletedAt).toLocaleString('ja-JP')}
+                          削除日時: {file.deletedAt ? new Date(file.deletedAt).toLocaleString('ja-JP') : '不明'}
                           {file.scheduledDeletionAt && (
                             <span className="ml-4">
                               物理削除予定: {new Date(file.scheduledDeletionAt).toLocaleString('ja-JP')}

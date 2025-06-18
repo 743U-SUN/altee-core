@@ -217,9 +217,9 @@ export async function deleteMediaFile(fileId: string) {
   }
 
   try {
-    // 論理削除実行（30日後に物理削除予定）
+    // 論理削除実行（5分後に物理削除予定 - テスト用）
     const now = new Date()
-    const scheduledDeletionAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30日後
+    const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
 
     await prisma.mediaFile.update({
       where: { id: fileId },
@@ -266,9 +266,9 @@ export async function bulkDeleteMediaFiles(fileIds: string[]) {
   }
 
   try {
-    // 論理削除実行（30日後に物理削除予定）
+    // 論理削除実行（5分後に物理削除予定 - テスト用）
     const now = new Date()
-    const scheduledDeletionAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30日後
+    const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
 
     await prisma.mediaFile.updateMany({
       where: { id: { in: fileIds } },
