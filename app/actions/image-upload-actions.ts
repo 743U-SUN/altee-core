@@ -30,8 +30,24 @@ export async function uploadImageAction(
     const extension = fileName.split('.').pop() || ''
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
     
-    // アップロード先のキーを決定
-    const key = `${folder}/${uniqueFileName}`
+    // コンテナとキーを決定（専用コンテナ対応）
+    let bucket: string
+    let key: string
+    
+    if (folder === 'article-thumbnails' || folder === 'article-images') {
+      // 専用コンテナに直接保存
+      bucket = folder
+      
+      // Swift最適化された階層構造: YYYY/MM/filename
+      const date = new Date()
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      key = `${year}/${month}/${uniqueFileName}`
+    } else {
+      // 従来の方式（imagesコンテナ内フォルダ）
+      bucket = STORAGE_BUCKET
+      key = `${folder}/${uniqueFileName}`
+    }
     
     let processedFile = file
     
@@ -47,9 +63,9 @@ export async function uploadImageAction(
     // ファイルをBufferに変換
     const buffer = Buffer.from(await processedFile.arrayBuffer())
     
-    // MinIOにアップロード
+    // ストレージにアップロード
     await storageClient.send(new PutObjectCommand({
-      Bucket: STORAGE_BUCKET,
+      Bucket: bucket,
       Key: key,
       Body: buffer,
       ContentType: processedFile.type,
@@ -65,8 +81,8 @@ export async function uploadImageAction(
     // MediaFileテーブルにレコード作成
     const mediaFile = await prisma.mediaFile.create({
       data: {
-        storageKey: key,
-        containerName: folder, // article-thumbnails など
+        storageKey: `${bucket}/${key}`, // 完全なストレージキー
+        containerName: bucket, // 実際のコンテナ名
         originalName: fileName,
         fileName: uniqueFileName,
         fileSize: processedFile.size,
@@ -81,14 +97,14 @@ export async function uploadImageAction(
       id: mediaFile.id, // データベースのIDを使用
       name: uniqueFileName,
       originalName: fileName,
-      url: `/api/files/${key}`,
-      key: key,
+      url: `/api/files/${bucket}/${key}`,
+      key: `${bucket}/${key}`, // 完全なストレージキー
       size: processedFile.size,
       type: processedFile.type,
       uploadedAt: mediaFile.createdAt.toISOString()
     }
     
-    console.log(`Image uploaded: ${key}`)
+    console.log(`Image uploaded to ${bucket}: ${key}`)
     return { 
       success: true, 
       file: uploadedFile

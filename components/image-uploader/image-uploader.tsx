@@ -127,7 +127,8 @@ export function ImageUploader({
         key: '',
         size: file.size,
         type: file.type,
-        uploadedAt: new Date().toISOString()
+        uploadedAt: new Date().toISOString(),
+        file: file // 元のFileオブジェクトを保持
       }))
       
       setUploadedFiles(prev => [...prev, ...previewFiles])

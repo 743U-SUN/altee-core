@@ -10,15 +10,29 @@ export async function GET(
     // paramsを解決
     const resolvedParams = await params
     
-    // パスを結合してファイルキーを作成
-    const filePath = resolvedParams.path.join('/')
+    // パスの最初の部分をコンテナ名、残りをキーとして解析
+    const [containerName, ...keyParts] = resolvedParams.path
     
-    console.log(`Fetching file: ${filePath}`)
+    // 専用コンテナかどうかを判定
+    let bucket: string
+    let key: string
+    
+    if (containerName === 'article-thumbnails' || containerName === 'article-images') {
+      // 専用コンテナの場合
+      bucket = containerName
+      key = keyParts.join('/')
+    } else {
+      // 従来のimagesコンテナの場合
+      bucket = STORAGE_BUCKET
+      key = resolvedParams.path.join('/')
+    }
+    
+    console.log(`Fetching file from ${bucket}: ${key}`)
     
     // ConoHaからファイルを取得
     const response = await storageClient.send(new GetObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: filePath,
+      Bucket: bucket,
+      Key: key,
     }))
     
     if (!response.Body) {

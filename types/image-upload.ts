@@ -22,6 +22,7 @@ export interface UploadedFile {
   size: number
   type: string
   uploadedAt: string
+  file?: File // batchモード用の元ファイルオブジェクト
 }
 
 

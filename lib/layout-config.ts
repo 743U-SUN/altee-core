@@ -1,4 +1,4 @@
-import { Home, Users, Settings, BarChart3, Shield, UserCircle, Command, Building } from "lucide-react"
+import { Home, Users, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen } from "lucide-react"
 
 // 型定義
 export interface NavItem {
@@ -103,15 +103,15 @@ const adminNavItems: NavItem[] = [
     isActive: false,
   },
   {
-    title: "System",
-    url: "/admin/system",
-    icon: Shield,
+    title: "Article",
+    url: "/admin/articles",
+    icon: NotebookPen,
     isActive: false,
   },
   {
-    title: "Settings",
-    url: "/admin/settings",
-    icon: Settings,
+    title: "Media",
+    url: "/admin/media",
+    icon: Image,
     isActive: false,
   }
 ]

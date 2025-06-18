@@ -103,24 +103,30 @@ model Article {
 }
 
 model MediaFile {
-  id            String     @id @default(cuid())
-  storageKey    String     @unique // コンテナ名/パス形式
-  containerName String     // article-thumbnails or article-images
-  originalName  String
-  fileName      String
-  fileSize      Int
-  mimeType      String
-  uploadType    MediaType  @default(THUMBNAIL)
-  uploaderId    String     // 管理者ID（必須）
-  uploader      User       @relation(fields: [uploaderId], references: [id])
-  articles      Article[]  // サムネイル用リレーション
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id                  String     @id @default(cuid())
+  storageKey          String     @unique // コンテナ名/パス形式
+  containerName       String     // article-thumbnails or article-images
+  originalName        String
+  fileName            String
+  fileSize            Int
+  mimeType            String
+  uploadType          MediaType  @default(THUMBNAIL)
+  uploaderId          String     // 管理者ID（必須）
+  uploader            User       @relation(fields: [uploaderId], references: [id])
+  articles            Article[]  // サムネイル用リレーション
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  
+  // 論理削除フィールド
+  deletedAt           DateTime?  // 削除日時（null = 削除されていない）
+  deletedBy           String?    // 削除者のユーザーID
+  scheduledDeletionAt DateTime?  // 物理削除予定日時（30日後）
 
   // Performance optimization indexes
   @@index([containerName])
   @@index([uploadType])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("media_files")
 }
 
