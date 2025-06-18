@@ -7,6 +7,7 @@ interface MediaTableProps {
   search?: string
   containerName?: string
   uploadType?: MediaType
+  tags?: string
   month?: string
 }
 
@@ -15,6 +16,7 @@ export async function MediaTable({
   search, 
   containerName,
   uploadType,
+  tags,
   month
 }: MediaTableProps) {
   try {
@@ -24,6 +26,7 @@ export async function MediaTable({
       ...(search && { search }),
       ...(containerName && { containerName }),
       ...(uploadType && { uploadType }),
+      ...(tags && { tags }),
       ...(month && { month }),
     }
     

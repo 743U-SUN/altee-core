@@ -27,7 +27,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const createdTo = typeof params.createdTo === "string" ? new Date(params.createdTo) : undefined
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="container mx-auto p-6 flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">ユーザー管理</h1>
       </div>

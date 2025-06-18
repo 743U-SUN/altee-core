@@ -11,7 +11,7 @@ export default async function NewArticlePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">新規記事作成</h1>
         <p className="text-muted-foreground">

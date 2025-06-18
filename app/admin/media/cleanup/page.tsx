@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Trash2, RefreshCw, FileX, HardDrive, Database, Clock } from 'lucide-react'
+import { AlertCircle, Trash2, RefreshCw, FileX, HardDrive, Database, Clock, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 import { detectOrphanFiles, cleanupOrphanFiles, getDeletionStats } from '@/app/actions/cleanup-actions'
 import { cleanupExpiredFiles, getDeletedMediaFiles, restoreMediaFile } from '@/app/actions/media-actions'
 
@@ -185,6 +186,12 @@ export default function CleanupPage() {
             孤立ファイルの検出・削除とストレージ統計情報
           </p>
         </div>
+        <Link href="/admin/media">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            メディア管理に戻る
+          </Button>
+        </Link>
       </div>
 
       {/* 統計情報 */}

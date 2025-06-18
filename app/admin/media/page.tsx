@@ -2,19 +2,22 @@ import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getMediaFiles, getMediaStats } from '@/app/actions/media-actions'
 import { MediaTable } from './components/MediaTable'
 import { MediaFilters } from './components/MediaFilters'
-import { HardDrive, Image, FileText, Calendar } from 'lucide-react'
+import { HardDrive, Image as ImageIcon, FileText, Calendar, Trash2, Upload } from 'lucide-react'
 import { Suspense } from 'react'
 import { MediaType } from '@prisma/client'
+import Link from 'next/link'
 
 interface MediaPageProps {
   searchParams: Promise<{
     search?: string
     container?: string
     type?: MediaType
+    tags?: string
     month?: string
     page?: string
     tab?: string
@@ -31,10 +34,10 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
 
   const resolvedSearchParams = await searchParams
   const currentPage = parseInt(resolvedSearchParams.page || '1', 10)
-  const activeTab = resolvedSearchParams.tab || 'overview'
+  const activeTab = resolvedSearchParams.tab || 'files'
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">メディア管理</h1>
         <p className="text-muted-foreground">
@@ -43,17 +46,27 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
       </div>
 
       <Tabs defaultValue={activeTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">概要</TabsTrigger>
-          <TabsTrigger value="files">ファイル一覧</TabsTrigger>
-          <TabsTrigger value="statistics">統計情報</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="files">ファイル一覧</TabsTrigger>
+            <TabsTrigger value="statistics">統計情報</TabsTrigger>
+          </TabsList>
+          <div className="flex gap-2">
+            <Link href="/admin/media/upload">
+              <Button variant="outline" size="sm" className="cursor-pointer">
+                <Upload className="mr-2 h-4 w-4" />
+                アップロード
+              </Button>
+            </Link>
+            <Link href="/admin/media/cleanup">
+              <Button variant="outline" size="sm" className="cursor-pointer">
+                <Trash2 className="mr-2 h-4 w-4" />
+                クリーンアップ
+              </Button>
+            </Link>
+          </div>
+        </div>
 
-        <TabsContent value="overview" className="space-y-6">
-          <Suspense fallback={<div>統計情報を読み込み中...</div>}>
-            <MediaOverview />
-          </Suspense>
-        </TabsContent>
 
         <TabsContent value="files" className="space-y-6">
           <Suspense fallback={<MediaFiltersSkeleton />}>
@@ -66,6 +79,7 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
               search={resolvedSearchParams.search}
               containerName={resolvedSearchParams.container}
               uploadType={resolvedSearchParams.type}
+              tags={resolvedSearchParams.tags}
               month={resolvedSearchParams.month}
             />
           </Suspense>
@@ -106,75 +120,6 @@ function MediaFiltersSkeleton() {
   )
 }
 
-async function MediaOverview() {
-  const stats = await getMediaStats()
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">総ファイル数</CardTitle>
-          <HardDrive className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalFiles.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            サムネイル: {stats.thumbnailFiles} / コンテンツ: {stats.contentFiles}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">総容量</CardTitle>
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatFileSize(stats.totalSize)}</div>
-          <p className="text-xs text-muted-foreground">
-            全ファイルの合計サイズ
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">コンテナ数</CardTitle>
-          <Image className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.containerStats.length}</div>
-          <p className="text-xs text-muted-foreground">
-            アクティブなコンテナ
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">今月のアップロード</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {stats.monthlyStats[0]?.count || 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {stats.monthlyStats[0]?.month || '今月'}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
 
 async function MediaStatistics() {
   const stats = await getMediaStats()
@@ -188,55 +133,115 @@ async function MediaStatistics() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>コンテナ別統計</CardTitle>
-          <CardDescription>各コンテナのファイル数と容量</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {stats.containerStats.map((container) => (
-              <div key={container.containerName} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{container.containerName}</span>
-                  {container.warningThreshold && (
-                    <Badge variant="destructive">容量警告</Badge>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {container.fileCount.toLocaleString()} ファイル • {formatFileSize(container.totalSize)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  制限: {container.fileCount > 500000 ? '50万ファイル超過' : `${(500000 - container.fileCount).toLocaleString()}ファイル残り`}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      {/* 基本統計カード */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">総ファイル数</CardTitle>
+            <HardDrive className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalFiles.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              サムネイル: {stats.thumbnailFiles} / コンテンツ: {stats.contentFiles}
+            </p>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>月別アップロード数</CardTitle>
-          <CardDescription>過去12ヶ月のアップロード傾向</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {stats.monthlyStats.slice(0, 6).map((month) => (
-              <div key={month.month} className="flex justify-between">
-                <span className="text-sm">{month.month}</span>
-                <div className="text-right">
-                  <div className="text-sm font-medium">{month.count} ファイル</div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">総容量</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatFileSize(stats.totalSize)}</div>
+            <p className="text-xs text-muted-foreground">
+              全ファイルの合計サイズ
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">コンテナ数</CardTitle>
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.containerStats.length}</div>
+            <p className="text-xs text-muted-foreground">
+              アクティブなコンテナ
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">今月のアップロード</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.monthlyStats[0]?.count || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats.monthlyStats[0]?.month || '今月'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 詳細統計 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>コンテナ別統計</CardTitle>
+            <CardDescription>各コンテナのファイル数と容量</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.containerStats.map((container) => (
+                <div key={container.containerName} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{container.containerName}</span>
+                    {container.warningThreshold && (
+                      <Badge variant="destructive">容量警告</Badge>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {container.fileCount.toLocaleString()} ファイル • {formatFileSize(container.totalSize)}
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    {formatFileSize(month.totalSize)}
+                    制限: {container.fileCount > 500000 ? '50万ファイル超過' : `${(500000 - container.fileCount).toLocaleString()}ファイル残り`}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>月別アップロード数</CardTitle>
+            <CardDescription>過去12ヶ月のアップロード傾向</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {stats.monthlyStats.slice(0, 6).map((month) => (
+                <div key={month.month} className="flex justify-between">
+                  <span className="text-sm">{month.month}</span>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">{month.count} ファイル</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatFileSize(month.totalSize)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

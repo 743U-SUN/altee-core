@@ -26,6 +26,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [containerName, setContainerName] = useState(searchParams.get('container') || '')
   const [uploadType, setUploadType] = useState(searchParams.get('type') || '')
+  const [tags, setTags] = useState(searchParams.get('tags') || '')
   const [month, setMonth] = useState(searchParams.get('month') || '')
 
   // 月の選択肢を生成（過去24ヶ月）
@@ -49,6 +50,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
     search: string
     containerName: string
     uploadType: string
+    tags: string
     month: string
   }> = {}) => {
     const params = new URLSearchParams()
@@ -56,11 +58,13 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
     const finalSearch = overrides.search !== undefined ? overrides.search : search
     const finalContainer = overrides.containerName !== undefined ? overrides.containerName : containerName
     const finalUploadType = overrides.uploadType !== undefined ? overrides.uploadType : uploadType
+    const finalTags = overrides.tags !== undefined ? overrides.tags : tags
     const finalMonth = overrides.month !== undefined ? overrides.month : month
     
     if (finalSearch?.trim()) params.set('search', finalSearch.trim())
     if (finalContainer) params.set('container', finalContainer)
     if (finalUploadType) params.set('type', finalUploadType)
+    if (finalTags?.trim()) params.set('tags', finalTags.trim())
     if (finalMonth) params.set('month', finalMonth)
     
     // ページをリセット
@@ -73,6 +77,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
     setSearch('')
     setContainerName('')
     setUploadType('')
+    setTags('')
     setMonth('')
     router.push('/admin/media')
   }
@@ -85,7 +90,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
   }
 
   // アクティブなフィルターの数を計算
-  const activeFiltersCount = [search, containerName, uploadType, month].filter(Boolean).length
+  const activeFiltersCount = [search, containerName, uploadType, tags, month].filter(Boolean).length
 
   return (
     <Card>
@@ -108,7 +113,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* 検索 */}
           <div className="space-y-2">
             <label className="text-sm font-medium">ファイル名検索</label>
@@ -139,6 +144,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
                 <SelectItem value="all">すべてのコンテナ</SelectItem>
                 <SelectItem value="article-thumbnails">article-thumbnails</SelectItem>
                 <SelectItem value="article-images">article-images</SelectItem>
+                <SelectItem value="system-assets">system-assets</SelectItem>
                 <SelectItem value="images">images</SelectItem>
                 <SelectItem value="user-icons">user-icons</SelectItem>
               </SelectContent>
@@ -160,8 +166,20 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
                 <SelectItem value="all">すべてのタイプ</SelectItem>
                 <SelectItem value="THUMBNAIL">サムネイル</SelectItem>
                 <SelectItem value="CONTENT">コンテンツ</SelectItem>
+                <SelectItem value="SYSTEM">システム</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* タグ検索 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">タグ検索</label>
+            <Input
+              placeholder="タグをカンマ区切りで入力"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
           </div>
 
           {/* 月別フィルター */}
@@ -216,7 +234,12 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
             )}
             {uploadType && (
               <Badge variant="secondary">
-                タイプ: {uploadType === 'THUMBNAIL' ? 'サムネイル' : 'コンテンツ'}
+                タイプ: {uploadType === 'THUMBNAIL' ? 'サムネイル' : uploadType === 'CONTENT' ? 'コンテンツ' : 'システム'}
+              </Badge>
+            )}
+            {tags && (
+              <Badge variant="secondary">
+                タグ: {tags}
               </Badge>
             )}
             {month && (

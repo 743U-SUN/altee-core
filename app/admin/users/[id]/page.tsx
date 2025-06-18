@@ -19,7 +19,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
     const user = await getUserDetail(id)
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="container mx-auto p-6 flex flex-col gap-6">
         {/* ヘッダー */}
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" asChild>

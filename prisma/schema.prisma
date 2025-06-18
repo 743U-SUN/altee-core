@@ -122,6 +122,11 @@ model MediaFile {
   deletedBy           String?    // 削除者のユーザーID
   scheduledDeletionAt DateTime?  // 物理削除予定日時（30日後）
 
+  // メタデータフィールド
+  description         String?    // 画像説明（オプション）
+  altText            String?    // alt属性用テキスト
+  tags               Json?      // タグ配列 ["hero", "mobile", "v2"]
+
   // Performance optimization indexes
   @@index([containerName])
   @@index([uploadType])
@@ -150,4 +155,5 @@ enum UserRole {
 enum MediaType {
   THUMBNAIL  // 記事サムネイル
   CONTENT    // 記事内画像
+  SYSTEM     // システム専用画像
 }

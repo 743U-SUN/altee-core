@@ -34,7 +34,7 @@ export async function uploadImageAction(
     let bucket: string
     let key: string
     
-    if (folder === 'article-thumbnails' || folder === 'article-images') {
+    if (folder === 'article-thumbnails' || folder === 'article-images' || folder === 'system-assets') {
       // 専用コンテナに直接保存
       bucket = folder
       

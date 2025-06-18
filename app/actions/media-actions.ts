@@ -31,6 +31,7 @@ export interface MediaFilesFilter {
   containerName?: string
   uploadType?: MediaType
   search?: string
+  tags?: string // タグ検索（カンマ区切り）
   month?: string // YYYY/MM format
   page?: number
   limit?: number
@@ -39,7 +40,7 @@ export interface MediaFilesFilter {
 export async function getMediaFiles(filter: MediaFilesFilter = {}) {
   await requireAdminAuth()
 
-  const { containerName, uploadType, search, month, page = 1, limit = 20 } = filter
+  const { containerName, uploadType, search, tags, month, page = 1, limit = 20 } = filter
   const skip = (page - 1) * limit
 
   const where: {
@@ -50,6 +51,10 @@ export async function getMediaFiles(filter: MediaFilesFilter = {}) {
       originalName?: { contains: string; mode: 'insensitive' }
       fileName?: { contains: string; mode: 'insensitive' }
     }>
+    tags?: {
+      path: string
+      array_contains: string[]
+    }
     storageKey?: { contains: string }
   } = {
     deletedAt: null // 論理削除されていないファイルのみ
@@ -68,6 +73,17 @@ export async function getMediaFiles(filter: MediaFilesFilter = {}) {
       { originalName: { contains: search, mode: 'insensitive' } },
       { fileName: { contains: search, mode: 'insensitive' } },
     ]
+  }
+
+  if (tags) {
+    // タグ検索：カンマ区切りの各タグを含むファイルを検索
+    const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+    if (tagArray.length > 0) {
+      where.tags = {
+        path: '$[*]',
+        array_contains: tagArray
+      }
+    }
   }
 
   if (month) {
