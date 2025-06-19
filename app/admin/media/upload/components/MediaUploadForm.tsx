@@ -71,9 +71,37 @@ export function MediaUploadForm() {
         throw new Error('ファイルデータが見つかりません。ファイルを再選択してください。')
       }
 
+      let fileToUpload = latestFile.file
+
+      // 画像ファイルの場合は最適化処理を実行
+      if (latestFile.file.type.startsWith('image/') && 
+          latestFile.file.type !== 'image/svg+xml' && 
+          latestFile.file.type !== 'image/gif') {
+        try {
+          const { processImage } = await import('@/lib/image-uploader/image-processor')
+          const processResult = await processImage(latestFile.file, {
+            maxWidth: 1920,
+            maxHeight: 1080,
+            quality: 0.8,
+            format: 'webp'
+          })
+          
+          if (processResult.success && processResult.processedFile) {
+            // WebPファイルとして新しいFileオブジェクトを作成
+            const webpFileName = latestFile.file.name.replace(/\.[^.]+$/, '.webp')
+            fileToUpload = new File([processResult.processedFile], webpFileName, {
+              type: 'image/webp'
+            })
+          }
+        } catch (error) {
+          console.warn('Image processing failed, using original file:', error)
+          // 処理に失敗した場合は元のファイルを使用
+        }
+      }
+
       // メタデータ付きでアップロード（新しいServer Actionを呼び出し）
       const formData = new FormData()
-      formData.append('file', latestFile.file)
+      formData.append('file', fileToUpload)
       
       const result = await uploadMediaFileAction(formData, {
         uploadType: data.uploadType as MediaType,

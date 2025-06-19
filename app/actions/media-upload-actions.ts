@@ -92,7 +92,7 @@ export async function uploadMediaFileAction(
     const date = new Date()
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
-    const key = `${year}/${month}/${uniqueFileName}`
+    let key = `${year}/${month}/${uniqueFileName}`
     
     let processedFile = file
     
@@ -126,7 +126,7 @@ export async function uploadMediaFileAction(
         containerName,
         originalName: fileName,
         fileName: uniqueFileName,
-        fileSize,
+        fileSize: fileBuffer.length,
         mimeType: fileType,
         uploadType: metadata.uploadType,
         uploaderId: session.user.id,
