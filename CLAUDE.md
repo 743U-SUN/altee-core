@@ -43,6 +43,20 @@ docker compose -f compose.prod.yaml exec app npx prisma studio  # Start Prisma S
 # Access via browser: http://localhost:5555 (while SSH connected)
 ```
 
+**Database Schema Updates:**
+```bash
+# IMPORTANT: Always create migrations for schema changes, never use db:push in production
+docker compose -f compose.dev.yaml exec app npx prisma migrate dev --name migration_name  # Create and apply migration (development)
+./scripts/migrate-production.sh              # Apply migrations to production (with automatic backup)
+```
+
+**⚠️ Database Schema Change Rules:**
+- **NEVER** use `db:push` for schema changes that need to be deployed to production
+- **ALWAYS** use `npx prisma migrate dev --name <descriptive_name>` to create proper migration files
+- **ALWAYS** test migrations in development before applying to production
+- Migration files must be committed to git and deployed through the normal deployment process
+- For production deployments, always use `./scripts/migrate-production.sh` for automatic backup and safe migration
+
 ## Architecture Overview
 
 This is a Next.js 15.3.3 application using the App Router paradigm with the following key architectural decisions:
