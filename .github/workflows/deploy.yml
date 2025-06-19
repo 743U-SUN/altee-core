@@ -1,4 +1,4 @@
-name: Deploy to Sakura VPS (Optimized)
+name: Deploy to Sakura VPS
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # 40→30分に短縮
+    timeout-minutes: 40
     
     steps:
     - name: Checkout code
@@ -28,37 +28,33 @@ jobs:
         ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
           # Ensure we're in the correct directory
           cd /home/ubuntu/altee-core || { echo "Directory not found"; exit 1; }
+          pwd
           
           # Pull latest changes
-          echo "🔄 Pulling latest changes..."
           git pull origin main
           
-          # Run database migrations first (fast)
-          echo "🗄️ Running database migrations..."
-          ./scripts/migrate-production.sh
+          # Stop current containers
+          docker compose -f compose.nginx.yaml down
           
-          # Build with cache (much faster)
-          echo "🏗️ Building application..."
+          # Rebuild and start (with progress output to prevent timeout)
+          echo "Starting Docker build process..."
           docker compose -f compose.nginx.yaml build --pull
-          
-          # Rolling restart (minimize downtime)
-          echo "🔄 Restarting services..."
+          echo "Starting containers..."
           docker compose -f compose.nginx.yaml up -d
           
-          # Quick health check (reduced wait time)
-          echo "⏳ Waiting for services to start..."
-          sleep 15  # 30→15秒に短縮
+          # Health check
+          sleep 30
           
           # Verify deployment
-          if curl -f -s --max-time 10 https://altee.me > /dev/null; then
+          if curl -f -s https://altee.me > /dev/null; then
             echo "✅ Deployment successful - https://altee.me is accessible"
             
-            # Quick health check
-            HEALTH_RESPONSE=$(curl -s --max-time 5 https://altee.me/api/health)
+            # Check health endpoint
+            HEALTH_RESPONSE=$(curl -s https://altee.me/api/health)
             if echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"'; then
               echo "✅ Health check passed"
             else
-              echo "⚠️ Health check failed or returned unexpected response"
+              echo "⚠️  Health check failed or returned unexpected response"
             fi
           else
             echo "❌ Deployment failed - site not accessible"
