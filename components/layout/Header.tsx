@@ -28,7 +28,7 @@ interface HeaderProps {
 
 export function Header({ config }: HeaderProps) {
   return (
-    <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
+    <header className="bg-background sticky z-20 top-0 flex shrink-0 items-center gap-2 border-b p-4">
       {!config.hideSidebarTrigger && (
         <>
           <SidebarTrigger className="-ml-1" />

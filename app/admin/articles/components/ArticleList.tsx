@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Edit, Trash2, Globe, FileX } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Globe, FileX, Download } from "lucide-react"
 import Link from "next/link"
-import { deleteArticle, toggleArticlePublished } from "@/app/actions/article-actions"
+import { deleteArticle, toggleArticlePublished, getArticle } from "@/app/actions/article-actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { downloadMarkdownFile, createExportDataFromArticle } from "@/lib/markdown-export"
 
 interface Article {
   id: string
@@ -87,6 +88,18 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
     }
   }
 
+  const handleExport = async (article: Article) => {
+    try {
+      // 記事詳細を取得してcontentを含める
+      const fullArticle = await getArticle(article.id)
+      const exportData = createExportDataFromArticle(fullArticle)
+      downloadMarkdownFile(exportData)
+      toast.success('Markdownファイルをエクスポートしました')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'エクスポートに失敗しました')
+    }
+  }
+
   if (articles.length === 0) {
     return (
       <Card>
@@ -153,6 +166,10 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
                         公開する
                       </>
                     )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport(article)}>
+                    <Download className="mr-2 h-4 w-4" />
+                    .mdでエクスポート
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDeleteClick(article)}

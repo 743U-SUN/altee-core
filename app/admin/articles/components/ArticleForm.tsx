@@ -12,12 +12,15 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createArticle, updateArticle } from '@/app/actions/article-actions'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { toast } from 'sonner'
-import { Save, Eye, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Edit, Eye, Download } from 'lucide-react'
 import Link from 'next/link'
 import type { UploadedFile } from '@/types/image-upload'
+import { MarkdownPreview } from '@/components/ui/markdown-preview'
+import { downloadMarkdownFile, createExportDataFromForm, createExportDataFromArticle } from '@/lib/markdown-export'
 
 const formSchema = z.object({
   title: z.string().min(1, 'タイトルは必須です').max(255, 'タイトルは255文字以内で入力してください'),
@@ -37,6 +40,13 @@ interface Article {
   content: string
   excerpt: string | null
   published: boolean
+  createdAt: Date | string
+  updatedAt: Date | string
+  author?: {
+    id: string
+    name: string | null
+    email: string
+  }
   thumbnail: {
     id: string
     storageKey: string
@@ -94,6 +104,33 @@ export function ArticleForm({ article }: ArticleFormProps) {
 
   const handleSlugChange = () => {
     setAutoSlug(false) // 手動でスラッグを変更した場合、自動生成を停止
+  }
+
+  const handleExport = () => {
+    try {
+      const formValues = form.getValues()
+      
+      if (article) {
+        // 既存記事の場合
+        const exportData = createExportDataFromArticle({
+          ...article,
+          ...formValues // フォームの最新値で上書き
+        })
+        downloadMarkdownFile(exportData)
+      } else {
+        // 新規記事の場合
+        if (!formValues.title || !formValues.slug || !formValues.content) {
+          toast.error('タイトル、スラッグ、本文を入力してからエクスポートしてください')
+          return
+        }
+        const exportData = createExportDataFromForm(formValues)
+        downloadMarkdownFile(exportData)
+      }
+      
+      toast.success('Markdownファイルをエクスポートしました')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'エクスポートに失敗しました')
+    }
   }
 
   const onSubmit = async (values: FormValues) => {
@@ -230,9 +267,24 @@ export function ArticleForm({ article }: ArticleFormProps) {
                     name="content"
                     render={({ field }) => (
                       <FormItem>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="# 記事タイトル
+                        <Tabs defaultValue="edit" className="w-full">
+                          <div className="sticky top-[69px] z-5 bg-card border-b border-border pt-2 pb-2 mb-4">
+                            <TabsList className="grid w-full grid-cols-2">
+                              <TabsTrigger value="edit" className="flex items-center gap-2">
+                                <Edit className="h-4 w-4" />
+                                編集
+                              </TabsTrigger>
+                              <TabsTrigger value="preview" className="flex items-center gap-2">
+                                <Eye className="h-4 w-4" />
+                                プレビュー
+                              </TabsTrigger>
+                            </TabsList>
+                          </div>
+                          
+                          <TabsContent value="edit" className="mt-0">
+                            <FormControl>
+                              <Textarea 
+                                placeholder="# 記事タイトル
 
 記事の内容をMarkdown形式で記述してください。
 
@@ -242,15 +294,38 @@ export function ArticleForm({ article }: ArticleFormProps) {
 
 - リスト項目1
 - リスト項目2
+- [x] チェックボックス
+- [ ] 未完了タスク
+
+| 列1 | 列2 | 列3 |
+|-----|-----|-----|
+| データ1 | データ2 | データ3 |
+
+:smile: 絵文字も使用できます :thumbsup:
 
 ```javascript
 // コードブロック
 console.log('Hello, World!');
 ```"
-                            className="min-h-[400px] font-mono"
-                            {...field}
-                          />
-                        </FormControl>
+                                className="min-h-[400px] font-mono"
+                                {...field}
+                              />
+                            </FormControl>
+                          </TabsContent>
+                          
+                          <TabsContent value="preview" className="mt-0">
+                            <div className="min-h-[400px] border rounded-md p-4 bg-muted/30">
+                              {field.value ? (
+                                <MarkdownPreview content={field.value} />
+                              ) : (
+                                <div className="text-muted-foreground text-center py-12">
+                                  プレビューする内容がありません。<br />
+                                  編集タブで記事の内容を入力してください。
+                                </div>
+                              )}
+                            </div>
+                          </TabsContent>
+                        </Tabs>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -315,12 +390,15 @@ console.log('Hello, World!');
                   {isSubmitting ? '保存中...' : article ? '更新' : '作成'}
                 </Button>
                 
-                {article && (
-                  <Button type="button" variant="outline" className="w-full">
-                    <Eye className="mr-2 h-4 w-4" />
-                    プレビュー
-                  </Button>
-                )}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleExport}
+                  className="w-full"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  .mdでエクスポート
+                </Button>
               </div>
             </div>
           </div>

@@ -16,19 +16,19 @@ export default async function MediaUploadPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* ヘッダー */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/media">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            メディア管理に戻る
-          </Link>
-        </Button>
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">メディアアップロード</h1>
           <p className="text-muted-foreground">
             画像ファイルをアップロードして、記事やシステムで利用できるようにします
           </p>
         </div>
+        <Link href="/admin/media">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            メディア管理に戻る
+          </Button>
+        </Link>
       </div>
 
       {/* アップロードフォーム */}
