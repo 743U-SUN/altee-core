@@ -13,7 +13,7 @@ export default function HomePage() {
             Welcome to Altee Core
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Next.js 15 + shadcn/ui + Prisma を使用したモダンなウェブアプリケーション
+            Next.js 15 + shadcn/ui + Prisma を使用したモダンなウェブアプリ
           </p>
         </div>
 
