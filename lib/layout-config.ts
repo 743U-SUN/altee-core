@@ -32,6 +32,9 @@ export interface SidebarConfig {
 
 export interface HeaderConfig {
   title?: string
+  titleIcon?: React.ComponentType<{ className?: string }>
+  titleUrl?: string
+  titleIconBgColor?: string
   rightContent?: React.ReactNode
   hideUserMenu?: boolean
   hideNotifications?: boolean
@@ -66,7 +69,7 @@ export interface LayoutOverrides {
 // デフォルトユーザーデータ
 export const defaultUser: UserData = {
   name: "shadcn",
-  email: "m@example.com", 
+  email: "m@example.com",
   avatar: "/avatars/shadcn.jpg",
 }
 
@@ -86,19 +89,25 @@ const defaultNavItems: NavItem[] = [
     url: "/",
     icon: Home,
     isActive: true,
+  },
+  {
+    title: "Admin",
+    url: "/admin",
+    icon: Shield,
+    isActive: false,
   }
 ]
 
 const adminNavItems: NavItem[] = [
   {
-    title: "Dashboard", 
+    title: "Dashboard",
     url: "/admin",
     icon: BarChart3,
     isActive: true,
   },
   {
     title: "Users",
-    url: "/admin/users", 
+    url: "/admin/users",
     icon: Users,
     isActive: false,
   },
@@ -124,7 +133,7 @@ const userProfileNavItems: NavItem[] = [
     isActive: true,
   },
   {
-    title: "Settings", 
+    title: "Settings",
     url: "/profile/settings",
     icon: Settings,
     isActive: false,
@@ -143,7 +152,10 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     },
     secondSidebar: {},
     header: {
-      title: "Dashboard",
+      title: "ALTEE",
+      titleIcon: Home, 
+      titleUrl: "/",  
+      titleIconBgColor: "bg-transparent",   
       hideUserMenu: false,
       hideNotifications: false,
       hideSidebarTrigger: false,
@@ -263,12 +275,12 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
 // 設定取得関数
 export function getLayoutConfig(variant: LayoutVariant): LayoutConfig {
   const config = layoutConfigs[variant]
-  
+
   if (!config) {
     console.warn(`Unknown layout variant: ${variant}. Using default.`)
     return layoutConfigs.default
   }
-  
+
   return config
 }
 
@@ -278,7 +290,7 @@ export function mergeLayoutConfig(
   overrides?: LayoutOverrides
 ): LayoutConfig {
   if (!overrides) return baseConfig
-  
+
   return {
     firstSidebar: {
       ...baseConfig.firstSidebar,

@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { HeaderConfig } from "@/lib/layout-config"
@@ -39,8 +40,26 @@ export function Header({ config }: HeaderProps) {
       )}
       
       {config.title && (
-        <div className="text-lg font-semibold">
-          {config.title}
+        <div className="flex items-center gap-2">
+          {config.titleUrl ? (
+            <Link href={config.titleUrl} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              {config.titleIcon && (
+                <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
+                  <config.titleIcon className="w-4 h-4 text-white" />
+                </div>
+              )}
+              <span className="text-lg font-semibold">{config.title}</span>
+            </Link>
+          ) : (
+            <>
+              {config.titleIcon && (
+                <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
+                  <config.titleIcon className="w-4 h-4 text-white" />
+                </div>
+              )}
+              <span className="text-lg font-semibold">{config.title}</span>
+            </>
+          )}
         </div>
       )}
 
