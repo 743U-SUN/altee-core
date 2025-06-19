@@ -6,53 +6,26 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Form } from '@/components/ui/form'
 import { createArticle, updateArticle } from '@/app/actions/article-actions'
-import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { toast } from 'sonner'
-import { Save, ArrowLeft, Edit, Eye, Download } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import type { UploadedFile } from '@/types/image-upload'
-import { MarkdownPreview } from '@/components/ui/markdown-preview'
 import { downloadMarkdownFile, createExportDataFromForm, createExportDataFromArticle } from '@/lib/markdown-export'
+import { BasicInfoSection } from './BasicInfoSection'
+import { ContentEditor } from './ContentEditor'
+import { SidebarSection } from './SidebarSection'
+import type { FormValues, Article } from './types'
 
 const formSchema = z.object({
   title: z.string().min(1, 'タイトルは必須です').max(255, 'タイトルは255文字以内で入力してください'),
   slug: z.string().min(1, 'スラッグは必須です').max(255, 'スラッグは255文字以内で入力してください'),
   content: z.string().min(1, 'コンテンツは必須です'),
-  excerpt: z.string().max(500, '要約は500文字以内で入力してください').optional(),
+  excerpt: z.string().max(500, '要約は500文字以内で入力してください'),
   published: z.boolean(),
 })
-
-type FormValues = z.infer<typeof formSchema>
 // Note: サムネイル画像は独立管理（thumbnailステート）
-
-interface Article {
-  id: string
-  title: string
-  slug: string
-  content: string
-  excerpt: string | null
-  published: boolean
-  createdAt: Date | string
-  updatedAt: Date | string
-  author?: {
-    id: string
-    name: string | null
-    email: string
-  }
-  thumbnail: {
-    id: string
-    storageKey: string
-    originalName: string
-  } | null
-}
 
 interface ArticleFormProps {
   article?: Article
@@ -182,225 +155,28 @@ export function ArticleForm({ article }: ArticleFormProps) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* メインコンテンツ */}
             <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>基本情報</CardTitle>
-                  <CardDescription>記事の基本的な情報を入力してください。</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>タイトル</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="記事のタイトルを入力"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              handleTitleChange(e.target.value)
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <BasicInfoSection
+                control={form.control}
+                onTitleChange={handleTitleChange}
+                onSlugChange={handleSlugChange}
+              />
 
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>スラッグ</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="article-slug"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              handleSlugChange()
-                            }}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          URLに使用されます。英数字とハイフンのみ使用可能です。
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="excerpt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>要約（任意）</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="記事の簡単な要約を入力"
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          記事一覧やSEOで使用されます。500文字以内で入力してください。
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>本文</CardTitle>
-                  <CardDescription>Markdown形式で記事の内容を記述してください。</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <Tabs defaultValue="edit" className="w-full">
-                          <div className="sticky top-[69px] z-5 bg-card border-b border-border pt-2 pb-2 mb-4">
-                            <TabsList className="grid w-full grid-cols-2">
-                              <TabsTrigger value="edit" className="flex items-center gap-2">
-                                <Edit className="h-4 w-4" />
-                                編集
-                              </TabsTrigger>
-                              <TabsTrigger value="preview" className="flex items-center gap-2">
-                                <Eye className="h-4 w-4" />
-                                プレビュー
-                              </TabsTrigger>
-                            </TabsList>
-                          </div>
-                          
-                          <TabsContent value="edit" className="mt-0">
-                            <FormControl>
-                              <Textarea 
-                                placeholder="# 記事タイトル
-
-記事の内容をMarkdown形式で記述してください。
-
-## 見出し2
-
-段落テキスト。**太字**や*斜体*、[リンク](https://example.com)なども使用できます。
-
-- リスト項目1
-- リスト項目2
-- [x] チェックボックス
-- [ ] 未完了タスク
-
-| 列1 | 列2 | 列3 |
-|-----|-----|-----|
-| データ1 | データ2 | データ3 |
-
-:smile: 絵文字も使用できます :thumbsup:
-
-```javascript
-// コードブロック
-console.log('Hello, World!');
-```"
-                                className="min-h-[400px] font-mono"
-                                {...field}
-                              />
-                            </FormControl>
-                          </TabsContent>
-                          
-                          <TabsContent value="preview" className="mt-0">
-                            <div className="min-h-[400px] border rounded-md p-4 bg-muted/30">
-                              {field.value ? (
-                                <MarkdownPreview content={field.value} />
-                              ) : (
-                                <div className="text-muted-foreground text-center py-12">
-                                  プレビューする内容がありません。<br />
-                                  編集タブで記事の内容を入力してください。
-                                </div>
-                              )}
-                            </div>
-                          </TabsContent>
-                        </Tabs>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+              <ContentEditor
+                control={form.control}
+                isSubmitting={isSubmitting}
+              />
             </div>
 
             {/* サイドバー */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>公開設定</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="published"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">公開状態</FormLabel>
-                          <FormDescription>
-                            公開すると一般ユーザーが閲覧できるようになります。
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>サムネイル画像</CardTitle>
-                  <CardDescription>記事のサムネイル画像を設定してください。</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ImageUploader
-                    mode="immediate"
-                    previewSize="medium"
-                    maxFiles={1}
-                    folder="article-thumbnails"
-                    value={thumbnail}
-                    onUpload={setThumbnail}
-                    onError={(error) => toast.error(error)}
-                  />
-                </CardContent>
-              </Card>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting ? '保存中...' : article ? '更新' : '作成'}
-                </Button>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleExport}
-                  className="w-full"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  .mdでエクスポート
-                </Button>
-              </div>
-            </div>
+            <SidebarSection
+              control={form.control}
+              isSubmitting={isSubmitting}
+              article={article}
+              thumbnail={thumbnail}
+              onThumbnailChange={setThumbnail}
+              onExport={handleExport}
+              onThumbnailError={(error) => toast.error(error)}
+            />
           </div>
         </form>
       </Form>

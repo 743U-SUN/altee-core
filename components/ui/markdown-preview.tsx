@@ -1,8 +1,13 @@
 'use client'
 
-import ReactMarkdown from 'react-markdown'
+import { lazy } from 'react'
 import remarkGfm from 'remark-gfm'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+
+// 重いコンポーネントを動的import
+const ReactMarkdown = lazy(() => import('react-markdown'))
+const SyntaxHighlighter = lazy(() => 
+  import('react-syntax-highlighter').then(mod => ({ default: mod.Prism }))
+)
 
 interface MarkdownPreviewProps {
   content: string
