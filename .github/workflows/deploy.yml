@@ -38,7 +38,7 @@ jobs:
           
           # Rebuild and start (with progress output to prevent timeout)
           echo "Starting Docker build process..."
-          docker compose -f compose.nginx.yaml build --pull
+          docker compose -f compose.nginx.yaml build --pull --no-cache
           echo "Starting containers..."
           docker compose -f compose.nginx.yaml up -d
           
