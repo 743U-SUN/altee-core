@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { signIn, signOut } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
+import Image from "next/image"
 
 async function handleSignIn() {
   "use server"
@@ -83,9 +84,11 @@ export default async function AuthTestPage() {
                 <p><strong className="text-gray-900">現在のプロフィール画像:</strong></p>
                 <div className="flex gap-4 mt-2">
                   <div className="text-center">
-                    <img 
+                    <Image 
                       src={session.user.image} 
                       alt="Profile Picture" 
+                      width={64}
+                      height={64}
                       className="w-16 h-16 rounded-full"
                     />
                     <p className="text-xs mt-1 text-gray-600">最新ログイン</p>

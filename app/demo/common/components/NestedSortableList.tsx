@@ -72,7 +72,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
         tempValues: { ...prev.tempValues, ...tempValues }
       }));
     }
-  }, [config.parentItems, config.parentConfig.editableFields]);
+  }, [config.parentItems, config.parentConfig.editableFields, parentState.tempValues]);
 
   // 子アイテムの状態を初期化
   useEffect(() => {
@@ -101,7 +101,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
     if (Object.keys(newChildStates).length > 0) {
       setChildStates(prev => ({ ...prev, ...newChildStates }));
     }
-  }, [config.parentItems, config.childConfig.editableFields, config.getChildItems, childStates]);
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 親アイテムを追加
   const handleAddParentItem = async () => {

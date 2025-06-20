@@ -16,6 +16,7 @@ import { downloadMarkdownFile, createExportDataFromForm, createExportDataFromArt
 import { BasicInfoSection } from './BasicInfoSection'
 import { ContentEditor } from './ContentEditor'
 import { SidebarSection } from './SidebarSection'
+import { CategoryTagSelector } from './CategoryTagSelector'
 import type { FormValues, Article } from './types'
 
 const formSchema = z.object({
@@ -55,6 +56,15 @@ export function ArticleForm({ article }: ArticleFormProps) {
       uploadedAt: new Date().toISOString()
     }] : []
   )
+  
+  // カテゴリ・タグ選択状態
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    article?.categories?.map(cat => cat.categoryId) || []
+  )
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    article?.tags?.map(tag => tag.tagId) || []
+  )
+  
   // 記事内画像は表示不要（プレビューなし）
   const [autoSlug, setAutoSlug] = useState(!article) // 新規作成時のみ自動生成
   const router = useRouter()
@@ -133,6 +143,14 @@ export function ArticleForm({ article }: ArticleFormProps) {
       if (thumbnail.length > 0) {
         formData.append('thumbnailId', thumbnail[0].id)
       }
+      
+      // カテゴリ・タグのIDを追加
+      selectedCategoryIds.forEach(categoryId => {
+        formData.append('categoryIds', categoryId)
+      })
+      selectedTagIds.forEach(tagId => {
+        formData.append('tagIds', tagId)
+      })
 
       if (article) {
         await updateArticle(article.id, formData)
@@ -177,6 +195,14 @@ export function ArticleForm({ article }: ArticleFormProps) {
               <ContentEditor
                 control={form.control}
                 isSubmitting={isSubmitting}
+              />
+
+              {/* カテゴリ・タグ選択 */}
+              <CategoryTagSelector
+                selectedCategoryIds={selectedCategoryIds}
+                selectedTagIds={selectedTagIds}
+                onCategoriesChange={setSelectedCategoryIds}
+                onTagsChange={setSelectedTagIds}
               />
             </div>
 

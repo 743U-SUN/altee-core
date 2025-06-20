@@ -1,4 +1,4 @@
-import { Home, Users, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen } from "lucide-react"
+import { Home, Users, Tag, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen } from "lucide-react"
 
 // 型定義
 export interface NavItem {
@@ -122,6 +122,12 @@ const adminNavItems: NavItem[] = [
     url: "/admin/media",
     icon: Image,
     isActive: false,
+  },
+  {
+    title: "Attirbutes",
+    url: "/admin/attributes",
+    icon: Tag,
+    isActive: false,
   }
 ]
 
@@ -153,9 +159,9 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     secondSidebar: {},
     header: {
       title: "ALTEE",
-      titleIcon: Home, 
-      titleUrl: "/",  
-      titleIconBgColor: "bg-transparent",   
+      titleIcon: Home,
+      titleUrl: "/",
+      titleIconBgColor: "bg-transparent",
       hideUserMenu: false,
       hideNotifications: false,
       hideSidebarTrigger: false,

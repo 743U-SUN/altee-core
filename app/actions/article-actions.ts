@@ -48,6 +48,10 @@ export async function createArticle(formData: FormData) {
     thumbnailId: formData.get('thumbnailId') || undefined,
     published: formData.get('published') === 'true',
   })
+  
+  // カテゴリ・タグIDを取得
+  const categoryIds = formData.getAll('categoryIds') as string[]
+  const tagIds = formData.getAll('tagIds') as string[]
 
   if (!validatedFields.success) {
     throw new Error(`バリデーションエラー: ${validatedFields.error.errors.map(e => e.message).join(', ')}`)
@@ -65,20 +69,47 @@ export async function createArticle(formData: FormData) {
       throw new Error('このスラッグは既に使用されています')
     }
 
-    const article = await prisma.article.create({
-      data: {
-        title,
-        slug,
-        content,
-        excerpt,
-        thumbnailId,
-        published,
-        publishedAt: published ? new Date() : null,
-        authorId: session.user.id,
-      },
+    // トランザクションで記事とカテゴリ・タグのリレーションを同時作成
+    const article = await prisma.$transaction(async (tx) => {
+      // 記事作成
+      const newArticle = await tx.article.create({
+        data: {
+          title,
+          slug,
+          content,
+          excerpt,
+          thumbnailId,
+          published,
+          publishedAt: published ? new Date() : null,
+          authorId: session.user.id,
+        },
+      })
+
+      // カテゴリのリレーション作成
+      if (categoryIds.length > 0) {
+        await tx.articleCategory.createMany({
+          data: categoryIds.map(categoryId => ({
+            articleId: newArticle.id,
+            categoryId,
+          }))
+        })
+      }
+
+      // タグのリレーション作成
+      if (tagIds.length > 0) {
+        await tx.articleTag.createMany({
+          data: tagIds.map(tagId => ({
+            articleId: newArticle.id,
+            tagId,
+          }))
+        })
+      }
+
+      return newArticle
     })
 
     revalidatePath('/admin/articles')
+    revalidatePath('/admin/attributes')
     return { success: true, article }
   } catch (error) {
     console.error('Article creation error:', error)
@@ -104,6 +135,10 @@ export async function updateArticle(id: string, formData: FormData) {
   }
 
   const { title, slug, content, excerpt, thumbnailId, published } = validatedFields.data
+  
+  // カテゴリ・タグIDを取得
+  const categoryIds = formData.getAll('categoryIds') as string[]
+  const tagIds = formData.getAll('tagIds') as string[]
 
   try {
     const existingArticle = await prisma.article.findUnique({
@@ -129,21 +164,56 @@ export async function updateArticle(id: string, formData: FormData) {
     const wasUnpublished = !existingArticle.published
     const isNowPublished = published
 
-    const article = await prisma.article.update({
-      where: { id },
-      data: {
-        title,
-        slug,
-        content,
-        excerpt,
-        thumbnailId,
-        published,
-        publishedAt: (wasUnpublished && isNowPublished) ? new Date() : existingArticle.publishedAt,
-      },
+    // トランザクションで記事更新とカテゴリ・タグのリレーション更新を実行
+    const article = await prisma.$transaction(async (tx) => {
+      // 記事更新
+      const updatedArticle = await tx.article.update({
+        where: { id },
+        data: {
+          title,
+          slug,
+          content,
+          excerpt,
+          thumbnailId,
+          published,
+          publishedAt: (wasUnpublished && isNowPublished) ? new Date() : existingArticle.publishedAt,
+        },
+      })
+
+      // 既存のカテゴリ・タグ関連を削除
+      await tx.articleCategory.deleteMany({
+        where: { articleId: id }
+      })
+      await tx.articleTag.deleteMany({
+        where: { articleId: id }
+      })
+
+      // 新しいカテゴリのリレーション作成
+      if (categoryIds.length > 0) {
+        await tx.articleCategory.createMany({
+          data: categoryIds.map(categoryId => ({
+            articleId: id,
+            categoryId,
+          }))
+        })
+      }
+
+      // 新しいタグのリレーション作成
+      if (tagIds.length > 0) {
+        await tx.articleTag.createMany({
+          data: tagIds.map(tagId => ({
+            articleId: id,
+            tagId,
+          }))
+        })
+      }
+
+      return updatedArticle
     })
 
     revalidatePath('/admin/articles')
     revalidatePath(`/admin/articles/${id}`)
+    revalidatePath('/admin/attributes')
     return { success: true, article }
   } catch (error) {
     console.error('Article update error:', error)
@@ -206,6 +276,20 @@ export async function getArticles(page: number = 1, limit: number = 10) {
           },
           thumbnail: {
             select: { id: true, storageKey: true, originalName: true }
+          },
+          categories: {
+            include: {
+              category: {
+                select: { id: true, name: true, slug: true, color: true }
+              }
+            }
+          },
+          tags: {
+            include: {
+              tag: {
+                select: { id: true, name: true, slug: true, color: true }
+              }
+            }
           }
         },
         orderBy: { createdAt: 'desc' }
@@ -241,6 +325,20 @@ export async function getArticle(id: string) {
         },
         thumbnail: {
           select: { id: true, storageKey: true, originalName: true }
+        },
+        categories: {
+          include: {
+            category: {
+              select: { id: true, name: true, slug: true, color: true }
+            }
+          }
+        },
+        tags: {
+          include: {
+            tag: {
+              select: { id: true, name: true, slug: true, color: true }
+            }
+          }
         }
       }
     })

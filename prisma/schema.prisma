@@ -94,6 +94,10 @@ model Article {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
+  // 新しいリレーション
+  categories ArticleCategory[]
+  tags       ArticleTag[]
+
   // Performance optimization indexes
   @@index([published])
   @@index([publishedAt])
@@ -133,6 +137,70 @@ model MediaFile {
   @@index([createdAt])
   @@index([deletedAt])
   @@map("media_files")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  color       String?   // UI表示用の色コード (#RRGGBB)
+  order       Int       @default(0) // 表示順序
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // リレーション
+  articles    ArticleCategory[]
+  
+  @@index([order])
+  @@index([name])
+  @@map("categories")
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  color       String?   // UI表示用の色コード (#RRGGBB)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // リレーション
+  articles    ArticleTag[]
+  
+  @@index([name])
+  @@map("tags")
+}
+
+// 記事とカテゴリの中間テーブル（多対多）
+model ArticleCategory {
+  id         String   @id @default(cuid())
+  articleId  String
+  categoryId String
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  
+  @@unique([articleId, categoryId])
+  @@index([articleId])
+  @@index([categoryId])
+  @@map("article_categories")
+}
+
+// 記事とタグの中間テーブル（多対多）
+model ArticleTag {
+  id        String   @id @default(cuid())
+  articleId String
+  tagId     String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([articleId, tagId])
+  @@index([articleId])
+  @@index([tagId])
+  @@map("article_tags")
 }
 
 model Product {

@@ -27,4 +27,24 @@ export interface Article {
     storageKey: string
     originalName: string
   } | null
+  categories?: {
+    id: string
+    categoryId: string
+    category: {
+      id: string
+      name: string
+      slug: string
+      color: string | null
+    }
+  }[]
+  tags?: {
+    id: string
+    tagId: string
+    tag: {
+      id: string
+      name: string
+      slug: string
+      color: string | null
+    }
+  }[]
 }

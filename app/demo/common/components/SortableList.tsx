@@ -66,7 +66,7 @@ export function SortableList<T extends SortableItemType>({
         tempValues: { ...prev.tempValues, ...tempValues }
       }));
     }
-  }, [config.items, config.editableFields]);
+  }, [config.items, config.editableFields, itemState.tempValues]);
 
   // アイテムを追加
   const handleAddItem = async () => {
