@@ -19,6 +19,7 @@ import {
 
 interface MarkdownToolbarProps {
   onInsert: (text: string, type?: 'wrap' | 'insert') => void
+  onImageInsert?: () => void
   disabled?: boolean
 }
 
@@ -29,7 +30,7 @@ interface ToolItem {
   type?: 'wrap' | 'insert'
 }
 
-export function MarkdownToolbar({ onInsert, disabled = false }: MarkdownToolbarProps) {
+export function MarkdownToolbar({ onInsert, onImageInsert, disabled = false }: MarkdownToolbarProps) {
   const tools: ToolItem[] = [
     {
       icon: Bold,
@@ -82,7 +83,7 @@ export function MarkdownToolbar({ onInsert, disabled = false }: MarkdownToolbarP
     {
       icon: Image,
       label: '画像',
-      action: () => onInsert('![alt](URL)', 'insert')
+      action: () => onImageInsert ? onImageInsert() : onInsert('![alt](URL)', 'insert')
     },
     {
       icon: Table,

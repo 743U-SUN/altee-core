@@ -19,6 +19,9 @@ interface SidebarSectionProps {
   onThumbnailChange: (files: UploadedFile[]) => void
   onExport: () => void
   onThumbnailError: (error: string) => void
+  contentImages: UploadedFile[]
+  onContentImagesChange: (files: UploadedFile[]) => void
+  onContentImagesError: (error: string) => void
 }
 
 export function SidebarSection({ 
@@ -28,7 +31,9 @@ export function SidebarSection({
   thumbnail, 
   onThumbnailChange, 
   onExport, 
-  onThumbnailError 
+  onThumbnailError,
+  onContentImagesChange,
+  onContentImagesError
 }: SidebarSectionProps) {
   return (
     <div className="space-y-6">
@@ -74,6 +79,30 @@ export function SidebarSection({
             value={thumbnail}
             onUpload={onThumbnailChange}
             onError={onThumbnailError}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>記事内画像</CardTitle>
+          <CardDescription>記事内で使用する画像をアップロードしてください。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ImageUploader
+            mode="immediate"
+            previewSize="small"
+            maxFiles={10}
+            folder="article-images"
+            value={[]}
+            showPreview={false}
+            onUpload={(files) => {
+              // アップロード完了時の通知のみ
+              if (files.length > 0) {
+                onContentImagesChange([])
+              }
+            }}
+            onError={onContentImagesError}
           />
         </CardContent>
       </Card>

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { ImageUploaderProps, UploadedFile } from '@/types/image-upload'
 import { validateImageFiles } from '@/lib/image-uploader/image-validator'
-import { processImage } from '@/lib/image-uploader/image-processor'
+import { processImage, processArticleImage } from '@/lib/image-uploader/image-processor'
 import { uploadImageAction, deleteImageAction } from '@/app/actions/image-upload-actions'
 import { DropZone } from './drop-zone'
 import { ImagePreview } from './image-preview'
@@ -23,15 +23,23 @@ export function ImageUploader({
   value = [],
   onUpload,
   onDelete,
-  onError
+  onError,
+  showPreview = true
 }: ImageUploaderProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(value)
   const [errors, setErrors] = useState<string[]>([])
+  const uploadedFilesRef = useRef<UploadedFile[]>(value)
 
   // valueが変更された時に内部状態を更新
   useEffect(() => {
     setUploadedFiles(value)
+    uploadedFilesRef.current = value
   }, [value])
+
+  // uploadedFilesが変更された時にrefも更新
+  useEffect(() => {
+    uploadedFilesRef.current = uploadedFiles
+  }, [uploadedFiles])
 
   // エラーを追加
   const addError = useCallback((error: string) => {
@@ -46,52 +54,14 @@ export function ImageUploader({
   }, [onError])
 
 
-  // ファイル処理とアップロード
-  const processAndUploadFile = useCallback(async (file: File) => {
-    try {
-      // 画像処理
-      const processResult = await processImage(file, {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.8,
-        format: 'webp'
-      })
-
-      if (!processResult.success) {
-        throw new Error(processResult.error)
-      }
-
-      // アップロード
-      const formData = new FormData()
-      formData.append('file', processResult.processedFile!)
-      
-      const uploadResult = await uploadImageAction(formData, folder)
-
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.error)
-      }
-
-      // 成功
-      const newFile = uploadResult.file!
-      const newFiles = [...uploadedFiles, newFile]
-      setUploadedFiles(newFiles)
-      onUpload?.(newFiles)
-      
-      // 成功トースト
-      toast.success(`${file.name} をアップロードしました`)
-
-    } catch (error) {
-      const errorMessage = `アップロードエラー: ${error instanceof Error ? error.message : 'Unknown error'}`
-      addError(errorMessage)
-    }
-  }, [uploadedFiles, addError, onUpload, folder])
 
   // ファイル選択時の処理
   const handleFilesSelected = useCallback(async (files: File[]) => {
     if (disabled) return
 
     // ファイル数制限チェック
-    const availableSlots = maxFiles - uploadedFiles.length
+    const currentFiles = uploadedFilesRef.current
+    const availableSlots = maxFiles - currentFiles.length
     if (availableSlots <= 0) {
       addError(`最大${maxFiles}ファイルまでです`)
       return
@@ -116,8 +86,91 @@ export function ImageUploader({
     if (validFiles.length === 0) return
 
     if (mode === 'immediate') {
-      // 即座にアップロード
-      validFiles.forEach(processAndUploadFile)
+      // 記事画像の場合は順次処理（メモリ節約）、その他は並列処理
+      if (folder === 'article-images' || folder === 'article-thumbnails') {
+        for (const file of validFiles) {
+          try {
+            // 画像処理（記事用画像の場合は専用処理を使用）
+            const processResult = folder === 'article-images' || folder === 'article-thumbnails'
+              ? await processArticleImage(file)
+              : await processImage(file, {
+                  maxWidth: 1920,
+                  maxHeight: 1080,
+                  quality: 0.8,
+                  format: 'webp'
+                })
+
+            if (!processResult.success) {
+              throw new Error(processResult.error)
+            }
+
+            // アップロード
+            const formData = new FormData()
+            formData.append('file', processResult.processedFile!)
+            
+            const uploadResult = await uploadImageAction(formData, folder)
+
+            if (!uploadResult.success) {
+              throw new Error(uploadResult.error)
+            }
+
+            // 成功
+            const newFile = uploadResult.file!
+            const currentFiles = uploadedFilesRef.current
+            const newFiles = [...currentFiles, newFile]
+            setUploadedFiles(newFiles)
+            onUpload?.(newFiles)
+            
+            // 成功トースト
+            toast.success(`${file.name} をアップロードしました`)
+
+          } catch (error) {
+            const errorMessage = `アップロードエラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+            addError(errorMessage)
+          }
+        }
+      } else {
+        // 並列処理（従来の方式）
+        validFiles.forEach(async (file) => {
+          try {
+            // 画像処理
+            const processResult = await processImage(file, {
+              maxWidth: 1920,
+              maxHeight: 1080,
+              quality: 0.8,
+              format: 'webp'
+            })
+
+            if (!processResult.success) {
+              throw new Error(processResult.error)
+            }
+
+            // アップロード
+            const formData = new FormData()
+            formData.append('file', processResult.processedFile!)
+            
+            const uploadResult = await uploadImageAction(formData, folder)
+
+            if (!uploadResult.success) {
+              throw new Error(uploadResult.error)
+            }
+
+            // 成功
+            const newFile = uploadResult.file!
+            const currentFiles = uploadedFilesRef.current
+            const newFiles = [...currentFiles, newFile]
+            setUploadedFiles(newFiles)
+            onUpload?.(newFiles)
+            
+            // 成功トースト
+            toast.success(`${file.name} をアップロードしました`)
+
+          } catch (error) {
+            const errorMessage = `アップロードエラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+            addError(errorMessage)
+          }
+        })
+      }
     } else {
       // プレビューのみ（batch mode）
       const previewFiles: UploadedFile[] = validFiles.map((file, index) => ({
@@ -132,15 +185,17 @@ export function ImageUploader({
         file: file // 元のFileオブジェクトを保持
       }))
       
-      const newFiles = [...uploadedFiles, ...previewFiles]
+      const currentFiles = uploadedFilesRef.current
+      const newFiles = [...currentFiles, ...previewFiles]
       setUploadedFiles(newFiles)
       onUpload?.(newFiles)
     }
-  }, [disabled, maxFiles, maxSize, uploadedFiles, mode, addError, processAndUploadFile, onUpload])
+  }, [disabled, maxFiles, maxSize, mode, addError, onUpload, folder])
 
   // ファイル削除
   const handleDelete = useCallback(async (fileId: string) => {
-    const fileToDelete = uploadedFiles.find(f => f.id === fileId)
+    const currentFiles = uploadedFilesRef.current
+    const fileToDelete = currentFiles.find(f => f.id === fileId)
     if (!fileToDelete) return
 
     try {
@@ -158,7 +213,7 @@ export function ImageUploader({
         throw new Error(deleteResult.error)
       }
 
-      const newFiles = uploadedFiles.filter(f => f.id !== fileId)
+      const newFiles = currentFiles.filter(f => f.id !== fileId)
       setUploadedFiles(newFiles)
       onUpload?.(newFiles)
       onDelete?.(fileId)
@@ -167,7 +222,7 @@ export function ImageUploader({
       const errorMessage = `削除エラー: ${error instanceof Error ? error.message : 'Unknown error'}`
       addError(errorMessage)
     }
-  }, [uploadedFiles, addError, onDelete, onUpload])
+  }, [addError, onDelete, onUpload])
 
   // Note: フォーム状態分離により、変更通知は必要に応じてのみ実行
 
@@ -187,64 +242,77 @@ export function ImageUploader({
         </div>
       )}
 
-      {/* 単一ファイルの場合：プレビューまたはドロップゾーンのどちらか一方 */}
-      {isSingleFile ? (
-        hasFiles ? (
-          <ImagePreview
-            file={uploadedFiles[0]}
-            previewSize={previewSize}
-            deleteButtonPosition={deleteButtonPosition}
-            rounded={rounded}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <DropZone
-            onFilesSelected={handleFilesSelected}
-            maxFiles={1}
-            disabled={disabled}
-            accept={['image/*']}
-            previewSize={previewSize}
-            rounded={rounded}
-          />
-        )
-      ) : (
-        /* 複数ファイルの場合：従来通りプレビューとドロップゾーンを両方表示 */
-        <>
-          {/* ファイルプレビュー */}
-          {hasFiles && (
-            <div className={cn(
-              'grid gap-4',
-              typeof previewSize === 'object' || previewSize === 'large'
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                : previewSize === 'medium'
-                ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
-                : 'grid-cols-4 sm:grid-cols-6 lg:grid-cols-8'
-            )}>
-              {uploadedFiles.map((file) => (
-                <ImagePreview
-                  key={file.id}
-                  file={file}
-                  previewSize={previewSize}
-                  deleteButtonPosition={deleteButtonPosition}
-                  rounded={rounded}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* ドロップゾーン（ファイル数制限に達していない場合のみ表示） */}
-          {uploadedFiles.length < maxFiles && (
+      {/* プレビュー表示制御 */}
+      {showPreview ? (
+        /* 従来のプレビュー表示 */
+        isSingleFile ? (
+          hasFiles ? (
+            <ImagePreview
+              file={uploadedFiles[0]}
+              previewSize={previewSize}
+              deleteButtonPosition={deleteButtonPosition}
+              rounded={rounded}
+              onDelete={handleDelete}
+            />
+          ) : (
             <DropZone
               onFilesSelected={handleFilesSelected}
-              maxFiles={maxFiles - uploadedFiles.length}
+              maxFiles={1}
               disabled={disabled}
               accept={['image/*']}
               previewSize={previewSize}
               rounded={rounded}
             />
-          )}
-        </>
+          )
+        ) : (
+          /* 複数ファイルの場合：従来通りプレビューとドロップゾーンを両方表示 */
+          <>
+            {/* ファイルプレビュー */}
+            {hasFiles && (
+              <div className={cn(
+                'grid gap-4',
+                typeof previewSize === 'object' || previewSize === 'large'
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                  : previewSize === 'medium'
+                  ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+                  : 'grid-cols-4 sm:grid-cols-6 lg:grid-cols-8'
+              )}>
+                {uploadedFiles.map((file) => (
+                  <ImagePreview
+                    key={file.id}
+                    file={file}
+                    previewSize={previewSize}
+                    deleteButtonPosition={deleteButtonPosition}
+                    rounded={rounded}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* ドロップゾーン（ファイル数制限に達していない場合のみ表示） */}
+            {uploadedFiles.length < maxFiles && (
+              <DropZone
+                onFilesSelected={handleFilesSelected}
+                maxFiles={maxFiles - uploadedFiles.length}
+                disabled={disabled}
+                accept={['image/*']}
+                previewSize={previewSize}
+                rounded={rounded}
+              />
+            )}
+          </>
+        )
+      ) : (
+        /* プレビュー非表示：ドロップゾーンのみ */
+        <DropZone
+          onFilesSelected={handleFilesSelected}
+          maxFiles={maxFiles}
+          disabled={disabled}
+          accept={['image/*']}
+          previewSize={previewSize}
+          rounded={rounded}
+        />
       )}
     </div>
   )

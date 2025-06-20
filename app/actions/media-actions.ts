@@ -119,8 +119,14 @@ export async function getMediaFiles(filter: MediaFilesFilter = {}) {
     prisma.mediaFile.count({ where }),
   ])
 
+  // publicUrlを追加したメディアファイル
+  const mediaFilesWithUrl = mediaFiles.map(file => ({
+    ...file,
+    publicUrl: `/api/files/${file.storageKey}`,
+  }))
+
   return {
-    mediaFiles,
+    mediaFiles: mediaFilesWithUrl,
     pagination: {
       total,
       page,

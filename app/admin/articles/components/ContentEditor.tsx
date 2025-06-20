@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { Control, useFormContext } from 'react-hook-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MarkdownPreview } from '@/components/ui/markdown-preview'
 import { MarkdownToolbar } from '@/components/ui/markdown-toolbar'
+import { ImageInsertModal } from '@/components/ui/image-insert-modal'
 import { Edit, Eye } from 'lucide-react'
 import type { FormValues } from './types'
 
@@ -19,6 +20,7 @@ interface ContentEditorProps {
 export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const form = useFormContext<FormValues>()
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
 
   const handleMarkdownInsert = (text: string, type: 'wrap' | 'insert' = 'insert') => {
     const textarea = textareaRef.current
@@ -60,6 +62,14 @@ export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
     }, 0)
   }
 
+  const handleImageInsert = () => {
+    setIsImageModalOpen(true)
+  }
+
+  const handleImageModalInsert = (markdown: string) => {
+    handleMarkdownInsert(markdown, 'insert')
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -90,6 +100,7 @@ export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
                   <div className="sticky top-[120px] z-4 bg-card">
                     <MarkdownToolbar 
                       onInsert={handleMarkdownInsert}
+                      onImageInsert={handleImageInsert}
                       disabled={isSubmitting}
                     />
                   </div>
@@ -152,6 +163,13 @@ console.log('Hello, World!');
           )}
         />
       </CardContent>
+
+      {/* 画像挿入モーダル */}
+      <ImageInsertModal
+        open={isImageModalOpen}
+        onOpenChange={setIsImageModalOpen}
+        onInsert={handleImageModalInsert}
+      />
     </Card>
   )
 }

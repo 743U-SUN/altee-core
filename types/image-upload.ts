@@ -40,6 +40,7 @@ export interface ImageUploaderProps {
   onUpload?: (files: UploadedFile[]) => void
   onDelete?: (fileId: string) => void
   onError?: (error: string) => void
+  showPreview?: boolean // プレビュー表示の制御（デフォルト: true）
 }
 
 export interface ImageUploaderRef {

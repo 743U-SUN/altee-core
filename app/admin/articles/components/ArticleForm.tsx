@@ -55,6 +55,7 @@ export function ArticleForm({ article }: ArticleFormProps) {
       uploadedAt: new Date().toISOString()
     }] : []
   )
+  // 記事内画像は表示不要（プレビューなし）
   const [autoSlug, setAutoSlug] = useState(!article) // 新規作成時のみ自動生成
   const router = useRouter()
 
@@ -104,6 +105,18 @@ export function ArticleForm({ article }: ArticleFormProps) {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'エクスポートに失敗しました')
     }
+  }
+
+  const handleThumbnailError = (error: string) => {
+    toast.error(error)
+  }
+
+  const handleContentImagesError = (error: string) => {
+    toast.error(error)
+  }
+
+  const handleContentImagesChange = () => {
+    // プレビュー表示なし、何もしない
   }
 
   const onSubmit = async (values: FormValues) => {
@@ -175,7 +188,10 @@ export function ArticleForm({ article }: ArticleFormProps) {
               thumbnail={thumbnail}
               onThumbnailChange={setThumbnail}
               onExport={handleExport}
-              onThumbnailError={(error) => toast.error(error)}
+              onThumbnailError={handleThumbnailError}
+              contentImages={[]}
+              onContentImagesChange={handleContentImagesChange}
+              onContentImagesError={handleContentImagesError}
             />
           </div>
         </form>
