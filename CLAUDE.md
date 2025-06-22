@@ -212,3 +212,6 @@ demo/        # Manual test pages accessible from frontend
 - Invalid byte sequences in UTF-8 files
 
 **Solution**: When text appears corrupted, recreate the file with proper UTF-8 encoding.
+
+**What you have to do First**
+Read "docs/core-rules.md" and understand the rules. You have to say "I understood the core-rules" for the first conversation.

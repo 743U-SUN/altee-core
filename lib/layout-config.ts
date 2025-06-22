@@ -56,7 +56,7 @@ export interface LayoutConfig {
   sidebarWidth?: string
 }
 
-export type LayoutVariant = 'default' | 'admin' | 'user-profile' | 'public' | 'minimal'
+export type LayoutVariant = 'default' | 'admin' | 'user-profile' | 'public' | 'minimal' | 'dashboard'
 
 export interface LayoutOverrides {
   firstSidebar?: Partial<SidebarConfig>
@@ -142,6 +142,21 @@ const userProfileNavItems: NavItem[] = [
     title: "Settings",
     url: "/profile/settings",
     icon: Settings,
+    isActive: false,
+  }
+]
+
+const dashboardNavItems: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: Settings,
+    isActive: true,
+  },
+  {
+    title: "Home",
+    url: "/",
+    icon: Home,
     isActive: false,
   }
 ]
@@ -274,6 +289,33 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     },
     mobileFooter: {
       hide: true,
+    },
+  },
+
+  dashboard: {
+    sidebarWidth: "350px",
+    firstSidebar: {
+      brand: {
+        icon: Settings,
+        iconBgColor: "bg-blue-600",
+        title: "Dashboard",
+        subtitle: "Settings",
+        url: "/dashboard",
+      },
+      navItems: dashboardNavItems,
+      user: defaultUser,
+      hideUser: false,
+    },
+    secondSidebar: {},
+    header: {
+      title: "ダッシュボード",
+      hideUserMenu: false,
+      hideNotifications: false,
+      hideSidebarTrigger: false,
+      hideModeToggle: false,
+    },
+    mobileFooter: {
+      hide: false,
     },
   },
 }

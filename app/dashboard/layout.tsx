@@ -6,7 +6,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <BaseLayout variant="default">
+    <BaseLayout variant="dashboard">
       {children}
     </BaseLayout>
   )

@@ -17,7 +17,7 @@ export async function GET(
     let bucket: string
     let key: string
     
-    if (containerName === 'article-thumbnails' || containerName === 'article-images' || containerName === 'system') {
+    if (containerName === 'article-thumbnails' || containerName === 'article-images' || containerName === 'system' || containerName === 'user-icons') {
       // 専用コンテナの場合
       bucket = containerName
       key = keyParts.join('/')

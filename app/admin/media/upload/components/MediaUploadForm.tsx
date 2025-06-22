@@ -23,6 +23,8 @@ const uploadSchema = z.object({
   tags: z.string().optional(),
 })
 
+type AdminMediaType = 'THUMBNAIL' | 'CONTENT' | 'SYSTEM'
+
 type UploadFormData = z.infer<typeof uploadSchema>
 
 export function MediaUploadForm() {
@@ -144,7 +146,7 @@ export function MediaUploadForm() {
               <Label>アップロード用途</Label>
               <RadioGroup
                 value={form.watch('uploadType')}
-                onValueChange={(value) => form.setValue('uploadType', value as MediaType)}
+                onValueChange={(value) => form.setValue('uploadType', value as AdminMediaType)}
                 className="flex flex-row space-x-6"
               >
                 <div className="flex items-center space-x-2">
