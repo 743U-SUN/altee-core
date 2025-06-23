@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+
+// 安定した空配列参照（無限ループ防止）
+const EMPTY_FILES: UploadedFile[] = []
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { ImageUploaderProps, UploadedFile } from '@/types/image-upload'
@@ -20,7 +23,7 @@ export function ImageUploader({
   className,
   disabled = false,
   folder = 'images',
-  value = [],
+  value = EMPTY_FILES,
   onUpload,
   onDelete,
   onError,
@@ -30,16 +33,14 @@ export function ImageUploader({
   const [errors, setErrors] = useState<string[]>([])
   const uploadedFilesRef = useRef<UploadedFile[]>(value)
 
-  // valueが変更された時に内部状態を更新
+  // valueが変更された時に内部状態を更新（参照比較で無限ループ防止）
   useEffect(() => {
-    setUploadedFiles(value)
-    uploadedFilesRef.current = value
+    // 参照が異なる場合のみ更新（shallow comparison）
+    if (uploadedFilesRef.current !== value) {
+      setUploadedFiles(value)
+      uploadedFilesRef.current = value
+    }
   }, [value])
-
-  // uploadedFilesが変更された時にrefも更新
-  useEffect(() => {
-    uploadedFilesRef.current = uploadedFiles
-  }, [uploadedFiles])
 
   // エラーを追加
   const addError = useCallback((error: string) => {

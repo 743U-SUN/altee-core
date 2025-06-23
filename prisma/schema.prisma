@@ -24,6 +24,7 @@ model User {
   articles               Article[]    // 記事の著者
   mediaFiles             MediaFile[]  // アップロードしたメディアファイル
   profile                UserProfile? // プロフィール情報
+  userLinks              UserLink[]   // ユーザーのSNSリンク
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -120,6 +121,7 @@ model MediaFile {
   uploader            User           @relation(fields: [uploaderId], references: [id])
   articles            Article[]      // サムネイル用リレーション
   profileImages       UserProfile[]  @relation("ProfileImage")
+  linkIcons           UserLink[]     @relation("LinkIcon")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   
@@ -228,6 +230,7 @@ enum MediaType {
   SYSTEM     // システム専用画像
   PROFILE    // プロフィール画像
   BACKGROUND // 背景画像
+  LINK_ICON  // リンクアイコン
 }
 
 model UserProfile {
@@ -244,4 +247,44 @@ model UserProfile {
 
   @@index([userId])
   @@map("user_profiles")
+}
+
+model LinkType {
+  id           String @id @default(cuid())
+  name         String @unique // "youtube", "instagram", "custom"
+  displayName  String // "YouTube", "Instagram", "カスタムリンク"
+  defaultIcon  String? // デフォルトアイコンのパス
+  urlPattern   String? // バリデーション用正規表現
+  isCustom     Boolean @default(false) // カスタムリンクかどうか
+  isActive     Boolean @default(true) // 利用可能かどうか
+  sortOrder    Int @default(0) // 管理画面での表示順序
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  userLinks    UserLink[]
+  
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("link_types")
+}
+
+model UserLink {
+  id           String @id @default(cuid())
+  userId       String
+  linkTypeId   String
+  url          String
+  customLabel  String? // カスタムリンクのラベル（最大10文字）
+  customIconId String? // ユーザーアップロードアイコン
+  sortOrder    Int @default(0) // ユーザー内での表示順序
+  isVisible    Boolean @default(true) // 表示/非表示
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkType     LinkType @relation(fields: [linkTypeId], references: [id])
+  customIcon   MediaFile? @relation("LinkIcon", fields: [customIconId], references: [id])
+  
+  @@index([userId])
+  @@index([sortOrder])
+  @@map("user_links")
 }

@@ -18,7 +18,7 @@ const settingsItems = [
   {
     title: "SNSリンク設定",
     description: "ソーシャルメディアのリンクを管理",
-    href: "/dashboard/sns",
+    href: "/dashboard/links",
     icon: Share2,
   },
   {

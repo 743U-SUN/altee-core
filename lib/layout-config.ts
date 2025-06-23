@@ -1,4 +1,4 @@
-import { Home, Users, Tag, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen } from "lucide-react"
+import { Home, Users, Link, Tag, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen } from "lucide-react"
 
 // 型定義
 export interface NavItem {
@@ -111,6 +111,12 @@ const adminNavItems: NavItem[] = [
     icon: Users,
     isActive: false,
   },
+  {
+    title: "Links",
+    url: "/admin/links",
+    icon: Link,
+    isActive: false,
+  },  
   {
     title: "Article",
     url: "/admin/articles",
