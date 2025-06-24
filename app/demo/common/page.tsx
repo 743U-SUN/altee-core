@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { NestedSortableList } from './components';
+import { NestedSortableList } from '@/components/sortable-list';
 import type { 
   SortableParentItemType, 
   SortableChildItemType, 
   NestedSortableListConfig, 
   EditableField 
-} from './components';
+} from '@/components/sortable-list';
 
 // デモ用のデータ型
 interface DemoCategory extends SortableParentItemType {

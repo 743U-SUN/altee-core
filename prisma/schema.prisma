@@ -25,6 +25,7 @@ model User {
   mediaFiles             MediaFile[]  // アップロードしたメディアファイル
   profile                UserProfile? // プロフィール情報
   userLinks              UserLink[]   // ユーザーのSNSリンク
+  faqCategories          FaqCategory[] // FAQカテゴリー
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -307,4 +308,39 @@ model UserLink {
   @@index([userId])
   @@index([sortOrder])
   @@map("user_links")
+}
+
+model FaqCategory {
+  id          String       @id @default(cuid())
+  userId      String       // 所有者のユーザーID
+  name        String       // カテゴリ名（最大30文字）
+  description String?      // カテゴリ説明（最大200文字、オプション）
+  sortOrder   Int          @default(0) // 表示順序
+  isVisible   Boolean      @default(true) // 表示/非表示
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions   FaqQuestion[]
+  
+  @@index([userId])
+  @@index([sortOrder])
+  @@map("faq_categories")
+}
+
+model FaqQuestion {
+  id           String      @id @default(cuid())
+  categoryId   String      // 所属カテゴリID
+  question     String      // 質問文（最大30文字）
+  answer       String      // 回答文（最大1000文字）
+  sortOrder    Int         @default(0) // カテゴリ内での表示順序
+  isVisible    Boolean     @default(true) // 表示/非表示
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  
+  category     FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([categoryId])
+  @@index([sortOrder])
+  @@map("faq_questions")
 }
