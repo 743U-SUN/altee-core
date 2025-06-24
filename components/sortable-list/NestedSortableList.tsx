@@ -19,19 +19,19 @@ import {
 } from '@dnd-kit/sortable';
 
 import { 
-  SortableParentItem, 
+  SortableParentItem as SortableParentItemType, 
   SortableChildItem, 
   NestedSortableListConfig, 
   ItemState 
 } from './types';
-import { SortableParentItem as SortableParentItemComponent } from './SortableParentItem';
+import { SortableParentItem } from './SortableParentItem';
 
-interface NestedSortableListProps<TParent extends SortableParentItem, TChild extends SortableChildItem> {
+interface NestedSortableListProps<TParent extends SortableParentItemType, TChild extends SortableChildItem> {
   config: NestedSortableListConfig<TParent, TChild>;
   loading?: boolean;
 }
 
-export function NestedSortableList<TParent extends SortableParentItem, TChild extends SortableChildItem>({ 
+function NestedSortableListComponent<TParent extends SortableParentItemType, TChild extends SortableChildItem>({ 
   config, 
   loading = false 
 }: NestedSortableListProps<TParent, TChild>) {
@@ -40,6 +40,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
     isDeleting: {},
     isSaving: {},
     tempValues: {},
+    accordionOpen: {},
   });
   const [childStates, setChildStates] = useState<{ [parentId: string]: ItemState }>({});
   const [isAddingParent, setIsAddingParent] = useState(false);
@@ -87,6 +88,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
           isDeleting: {},
           isSaving: {},
           tempValues: {},
+          accordionOpen: {},
         };
         
         childItems.forEach(childItem => {
@@ -95,13 +97,26 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
             newChildStates[parentItem.id].tempValues[childItem.id][field.key] = (childItem as Record<string, unknown>)[field.key] as string || '';
           });
         });
+      } else {
+        // 既存の状態を保持しつつ、新しい子アイテムの tempValues のみ初期化
+        childItems.forEach(childItem => {
+          if (!childStates[parentItem.id].tempValues[childItem.id]) {
+            if (!newChildStates[parentItem.id]) {
+              newChildStates[parentItem.id] = { ...childStates[parentItem.id] };
+            }
+            newChildStates[parentItem.id].tempValues[childItem.id] = {};
+            config.childConfig.editableFields.forEach(field => {
+              newChildStates[parentItem.id].tempValues[childItem.id][field.key] = (childItem as Record<string, unknown>)[field.key] as string || '';
+            });
+          }
+        });
       }
     });
     
     if (Object.keys(newChildStates).length > 0) {
       setChildStates(prev => ({ ...prev, ...newChildStates }));
     }
-  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [config.parentItems, config.childConfig.editableFields, childStates, config]);
 
   // 親アイテムを追加
   const handleAddParentItem = async () => {
@@ -258,6 +273,20 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
     }));
   };
 
+  // アコーディオンの開閉を切り替え
+  const toggleAccordion = (parentId: string) => {
+    setChildStates(prev => ({
+      ...prev,
+      [parentId]: {
+        ...prev[parentId],
+        accordionOpen: {
+          ...prev[parentId]?.accordionOpen,
+          [parentId]: !prev[parentId]?.accordionOpen?.[parentId]
+        }
+      }
+    }));
+  };
+
   if (loading) {
     return (
       <div className="py-4 flex items-center justify-center">
@@ -282,7 +311,7 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
         >
           <div className="space-y-4">
             {sortedParentItems.map((parentItem, index) => (
-              <SortableParentItemComponent
+              <SortableParentItem
                 key={parentItem.id}
                 parentItem={parentItem}
                 index={index}
@@ -293,12 +322,14 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
                   isDeleting: {},
                   isSaving: {},
                   tempValues: {},
+                  accordionOpen: {},
                 }}
                 onEditParent={handleEditParentItem}
                 onDeleteParent={handleDeleteParentItem}
                 onToggleParentEdit={toggleParentEdit}
                 onUpdateParentTempValue={updateParentTempValue}
                 onUpdateChildState={updateChildState}
+                onToggleAccordion={toggleAccordion}
               />
             ))}
           </div>
@@ -337,3 +368,8 @@ export function NestedSortableList<TParent extends SortableParentItem, TChild ex
     </div>
   );
 }
+
+// React.memoでメモ化して不要な再レンダリングを防ぐ
+export const NestedSortableList = React.memo(NestedSortableListComponent) as <TParent extends SortableParentItemType, TChild extends SortableChildItem>(
+  props: NestedSortableListProps<TParent, TChild>
+) => React.ReactElement;

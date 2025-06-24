@@ -29,9 +29,10 @@ interface SortableParentItemProps<TParent extends SortableParentItemType, TChild
   onToggleParentEdit: (itemId: string) => void;
   onUpdateParentTempValue: (itemId: string, fieldKey: string, value: string) => void;
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
+  onToggleAccordion: (parentId: string) => void;
 }
 
-export function SortableParentItem<TParent extends SortableParentItemType, TChild extends SortableChildItem>({
+function SortableParentItemComponent<TParent extends SortableParentItemType, TChild extends SortableChildItem>({
   parentItem,
   index,
   config,
@@ -42,6 +43,7 @@ export function SortableParentItem<TParent extends SortableParentItemType, TChil
   onToggleParentEdit,
   onUpdateParentTempValue,
   onUpdateChildState,
+  onToggleAccordion,
 }: SortableParentItemProps<TParent, TChild>) {
   const {
     attributes,
@@ -249,6 +251,12 @@ export function SortableParentItem<TParent extends SortableParentItemType, TChil
         <Accordion 
           type="single" 
           collapsible 
+          value={childState.accordionOpen?.[parentItem.id] ? "children" : ""}
+          onValueChange={(value) => {
+            if (value !== (childState.accordionOpen?.[parentItem.id] ? "children" : "")) {
+              onToggleAccordion(parentItem.id);
+            }
+          }}
           className="w-full border border-gray-200 rounded-sm px-0 py-2"
         >
           <AccordionItem value="children" className="border-0">
@@ -277,3 +285,8 @@ export function SortableParentItem<TParent extends SortableParentItemType, TChil
     </div>
   );
 }
+
+// React.memoでメモ化して不要な再レンダリングを防ぐ
+export const SortableParentItem = React.memo(SortableParentItemComponent) as <TParent extends SortableParentItemType, TChild extends SortableChildItem>(
+  props: SortableParentItemProps<TParent, TChild>
+) => React.ReactElement;

@@ -92,4 +92,5 @@ export interface ItemState {
   isDeleting: { [itemId: string]: boolean };
   isSaving: { [itemId: string]: boolean };
   tempValues: { [itemId: string]: { [fieldKey: string]: string } };
+  accordionOpen: { [itemId: string]: boolean };
 }

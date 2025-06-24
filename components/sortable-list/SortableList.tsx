@@ -35,6 +35,7 @@ export function SortableList<T extends SortableItemType>({
     isDeleting: {},
     isSaving: {},
     tempValues: {},
+    accordionOpen: {},
   });
   const [isAdding, setIsAdding] = useState(false);
 
