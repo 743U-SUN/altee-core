@@ -253,7 +253,6 @@ model LinkType {
   id           String @id @default(cuid())
   name         String @unique // "youtube", "instagram", "custom"
   displayName  String // "YouTube", "Instagram", "カスタムリンク"
-  defaultIcon  String? // デフォルトアイコンのパス
   urlPattern   String? // バリデーション用正規表現
   isCustom     Boolean @default(false) // カスタムリンクかどうか
   isActive     Boolean @default(true) // 利用可能かどうか
@@ -262,27 +261,48 @@ model LinkType {
   updatedAt    DateTime @updatedAt
   
   userLinks    UserLink[]
+  icons        LinkTypeIcon[] // 複数アイコンオプション
   
   @@index([isActive])
   @@index([sortOrder])
   @@map("link_types")
 }
 
-model UserLink {
+model LinkTypeIcon {
   id           String @id @default(cuid())
-  userId       String
   linkTypeId   String
-  url          String
-  customLabel  String? // カスタムリンクのラベル（最大10文字）
-  customIconId String? // ユーザーアップロードアイコン
-  sortOrder    Int @default(0) // ユーザー内での表示順序
-  isVisible    Boolean @default(true) // 表示/非表示
+  iconKey      String // ストレージキー（例: "admin-links/2025/01/icon.svg"）
+  iconName     String // アイコンの名前（例: "公式ロゴ", "シンプル版", "ダーク版"）
+  isDefault    Boolean @default(false) // デフォルトアイコンかどうか
+  sortOrder    Int @default(0) // 表示順序
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
-  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  linkType     LinkType @relation(fields: [linkTypeId], references: [id])
-  customIcon   MediaFile? @relation("LinkIcon", fields: [customIconId], references: [id])
+  linkType     LinkType @relation(fields: [linkTypeId], references: [id], onDelete: Cascade)
+  userLinks    UserLink[] // このアイコンを選択したユーザーリンク
+  
+  @@index([linkTypeId])
+  @@index([sortOrder])
+  @@map("link_type_icons")
+}
+
+model UserLink {
+  id                     String @id @default(cuid())
+  userId                 String
+  linkTypeId             String
+  url                    String
+  customLabel            String? // カスタムリンクのラベル（最大10文字）
+  customIconId           String? // ユーザーアップロードアイコン
+  selectedLinkTypeIconId String? // 選択されたプリセットアイコン
+  sortOrder              Int @default(0) // ユーザー内での表示順序
+  isVisible              Boolean @default(true) // 表示/非表示
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  
+  user                   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkType               LinkType @relation(fields: [linkTypeId], references: [id])
+  customIcon             MediaFile? @relation("LinkIcon", fields: [customIconId], references: [id])
+  selectedLinkTypeIcon   LinkTypeIcon? @relation(fields: [selectedLinkTypeIconId], references: [id])
   
   @@index([userId])
   @@index([sortOrder])

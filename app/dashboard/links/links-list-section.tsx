@@ -1,19 +1,12 @@
 "use client"
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import type { UserLink, LinkType } from "@/types/link-type"
 
 // モーダルコンポーネントの遅延読み込み
 const AddLinkModal = dynamic(() => import("./add-link-modal").then(mod => ({ default: mod.AddLinkModal })), {
   loading: () => <div className="h-10 w-24 bg-muted animate-pulse rounded-md" />,
-  ssr: false
-})
-
-const EditLinkModal = dynamic(() => import("./edit-link-modal").then(mod => ({ default: mod.EditLinkModal })), {
-  loading: () => <div className="h-10 w-20 bg-muted animate-pulse rounded-md" />,
   ssr: false
 })
 
@@ -43,69 +36,12 @@ const DragDropLinkList = dynamic(() => import("./components/DragDropLinkList").t
   ssr: false
 })
 
-// 型定義（Prismaクエリの結果と一致）
-interface UserLink {
-  id: string
-  userId: string
-  linkTypeId: string
-  url: string
-  customLabel: string | null
-  customIconId: string | null
-  sortOrder: number
-  isVisible: boolean
-  createdAt: Date
-  updatedAt: Date
-  linkType: {
-    id: string
-    name: string
-    displayName: string
-    defaultIcon: string | null
-    urlPattern: string | null
-    isCustom: boolean
-    isActive: boolean
-    sortOrder: number
-    createdAt: Date
-    updatedAt: Date
-  }
-  customIcon: {
-    id: string
-    storageKey: string
-    containerName: string
-    originalName: string
-    fileName: string
-    fileSize: number
-    mimeType: string
-    uploadType: string
-    uploaderId: string
-    createdAt: Date
-    updatedAt: Date
-    deletedAt: Date | null
-    deletedBy: string | null
-    scheduledDeletionAt: Date | null
-    description: string | null
-    altText: string | null
-    tags: unknown // JsonValue
-  } | null
-}
-
-interface LinkType {
-  id: string
-  name: string
-  displayName: string
-  defaultIcon?: string | null
-  isCustom: boolean
-  urlPattern?: string | null
-}
-
 interface LinksListSectionProps {
   initialUserLinks: UserLink[]
   initialLinkTypes: LinkType[]
 }
 
 export function LinksListSection({ initialUserLinks, initialLinkTypes }: LinksListSectionProps) {
-  const [editingLink, setEditingLink] = useState<UserLink | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-
   // データ管理（シンプル化）
   const [userLinks, setUserLinks] = useState(initialUserLinks)
   const [linkTypes] = useState(initialLinkTypes)
@@ -121,18 +57,7 @@ export function LinksListSection({ initialUserLinks, initialLinkTypes }: LinksLi
   const handleLinkAdded = (newLink: UserLink) => {
     const updatedLinks = [...userLinks, newLink].sort((a, b) => a.sortOrder - b.sortOrder)
     mutateUserLinks(updatedLinks)
-    setShowAddModal(false)
   }
-
-  const handleLinkUpdated = (updatedLink: UserLink) => {
-    const updatedLinks = userLinks.map(link => 
-      link.id === updatedLink.id ? updatedLink : link
-    )
-    mutateUserLinks(updatedLinks)
-    setEditingLink(null)
-  }
-
-  const maxLinksReached = userLinks.length >= 20
 
   return (
     <div className="space-y-6">
@@ -143,13 +68,10 @@ export function LinksListSection({ initialUserLinks, initialLinkTypes }: LinksLi
             SNSアカウントやWebサイトのリンクを設定できます（最大20個）
           </p>
         </div>
-        <Button 
-          onClick={() => setShowAddModal(true)}
-          disabled={maxLinksReached}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {maxLinksReached ? "上限20個に達しました" : "リンクを追加"}
-        </Button>
+        <AddLinkModal
+          linkTypes={linkTypes}
+          onLinkAdded={handleLinkAdded}
+        />
       </div>
 
       {userLinks.length === 0 ? (
@@ -160,29 +82,13 @@ export function LinksListSection({ initialUserLinks, initialLinkTypes }: LinksLi
       ) : (
         <DragDropLinkList
           userLinks={userLinks}
+          linkTypes={linkTypes}
           onLinksChange={handleLinksChange}
-          onEditLink={setEditingLink}
+          onEditLink={() => {}}
         />
       )}
 
-      {/* 追加モーダル */}
-      {showAddModal && (
-        <AddLinkModal
-          linkTypes={linkTypes}
-          onLinkAdded={handleLinkAdded as any}
-          onCancel={() => setShowAddModal(false)}
-        />
-      )}
 
-      {/* 編集モーダル */}
-      {editingLink && (
-        <EditLinkModal
-          link={editingLink}
-          linkTypes={linkTypes}
-          onLinkUpdated={handleLinkUpdated as any}
-          onCancel={() => setEditingLink(null)}
-        />
-      )}
     </div>
   )
 }

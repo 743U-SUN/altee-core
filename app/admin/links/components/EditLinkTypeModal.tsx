@@ -13,24 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { toast } from "sonner"
 import { updateLinkType } from "@/app/actions/link-actions"
-import { IconUploadSection } from "./IconUploadSection"
-
-// 型定義
-interface LinkType {
-  id: string
-  name: string
-  displayName: string
-  defaultIcon?: string | null
-  urlPattern?: string | null
-  isCustom: boolean
-  isActive: boolean
-  sortOrder: number
-  createdAt: Date
-  updatedAt: Date
-  _count?: {
-    userLinks: number
-  }
-}
+import { MultipleIconUploadSection } from "./MultipleIconUploadSection"
+import type { LinkType } from "@/types/link-type"
 
 interface EditLinkTypeModalProps {
   linkType: LinkType
@@ -46,7 +30,6 @@ const editLinkTypeFormSchema = z.object({
   urlPattern: z.string()
     .max(200, "URLパターンは200文字以内で入力してください")
     .optional(),
-  defaultIcon: z.string().optional(),
   isActive: z.boolean(),
 })
 
@@ -60,7 +43,6 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
     defaultValues: {
       displayName: linkType.displayName,
       urlPattern: linkType.urlPattern || "",
-      defaultIcon: linkType.defaultIcon || "",
       isActive: linkType.isActive,
     },
   })
@@ -71,7 +53,6 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
       const result = await updateLinkType(linkType.id, {
         displayName: data.displayName,
         urlPattern: data.urlPattern || undefined,
-        defaultIcon: data.defaultIcon || undefined,
         isActive: data.isActive,
       })
 
@@ -91,7 +72,7 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
 
   return (
     <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>リンクタイプを編集</DialogTitle>
         </DialogHeader>
@@ -144,14 +125,13 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
               )}
             />
 
-            {/* アイコンアップロード・編集機能 */}
-            <IconUploadSection 
-              currentIcon={linkType.defaultIcon}
-              onIconUploaded={(iconPath) => {
-                form.setValue('defaultIcon', iconPath)
-              }}
-              onIconRemoved={() => {
-                form.setValue('defaultIcon', '')
+            {/* 複数アイコン管理機能 */}
+            <MultipleIconUploadSection
+              linkTypeId={linkType.id}
+              initialIcons={linkType.icons}
+              onIconsChanged={(icons) => {
+                // アイコンが変更された場合の処理（必要に応じて）
+                console.log("Icons updated:", icons)
               }}
             />
 

@@ -1,10 +1,19 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { GripVertical, ExternalLink, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
+import type { UserLink, LinkType } from "@/types/link-type"
+
+// EditLinkModalの遅延読み込み
+const EditLinkModal = dynamic(() => import("../edit-link-modal").then(mod => ({ default: mod.EditLinkModal })), {
+  loading: () => <div className="h-8 w-16 bg-muted animate-pulse rounded-md" />,
+  ssr: false
+})
+
 import {
   DndContext,
   DragEndEvent,
@@ -24,58 +33,14 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { deleteUserLink, reorderUserLinks, updateUserLink } from "@/app/actions/link-actions"
 
-// 型定義（Prismaクエリの結果と一致）
-interface UserLink {
-  id: string
-  userId: string
-  linkTypeId: string
-  url: string
-  customLabel: string | null
-  customIconId: string | null
-  sortOrder: number
-  isVisible: boolean
-  createdAt: Date
-  updatedAt: Date
-  linkType: {
-    id: string
-    name: string
-    displayName: string
-    defaultIcon: string | null
-    urlPattern: string | null
-    isCustom: boolean
-    isActive: boolean
-    sortOrder: number
-    createdAt: Date
-    updatedAt: Date
-  }
-  customIcon: {
-    id: string
-    storageKey: string
-    containerName: string
-    originalName: string
-    fileName: string
-    fileSize: number
-    mimeType: string
-    uploadType: string
-    uploaderId: string
-    createdAt: Date
-    updatedAt: Date
-    deletedAt: Date | null
-    deletedBy: string | null
-    scheduledDeletionAt: Date | null
-    description: string | null
-    altText: string | null
-    tags: unknown // JsonValue
-  } | null
-}
-
 interface DragDropLinkListProps {
   userLinks: UserLink[]
+  linkTypes: LinkType[]
   onLinksChange: (links: UserLink[]) => void
   onEditLink: (link: UserLink) => void
 }
 
-export function DragDropLinkList({ userLinks, onLinksChange, onEditLink }: DragDropLinkListProps) {
+export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLink }: DragDropLinkListProps) {
   const [activeItem, setActiveItem] = useState<UserLink | null>(null)
 
   // DnD センサー設定（モバイル対応）
@@ -152,11 +117,24 @@ export function DragDropLinkList({ userLinks, onLinksChange, onEditLink }: DragD
 
   const getIconSrc = (link: UserLink) => {
     if (link.customIcon) {
-      return `/api/files/user-links/${link.customIcon.storageKey}`
+      return `/api/files/${link.customIcon.storageKey}`
     }
-    if (link.linkType.defaultIcon) {
-      return `/api/files/admin-links/${link.linkType.defaultIcon}`
+    
+    // 選択されたプリセットアイコンがある場合はそれを表示
+    if (link.selectedLinkTypeIcon) {
+      return `/api/files/${link.selectedLinkTypeIcon.iconKey}`
     }
+    
+    // 選択されたアイコンがない場合はデフォルトアイコンを表示
+    if (link.linkType.icons && link.linkType.icons.length > 0) {
+      const defaultIcon = link.linkType.icons.find(icon => icon.isDefault)
+      if (defaultIcon) {
+        return `/api/files/${defaultIcon.iconKey}`
+      }
+      // デフォルトがない場合は最初のアイコンを使用
+      return `/api/files/${link.linkType.icons[0].iconKey}`
+    }
+    
     return null
   }
 
@@ -179,6 +157,7 @@ export function DragDropLinkList({ userLinks, onLinksChange, onEditLink }: DragD
             <SortableLinkItem
               key={link.id}
               link={link}
+              linkTypes={linkTypes}
               onEdit={() => onEditLink(link)}
               onVisibilityToggle={() => handleVisibilityToggle(link)}
               onDelete={() => handleDeleteLink(link)}
@@ -206,6 +185,7 @@ export function DragDropLinkList({ userLinks, onLinksChange, onEditLink }: DragD
 // ソート可能なリンクアイテム
 function SortableLinkItem({ 
   link, 
+  linkTypes,
   onEdit, 
   onVisibilityToggle, 
   onDelete, 
@@ -213,6 +193,7 @@ function SortableLinkItem({
   getDisplayName 
 }: {
   link: UserLink
+  linkTypes: LinkType[]
   onEdit: () => void
   onVisibilityToggle: () => void
   onDelete: () => void
@@ -237,6 +218,7 @@ function SortableLinkItem({
     <div ref={setNodeRef} style={style}>
       <LinkItemCard
         link={link}
+        linkTypes={linkTypes}
         getIconSrc={getIconSrc}
         getDisplayName={getDisplayName}
         isDragging={isDragging}
@@ -252,6 +234,7 @@ function SortableLinkItem({
 // リンクアイテムカード
 function LinkItemCard({
   link,
+  linkTypes,
   getIconSrc,
   getDisplayName,
   isDragging = false,
@@ -261,6 +244,7 @@ function LinkItemCard({
   onDelete
 }: {
   link: UserLink
+  linkTypes?: LinkType[]
   getIconSrc: (link: UserLink) => string | null
   getDisplayName: (link: UserLink) => string
   isDragging?: boolean
@@ -319,13 +303,15 @@ function LinkItemCard({
             >
               <ExternalLink className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-            >
-              編集
-            </Button>
+            {linkTypes && (
+              <EditLinkModal
+                link={link}
+                linkTypes={linkTypes}
+                onLinkUpdated={() => {
+                  onEdit?.()
+                }}
+              />
+            )}
             <Button
               variant="ghost"
               size="sm"

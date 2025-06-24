@@ -13,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import { createLinkType } from "@/app/actions/link-actions"
-import { IconUploadSection } from "./IconUploadSection"
 
 // フォームスキーマ
 const linkTypeFormSchema = z.object({
@@ -26,9 +25,6 @@ const linkTypeFormSchema = z.object({
     .max(50, "表示名は50文字以内で入力してください"),
   urlPattern: z.string()
     .max(200, "URLパターンは200文字以内で入力してください")
-    .optional()
-    .or(z.literal("")),
-  defaultIcon: z.string()
     .optional()
     .or(z.literal("")),
   isCustom: z.boolean()
@@ -51,7 +47,6 @@ export function AddLinkTypeModal({ onLinkTypeAdded }: AddLinkTypeModalProps = {}
       name: "",
       displayName: "",
       urlPattern: "",
-      defaultIcon: "",
       isCustom: false,
       isActive: true,
     },
@@ -159,13 +154,14 @@ export function AddLinkTypeModal({ onLinkTypeAdded }: AddLinkTypeModalProps = {}
               )}
             />
 
-            {/* アイコンアップロード機能 */}
-            <IconUploadSection 
-              onIconUploaded={(iconPath) => {
-                // アイコンパスを一時保存
-                form.setValue('defaultIcon', iconPath)
-              }}
-            />
+            {/* アイコン管理の説明 */}
+            <div className="rounded-lg border p-4 bg-muted/50">
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p className="font-medium">📌 アイコン管理について</p>
+                <p>リンクタイプを作成した後、編集画面で複数のアイコンを追加・管理できます。</p>
+                <p>デフォルトアイコン、カスタムアイコンなど様々なオプションを設定可能です。</p>
+              </div>
+            </div>
 
             <div className="space-y-4">
               <FormField

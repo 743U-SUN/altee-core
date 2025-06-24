@@ -13,6 +13,9 @@ export async function GET() {
 
     const linkTypes = await prisma.linkType.findMany({
       include: {
+        icons: {
+          orderBy: { sortOrder: 'asc' }
+        },
         _count: {
           select: {
             userLinks: true

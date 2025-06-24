@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -40,23 +40,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import useSWR from "swr"
 
-// 型定義
-interface LinkType {
-  id: string
-  name: string
-  displayName: string
-  defaultIcon?: string | null
-  urlPattern?: string | null
-  isCustom: boolean
-  isActive: boolean
-  sortOrder: number
-  createdAt: Date
-  updatedAt: Date
-  _count?: {
-    userLinks: number
-  }
-}
+import type { LinkType } from "@/types/link-type"
 
 // ソート可能な行コンポーネント
 function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
@@ -81,9 +67,16 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
   }
 
   const getIconUrl = () => {
-    if (linkType.defaultIcon) {
-      return `https://object-storage.c3j1.conoha.io/v1/AUTH_0bf5238d06034983a552682e781f9e25/${linkType.defaultIcon}`
+    if (linkType.icons && linkType.icons.length > 0) {
+      // デフォルトアイコンを探す
+      const defaultIcon = linkType.icons.find(icon => icon.isDefault)
+      if (defaultIcon) {
+        return `/api/files/${defaultIcon.iconKey}`
+      }
+      // デフォルトがない場合は最初のアイコンを使用
+      return `/api/files/${linkType.icons[0].iconKey}`
     }
+    
     return null
   }
 
@@ -108,7 +101,6 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
                 width={24}
                 height={24}
                 className="object-contain"
-                unoptimized
               />
             ) : (
               <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
@@ -173,9 +165,14 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
   )
 }
 
+// SWR fetcher関数
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error('Failed to fetch')
+  return response.json()
+}
+
 export function LinkTypeTable() {
-  const [linkTypes, setLinkTypes] = useState<LinkType[]>([])
-  const [loading, setLoading] = useState(true)
   const [editingLinkType, setEditingLinkType] = useState<LinkType | null>(null)
 
   // dnd-kit sensors設定（モバイル対応）
@@ -189,42 +186,43 @@ export function LinkTypeTable() {
     })
   )
 
-  // データ取得（useCallbackでメモ化して無限ループを防止）
-  const fetchLinkTypes = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/admin/link-types')
-      if (!response.ok) throw new Error('Failed to fetch')
-      
-      const data = await response.json()
-      setLinkTypes(data)
-    } catch (error) {
-      console.error('LinkType取得エラー:', error)
-      toast.error('リンクタイプの取得に失敗しました')
-    } finally {
-      setLoading(false)
+  // useSWRでデータ取得
+  const { data: linkTypes = [], isLoading, mutate } = useSWR<LinkType[]>(
+    '/api/admin/link-types',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      onError: () => {
+        toast.error('リンクタイプの取得に失敗しました')
+      }
     }
-  }, [])
-
-  useEffect(() => {
-    fetchLinkTypes()
-  }, [fetchLinkTypes])
+  )
 
   // アクティブ状態の切り替え
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
+      // 楽観的更新
+      await mutate(
+        linkTypes.map(lt => 
+          lt.id === id ? { ...lt, isActive } : lt
+        ),
+        false
+      )
+
       const result = await updateLinkType(id, { isActive })
       
       if (result.success) {
-        setLinkTypes(linkTypes.map(lt => 
-          lt.id === id ? { ...lt, isActive } : lt
-        ))
         toast.success(isActive ? "リンクタイプを有効にしました" : "リンクタイプを無効にしました")
+        // 再検証して最新データを取得
+        mutate()
       } else {
         toast.error(result.error || "更新に失敗しました")
+        // エラー時は元に戻す
+        mutate()
       }
     } catch {
       toast.error("更新に失敗しました")
+      mutate()
     }
   }
 
@@ -233,16 +231,24 @@ export function LinkTypeTable() {
     if (!confirm("このリンクタイプを削除しますか？")) return
 
     try {
+      // 楽観的更新
+      await mutate(
+        linkTypes.filter(lt => lt.id !== id),
+        false
+      )
+
       const result = await deleteLinkType(id)
       
       if (result.success) {
-        setLinkTypes(linkTypes.filter(lt => lt.id !== id))
         toast.success("リンクタイプを削除しました")
+        mutate()
       } else {
         toast.error(result.error || "削除に失敗しました")
+        mutate()
       }
     } catch {
       toast.error("削除に失敗しました")
+      mutate()
     }
   }
 
@@ -262,7 +268,9 @@ export function LinkTypeTable() {
     }
 
     const newLinkTypes = arrayMove(linkTypes, oldIndex, newIndex)
-    setLinkTypes(newLinkTypes)
+    
+    // 楽観的更新
+    await mutate(newLinkTypes, false)
 
     // サーバーに並び順を保存
     try {
@@ -272,23 +280,27 @@ export function LinkTypeTable() {
       
       await Promise.all(updatePromises)
       toast.success("並び順を更新しました")
+      mutate()
     } catch {
       // エラーの場合は元に戻す
-      setLinkTypes(linkTypes)
       toast.error("並び替えに失敗しました")
+      mutate()
     }
   }
 
-  // 編集完了（fetchLinkTypes削除で無限ループ修正）
+  // 編集完了
   const handleLinkTypeUpdated = (updatedLinkType: LinkType) => {
-    setLinkTypes(linkTypes.map(lt => 
-      lt.id === updatedLinkType.id ? updatedLinkType : lt
-    ))
+    mutate(
+      linkTypes.map(lt => 
+        lt.id === updatedLinkType.id ? updatedLinkType : lt
+      ),
+      false
+    )
     setEditingLinkType(null)
-    // fetchLinkTypes() を削除 - 状態は既に更新済み
+    mutate()
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -302,7 +314,10 @@ export function LinkTypeTable() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>リンクタイプ一覧</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>リンクタイプ一覧</CardTitle>
+            <AddLinkTypeModal onLinkTypeAdded={() => mutate()} />
+          </div>
         </CardHeader>
         <CardContent>
           {linkTypes.length === 0 ? (
@@ -354,8 +369,6 @@ export function LinkTypeTable() {
           onCancel={() => setEditingLinkType(null)}
         />
       )}
-
-      <AddLinkTypeModal onLinkTypeAdded={fetchLinkTypes} />
     </>
   )
 }
