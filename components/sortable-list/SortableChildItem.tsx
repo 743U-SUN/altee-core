@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,7 +28,7 @@ interface SortableChildItemProps<TParent extends SortableParentItem, TChild exte
   onUpdateTempValue: (itemId: string, fieldKey: string, value: string) => void;
 }
 
-export function SortableChildItem<TParent extends SortableParentItem, TChild extends SortableChildItemType>({
+function SortableChildItemComponent<TParent extends SortableParentItem, TChild extends SortableChildItemType>({
   childItem,
   index,
   config,
@@ -57,38 +57,67 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
   const isSaving = childState.isSaving[childItem.id] || false;
   const isDeleting = childState.isDeleting[childItem.id] || false;
   const tempValues = childState.tempValues[childItem.id] || {};
+  
+  // フィールドエラー状態管理
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // バリデーション
+  // 単一フィールドのバリデーション
+  const validateField = useCallback((fieldKey: string, value: string): string | null => {
+    const field = config.childConfig.editableFields.find(f => f.key === fieldKey);
+    if (!field) return null;
+
+    // 必須チェック
+    if (!value.trim()) {
+      return `${field.label}は必須です`;
+    }
+
+    // 文字数チェック
+    if (field.maxLength && value.length > field.maxLength) {
+      return `${field.label}は${field.maxLength}文字以内で入力してください`;
+    }
+
+    // カスタムバリデーション
+    if (field.validation) {
+      return field.validation(value);
+    }
+
+    return null;
+  }, [config.childConfig.editableFields]);
+
+  // フィールド値変更時のハンドラー（バリデーション付き）
+  const handleFieldChange = useCallback((fieldKey: string, value: string) => {
+    // 値を更新
+    onUpdateTempValue(childItem.id, fieldKey, value);
+    
+    // リアルタイムバリデーション
+    const error = validateField(fieldKey, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldKey]: error || ''
+    }));
+  }, [childItem.id, onUpdateTempValue, validateField]);
+
+  // 全フィールドバリデーション
   const validateAndSave = async () => {
     const updates: Partial<TChild> = {};
+    const newFieldErrors: Record<string, string> = {};
     let hasError = false;
 
+    // 全フィールドをバリデーション
     for (const field of config.childConfig.editableFields) {
       const value = tempValues[field.key]?.trim() || '';
+      const error = validateField(field.key, value);
       
-      // 必須チェック
-      if (!value) {
+      if (error) {
+        newFieldErrors[field.key] = error;
         hasError = true;
-        break;
+      } else {
+        (updates as Record<string, string>)[field.key] = value;
       }
-
-      // 文字数チェック
-      if (field.maxLength && value.length > field.maxLength) {
-        hasError = true;
-        break;
-      }
-
-      // カスタムバリデーション
-      if (field.validation) {
-        const error = field.validation(value);
-        if (error) {
-          hasError = true;
-          break;
-        }
-      }
-
-      (updates as Record<string, string>)[field.key] = value;
     }
+
+    // エラー状態を更新
+    setFieldErrors(newFieldErrors);
 
     if (!hasError) {
       await onEdit(childItem.id, updates);
@@ -104,6 +133,8 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
       config.childConfig.editableFields.forEach(field => {
         onUpdateTempValue(childItem.id, field.key, (childItem as Record<string, unknown>)[field.key] as string || '');
       });
+      // エラー状態もリセット
+      setFieldErrors({});
       onToggleEdit(childItem.id);
     }
   };
@@ -206,28 +237,36 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
                     <Textarea
                       id={`${childItem.id}-${field.key}`}
                       value={tempValues[field.key] || ''}
-                      onChange={(e) => onUpdateTempValue(childItem.id, field.key, e.target.value)}
+                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
                       placeholder={field.placeholder}
                       maxLength={field.maxLength}
                       rows={4}
-                      className="mt-1 resize-none"
+                      className={`mt-1 resize-none ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       onKeyDown={(e) => handleKeyDown(e)}
                     />
                   ) : (
                     <Input
                       id={`${childItem.id}-${field.key}`}
                       value={tempValues[field.key] || ''}
-                      onChange={(e) => onUpdateTempValue(childItem.id, field.key, e.target.value)}
+                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
                       placeholder={field.placeholder}
                       maxLength={field.maxLength}
-                      className="mt-1"
+                      className={`mt-1 ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       onKeyDown={(e) => handleKeyDown(e)}
                     />
                   )}
                   
-                  {field.maxLength && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {(tempValues[field.key] || '').length}/{field.maxLength}文字
+                  {/* 文字数カウントとエラーメッセージ */}
+                  <div className="flex justify-between items-start mt-1">
+                    {field.maxLength && (
+                      <div className="text-xs text-gray-500">
+                        {(tempValues[field.key] || '').length}/{field.maxLength}文字
+                      </div>
+                    )}
+                  </div>
+                  {fieldErrors[field.key] && (
+                    <div className="text-xs text-red-600 mt-1">
+                      {fieldErrors[field.key]}
                     </div>
                   )}
                 </div>
@@ -239,3 +278,8 @@ export function SortableChildItem<TParent extends SortableParentItem, TChild ext
     </div>
   );
 }
+
+// React.memoでメモ化して不要な再レンダリングを防ぐ
+export const SortableChildItem = React.memo(SortableChildItemComponent) as <TParent extends SortableParentItem, TChild extends SortableChildItemType>(
+  props: SortableChildItemProps<TParent, TChild>
+) => React.ReactElement;

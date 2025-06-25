@@ -35,7 +35,7 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
 }
 
-export function SortableChildList<TParent extends SortableParentItem, TChild extends SortableChildItem>({
+function SortableChildListComponent<TParent extends SortableParentItem, TChild extends SortableChildItem>({
   parentId,
   childItems,
   config,
@@ -268,3 +268,8 @@ export function SortableChildList<TParent extends SortableParentItem, TChild ext
     </div>
   );
 }
+
+// React.memoでメモ化して不要な再レンダリングを防ぐ
+export const SortableChildList = React.memo(SortableChildListComponent) as <TParent extends SortableParentItem, TChild extends SortableChildItem>(
+  props: SortableChildListProps<TParent, TChild>
+) => React.ReactElement;

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,38 +66,67 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   const tempValues = parentState.tempValues[parentItem.id] || {};
 
   const childItems = config.getChildItems(parentItem.id);
+  
+  // フィールドエラー状態管理
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // バリデーション
+  // 単一フィールドのバリデーション
+  const validateField = useCallback((fieldKey: string, value: string): string | null => {
+    const field = config.parentConfig.editableFields.find(f => f.key === fieldKey);
+    if (!field) return null;
+
+    // 必須チェック
+    if (!value.trim()) {
+      return `${field.label}は必須です`;
+    }
+
+    // 文字数チェック
+    if (field.maxLength && value.length > field.maxLength) {
+      return `${field.label}は${field.maxLength}文字以内で入力してください`;
+    }
+
+    // カスタムバリデーション
+    if (field.validation) {
+      return field.validation(value);
+    }
+
+    return null;
+  }, [config.parentConfig.editableFields]);
+
+  // フィールド値変更時のハンドラー（バリデーション付き）
+  const handleFieldChange = useCallback((fieldKey: string, value: string) => {
+    // 値を更新
+    onUpdateParentTempValue(parentItem.id, fieldKey, value);
+    
+    // リアルタイムバリデーション
+    const error = validateField(fieldKey, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldKey]: error || ''
+    }));
+  }, [parentItem.id, onUpdateParentTempValue, validateField]);
+
+  // 全フィールドバリデーション
   const validateAndSave = async () => {
     const updates: Partial<TParent> = {};
+    const newFieldErrors: Record<string, string> = {};
     let hasError = false;
 
+    // 全フィールドをバリデーション
     for (const field of config.parentConfig.editableFields) {
       const value = tempValues[field.key]?.trim() || '';
+      const error = validateField(field.key, value);
       
-      // 必須チェック
-      if (!value) {
+      if (error) {
+        newFieldErrors[field.key] = error;
         hasError = true;
-        break;
+      } else {
+        (updates as Record<string, string>)[field.key] = value;
       }
-
-      // 文字数チェック
-      if (field.maxLength && value.length > field.maxLength) {
-        hasError = true;
-        break;
-      }
-
-      // カスタムバリデーション
-      if (field.validation) {
-        const error = field.validation(value);
-        if (error) {
-          hasError = true;
-          break;
-        }
-      }
-
-      (updates as Record<string, string>)[field.key] = value;
     }
+
+    // エラー状態を更新
+    setFieldErrors(newFieldErrors);
 
     if (!hasError) {
       await onEditParent(parentItem.id, updates);
@@ -113,6 +142,8 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
       config.parentConfig.editableFields.forEach(field => {
         onUpdateParentTempValue(parentItem.id, field.key, (parentItem as Record<string, unknown>)[field.key] as string || '');
       });
+      // エラー状態もリセット
+      setFieldErrors({});
       onToggleParentEdit(parentItem.id);
     }
   };
@@ -158,28 +189,36 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
                     <Textarea
                       id={`${parentItem.id}-${field.key}`}
                       value={tempValues[field.key] || ''}
-                      onChange={(e) => onUpdateParentTempValue(parentItem.id, field.key, e.target.value)}
+                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
                       placeholder={field.placeholder}
                       maxLength={field.maxLength}
                       rows={3}
-                      className="mt-1 resize-none"
+                      className={`mt-1 resize-none ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       onKeyDown={(e) => handleKeyDown(e)}
                     />
                   ) : (
                     <Input
                       id={`${parentItem.id}-${field.key}`}
                       value={tempValues[field.key] || ''}
-                      onChange={(e) => onUpdateParentTempValue(parentItem.id, field.key, e.target.value)}
+                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
                       placeholder={field.placeholder}
                       maxLength={field.maxLength}
-                      className="mt-1"
+                      className={`mt-1 ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       onKeyDown={(e) => handleKeyDown(e)}
                     />
                   )}
                   
-                  {field.maxLength && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {(tempValues[field.key] || '').length}/{field.maxLength}文字
+                  {/* 文字数カウントとエラーメッセージ */}
+                  <div className="flex justify-between items-start mt-1">
+                    {field.maxLength && (
+                      <div className="text-xs text-gray-500">
+                        {(tempValues[field.key] || '').length}/{field.maxLength}文字
+                      </div>
+                    )}
+                  </div>
+                  {fieldErrors[field.key] && (
+                    <div className="text-xs text-red-600 mt-1">
+                      {fieldErrors[field.key]}
                     </div>
                   )}
                 </div>
