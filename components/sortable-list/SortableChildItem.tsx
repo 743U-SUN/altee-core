@@ -143,7 +143,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
     <div
       ref={setNodeRef}
       style={style}
-      className={`border border-gray-200 border-x-0 border-b-0 hover:bg-gray-50 ${
+      className={`border border-border border-x-0 border-b-0 hover:bg-muted/50 ${
         isDragging ? 'opacity-50' : ''
       }`}
       {...attributes}
@@ -156,7 +156,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
       >
         <div className="relative flex items-stretch">
           {/* ドラッグハンドル */}
-          <div className="flex items-center px-2 text-gray-400">
+          <div className="flex items-center px-2 text-muted-foreground">
             <GripVertical className="h-4 w-4" />
           </div>
           
@@ -228,7 +228,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
             <div className="space-y-4">
               {config.childConfig.editableFields.map((field) => (
                 <div key={field.key}>
-                  <Label htmlFor={`${childItem.id}-${field.key}`} className="text-xs font-medium text-gray-700">
+                  <Label htmlFor={`${childItem.id}-${field.key}`} className="text-xs font-medium text-card-foreground">
                     {field.label}
                     {field.maxLength && ` (${field.maxLength}文字以内)`}
                   </Label>
@@ -259,7 +259,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
                   {/* 文字数カウントとエラーメッセージ */}
                   <div className="flex justify-between items-start mt-1">
                     {field.maxLength && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {(tempValues[field.key] || '').length}/{field.maxLength}文字
                       </div>
                     )}

@@ -152,8 +152,8 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white rounded-lg border ${
-        isDragging ? 'border-primary' : 'border-gray-200'
+      className={`bg-card rounded-lg border ${
+        isDragging ? 'border-primary' : 'border-border'
       } p-2 md:p-6`}
     >
       {/* 親アイテムのヘッダー */}
@@ -164,7 +164,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="h-5 w-5 text-gray-400" />
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
           <div className="w-8 h-8 bg-primary/10 text-primary text-sm font-medium rounded-full flex items-center justify-center">
             {index + 1}
           </div>
@@ -180,7 +180,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
             >
               {config.parentConfig.editableFields.map((field) => (
                 <div key={field.key}>
-                  <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-gray-700">
+                  <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-card-foreground">
                     {field.label}
                     {field.maxLength && ` (${field.maxLength}文字以内)`}
                   </Label>
@@ -211,7 +211,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
                   {/* 文字数カウントとエラーメッセージ */}
                   <div className="flex justify-between items-start mt-1">
                     {field.maxLength && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {(tempValues[field.key] || '').length}/{field.maxLength}文字
                       </div>
                     )}
@@ -226,7 +226,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-card-foreground">
                 {config.parentConfig.itemDisplayName(parentItem, index)}
               </h3>
               <Button
@@ -296,12 +296,12 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
               onToggleAccordion(parentItem.id);
             }
           }}
-          className="w-full border border-gray-200 rounded-sm px-0 py-2"
+          className="w-full border border-border rounded-sm px-0 py-2"
         >
           <AccordionItem value="children" className="border-0">
             <AccordionTrigger className="hover:no-underline py-2 px-0 pr-2">
               <div className="flex items-center gap-2 px-4">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-card-foreground">
                   {config.childConfig.childListLabel ? 
                     config.childConfig.childListLabel(parentItem, childItems.length) :
                     `子アイテム管理 (${childItems.length}個)`

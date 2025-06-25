@@ -290,7 +290,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
   if (loading) {
     return (
       <div className="py-4 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -358,10 +358,10 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
 
       {/* 空の状態 */}
       {config.parentItems.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           <div className="text-lg mb-2">{config.parentConfig.emptyStateText || 'アイテムがありません'}</div>
           {config.parentConfig.emptyStateDescription && (
-            <p className="text-sm text-gray-400">{config.parentConfig.emptyStateDescription}</p>
+            <p className="text-sm text-muted-foreground/70">{config.parentConfig.emptyStateDescription}</p>
           )}
         </div>
       )}

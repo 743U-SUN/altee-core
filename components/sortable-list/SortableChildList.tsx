@@ -257,11 +257,11 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
 
       {/* 空の状態 */}
       {childItems.length === 0 && (
-        <div className="text-center py-4 text-gray-500">
-          <MessageCircleQuestion className="h-6 w-6 mx-auto mb-2 text-gray-300" />
+        <div className="text-center py-4 text-muted-foreground">
+          <MessageCircleQuestion className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
           <p className="text-sm">{config.childConfig.emptyStateText || '子アイテムがありません'}</p>
           {config.childConfig.emptyStateDescription && (
-            <p className="text-xs text-gray-400">{config.childConfig.emptyStateDescription}</p>
+            <p className="text-xs text-muted-foreground/70">{config.childConfig.emptyStateDescription}</p>
           )}
         </div>
       )}

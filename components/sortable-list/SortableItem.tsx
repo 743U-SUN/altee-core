@@ -109,8 +109,8 @@ export function SortableItem<T extends SortableItemType>({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white rounded-lg border ${
-        isDragging ? 'border-primary' : 'border-gray-200'
+      className={`bg-card rounded-lg border ${
+        isDragging ? 'border-primary' : 'border-border'
       } p-4 md:p-6`}
     >
       {/* ヘッダー */}
@@ -121,7 +121,7 @@ export function SortableItem<T extends SortableItemType>({
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="h-5 w-5 text-gray-400" />
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
           <div className="w-8 h-8 bg-primary/10 text-primary text-sm font-medium rounded-full flex items-center justify-center">
             {index + 1}
           </div>
@@ -129,7 +129,7 @@ export function SortableItem<T extends SortableItemType>({
 
         {/* アイテム名表示 */}
         <div className="flex-1">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-medium text-card-foreground">
             {config.itemDisplayName(item, index)}
           </h3>
         </div>
@@ -185,13 +185,13 @@ export function SortableItem<T extends SortableItemType>({
       {/* 編集フィールド */}
       {isEditing && (
         <div 
-          className="space-y-4 border-t border-gray-200 pt-4"
+          className="space-y-4 border-t border-border pt-4"
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
           {config.editableFields.map((field) => (
             <div key={field.key}>
-              <Label htmlFor={`${item.id}-${field.key}`} className="text-sm font-medium text-gray-700">
+              <Label htmlFor={`${item.id}-${field.key}`} className="text-sm font-medium text-card-foreground">
                 {field.label}
                 {field.maxLength && ` (${field.maxLength}文字以内)`}
               </Label>
@@ -220,7 +220,7 @@ export function SortableItem<T extends SortableItemType>({
               )}
               
               {field.maxLength && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-muted-foreground mt-1">
                   {(tempValues[field.key] || '').length}/{field.maxLength}文字
                 </div>
               )}

@@ -210,7 +210,7 @@ export function SortableList<T extends SortableItemType>({
   if (loading) {
     return (
       <div className="py-4 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -269,10 +269,10 @@ export function SortableList<T extends SortableItemType>({
 
       {/* 空の状態 */}
       {config.items.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           <div className="text-lg mb-2">{config.emptyStateText || 'アイテムがありません'}</div>
           {config.emptyStateDescription && (
-            <p className="text-sm text-gray-400">{config.emptyStateDescription}</p>
+            <p className="text-sm text-muted-foreground/70">{config.emptyStateDescription}</p>
           )}
         </div>
       )}
