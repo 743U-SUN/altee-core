@@ -7,15 +7,15 @@ import { updateUserProfile, getUserProfile } from "@/app/actions/profile-actions
 import { toast } from "sonner"
 
 interface ProfileInfoSectionProps {
-  initialDisplayName: string
+  initialCharacterName: string
   initialBio: string
 }
 
 export function ProfileInfoSection({ 
-  initialDisplayName, 
+  initialCharacterName, 
   initialBio
 }: ProfileInfoSectionProps) {
-  const [displayName, setDisplayName] = useState(initialDisplayName)
+  const [characterName, setCharacterName] = useState(initialCharacterName)
   const [bio, setBio] = useState(initialBio)
 
   const getCurrentProfileImageId = async () => {
@@ -23,26 +23,26 @@ export function ProfileInfoSection({
     return result.success ? result.data?.profileImageId || undefined : undefined
   }
 
-  const handleDisplayNameSave = async (newDisplayName: string) => {
+  const handleCharacterNameSave = async (newCharacterName: string) => {
     try {
       const currentProfileImageId = await getCurrentProfileImageId()
       
       const result = await updateUserProfile({
-        displayName: newDisplayName,
+        characterName: newCharacterName,
         bio,
         profileImageId: currentProfileImageId,
       })
 
       if (result.success) {
-        setDisplayName(newDisplayName)
-        toast.success("表示名を更新しました")
+        setCharacterName(newCharacterName)
+        toast.success("キャラクター名を更新しました")
       } else {
         toast.error(result.error || "更新に失敗しました")
         throw new Error(result.error)
       }
     } catch (error) {
-      console.error("表示名保存エラー:", error)
-      toast.error("表示名の保存に失敗しました")
+      console.error("キャラクター名保存エラー:", error)
+      toast.error("キャラクター名の保存に失敗しました")
       throw error
     }
   }
@@ -52,7 +52,7 @@ export function ProfileInfoSection({
       const currentProfileImageId = await getCurrentProfileImageId()
       
       const result = await updateUserProfile({
-        displayName,
+        characterName,
         bio: newBio,
         profileImageId: currentProfileImageId,
       })
@@ -74,10 +74,10 @@ export function ProfileInfoSection({
   return (
     <>
       <InlineEdit
-        value={displayName}
-        onSave={handleDisplayNameSave}
-        placeholder="表示名を入力してください"
-        maxLength={50}
+        value={characterName}
+        onSave={handleCharacterNameSave}
+        placeholder="キャラクター名を入力してください"
+        maxLength={30}
       />
       <div className="space-y-2">
         <Label>自己紹介</Label>

@@ -7,6 +7,8 @@ declare module "next-auth" {
       id: string
       role: UserRole
       isActive: boolean
+      handle?: string | null
+      characterName?: string | null
       profileImages: {
         google?: string | null
         discord?: string | null
@@ -19,6 +21,8 @@ declare module "next-auth" {
   interface User {
     role: UserRole
     isActive: boolean
+    handle?: string | null
+    characterName?: string | null
     profileImages?: {
       google?: string | null
       discord?: string | null
@@ -32,5 +36,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     role: UserRole
     isActive: boolean
+    handle?: string | null
+    characterName?: string | null
   }
 }

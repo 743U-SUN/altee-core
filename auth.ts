@@ -70,6 +70,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             role: true,
             isActive: true,
             image: true,
+            handle: true,
+            characterName: true,
           }
         })
 
@@ -102,6 +104,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: dbUser.role || 'USER',
           isActive: dbUser.isActive,
           image: dbUser.image,
+          handle: dbUser.handle,
+          characterName: dbUser.characterName,
         }
         
         return session
@@ -115,6 +119,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           isActive: true,
         }
         return session
+      }
+    },
+    async redirect({ url, baseUrl }) {
+      try {
+        // ローカルURLの場合はそのまま使用
+        if (url.startsWith('/')) {
+          return `${baseUrl}${url}`
+        }
+        
+        // 同じドメインの場合
+        if (new URL(url).origin === baseUrl) {
+          return url
+        }
+
+        // 外部URLの場合はbaseUrlを返す
+        return baseUrl
+      } catch {
+        // URL解析エラーの場合はbaseURLを返す
+        return baseUrl
       }
     },
   },

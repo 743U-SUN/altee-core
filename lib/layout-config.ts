@@ -245,7 +245,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
   },
 
   "user-profile": {
-    sidebarWidth: "48px",
+    sidebarWidth: "720px",
     firstSidebar: {
       brand: {
         icon: UserCircle,

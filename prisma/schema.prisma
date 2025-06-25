@@ -11,6 +11,8 @@ model User {
   id                     String       @id @default(cuid())
   email                  String       @unique
   name                   String?
+  handle                 String?      @unique // ユーザー固有のハンドル名
+  characterName          String?      // 表示用キャラクター名
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   customImageKey         String?
@@ -32,6 +34,7 @@ model User {
   @@index([isActive])
   @@index([role])
   @@index([email, name])
+  @@index([handle])
   @@map("users")
 }
 
@@ -238,7 +241,6 @@ model UserProfile {
   id                 String     @id @default(cuid())
   userId             String     @unique
   user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  displayName        String?
   bio                String?
   profileImageId     String?
   profileImage       MediaFile? @relation("ProfileImage", fields: [profileImageId], references: [id])

@@ -48,7 +48,7 @@ export default async function ProfilePage() {
                   type: profile.profileImage.mimeType,
                   uploadedAt: profile.profileImage.createdAt.toString(),
                 } : null}
-                currentDisplayName={profile?.displayName || ""}
+                currentDisplayName={profile?.user?.characterName || ""}
                 currentBio={profile?.bio || ""}
               />
             </CardContent>
@@ -65,9 +65,9 @@ export default async function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>表示名</Label>
+                <Label>キャラクター名</Label>
                 <ProfileInfoSection 
-                  initialDisplayName={profile?.displayName || ""}
+                  initialCharacterName={profile?.user?.characterName || ""}
                   initialBio={profile?.bio || ""}
                 />
               </div>

@@ -28,7 +28,7 @@ export function ProfileImageSection({
     if (files.length > 0) {
       try {
         const result = await updateUserProfile({
-          displayName: currentDisplayName,
+          characterName: currentDisplayName,
           bio: currentBio,
           profileImageId: files[0].id,
         })
