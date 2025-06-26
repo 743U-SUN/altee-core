@@ -1,4 +1,4 @@
-import { Home, Users, Link, Tag, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
+import { Home, Users, Link, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
 
 // 型定義
 export interface NavItem {
@@ -182,6 +182,12 @@ const dashboardNavItems: NavItem[] = [
     icon: UserCircle,
     isActive: false,
   },
+  {
+    title: "ユーザーデータ",
+    url: "/dashboard/userdata",
+    icon: Logs,
+    isActive: false,
+  },  
   {
     title: "SNSリンク",
     url: "/dashboard/links",

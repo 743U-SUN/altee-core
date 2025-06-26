@@ -28,6 +28,7 @@ model User {
   profile                UserProfile? // プロフィール情報
   userLinks              UserLink[]   // ユーザーのSNSリンク
   faqCategories          FaqCategory[] // FAQカテゴリー
+  userData               UserData[]   // ユーザーデータ
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -345,4 +346,22 @@ model FaqQuestion {
   @@index([categoryId])
   @@index([sortOrder])
   @@map("faq_questions")
+}
+
+model UserData {
+  id          String   @id @default(cuid())
+  userId      String   // 所有者のユーザーID
+  icon        String   // Lucideアイコン名（例: "User", "Heart", "Star"）
+  field       String   // 項目名（例: "身長", "体重", "好きなもの"）
+  value       String   // 値（例: "175cm", "65kg", "読書"）
+  sortOrder   Int      @default(0) // 表示順序
+  isVisible   Boolean  @default(true) // 表示/非表示
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([sortOrder])
+  @@map("user_data")
 }

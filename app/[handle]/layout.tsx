@@ -1,10 +1,14 @@
 import { BaseLayout } from "@/components/layout/BaseLayout"
 
-export default function ProfileLayout({
+export default async function HandleLayout({
   children,
+  params,
 }: {
   children: React.ReactNode
+  params: Promise<{ handle: string }>
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { handle } = await params
   const secondSidebarContent = (
     <div className="relative h-full w-full overflow-hidden">
       {/* 背景画像 */}

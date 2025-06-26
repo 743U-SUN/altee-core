@@ -17,6 +17,7 @@ interface MobileSidebarSheetProps {
   secondSidebarContent?: React.ReactNode
   side?: "left" | "right"
   verticalLayout?: boolean
+  noPadding?: boolean
 }
 
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -26,15 +27,16 @@ export function MobileSidebarSheet({
   onOpenChange, 
   secondSidebarContent,
   side = "left",
-  verticalLayout = false
+  verticalLayout = false,
+  noPadding = false
 }: MobileSidebarSheetProps) {
   const isMobile = useIsMobile()
 
   // 縦並びレイアウトの場合はモバイル判定に関係なく表示
   if (verticalLayout) {
     return (
-      <div className="w-full bg-sidebar text-sidebar-foreground border-b">
-        <div className="p-4">
+      <div className={`w-full bg-sidebar text-sidebar-foreground border-b ${noPadding ? '' : ''}`}>
+        <div className={noPadding ? '' : 'p-4'}>
           {secondSidebarContent || (
             <div className="text-muted-foreground text-sm">
               セカンドサイドバーコンテンツ

@@ -72,6 +72,7 @@ export function BaseLayout({
             onOpenChange={() => {}}
             secondSidebarContent={finalConfig.secondSidebar.content}
             verticalLayout={true}
+            noPadding={variant === 'user-profile'}
           />
           <main className="flex flex-1 flex-col gap-4 p-4 pb-20">
             {children}
