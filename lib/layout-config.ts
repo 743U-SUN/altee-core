@@ -46,6 +46,10 @@ export interface MobileFooterConfig {
   hide?: boolean
 }
 
+export interface MobileLayoutConfig {
+  verticalLayout?: boolean
+}
+
 export interface LayoutConfig {
   firstSidebar: SidebarConfig
   secondSidebar: {
@@ -53,6 +57,7 @@ export interface LayoutConfig {
   }
   header: HeaderConfig
   mobileFooter: MobileFooterConfig
+  mobileLayout: MobileLayoutConfig
   sidebarWidth?: string
 }
 
@@ -63,6 +68,7 @@ export interface LayoutOverrides {
   secondSidebar?: Partial<{ content?: React.ReactNode }>
   header?: Partial<HeaderConfig>
   mobileFooter?: Partial<MobileFooterConfig>
+  mobileLayout?: Partial<MobileLayoutConfig>
   sidebarWidth?: string
 }
 
@@ -80,6 +86,11 @@ export const defaultBrand: BrandConfig = {
   title: "Altee Core",
   subtitle: "v1.0",
   url: "/",
+}
+
+// デフォルトモバイルレイアウト設定
+export const defaultMobileLayout: MobileLayoutConfig = {
+  verticalLayout: false,
 }
 
 // ナビゲーション項目の定義
@@ -215,6 +226,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     mobileFooter: {
       hide: false,
     },
+    mobileLayout: defaultMobileLayout,
   },
 
   admin: {
@@ -242,6 +254,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     mobileFooter: {
       hide: false,
     },
+    mobileLayout: defaultMobileLayout,
   },
 
   "user-profile": {
@@ -263,11 +276,14 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
       title: "プロフィール",
       hideUserMenu: false,
       hideNotifications: false,
-      hideSidebarTrigger: false,
+      hideSidebarTrigger: true, // 縦並びレイアウトではトグルボタン非表示
       hideModeToggle: false,
     },
     mobileFooter: {
       hide: false,
+    },
+    mobileLayout: {
+      verticalLayout: true,
     },
   },
 
@@ -302,6 +318,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     mobileFooter: {
       hide: false,
     },
+    mobileLayout: defaultMobileLayout,
   },
 
   minimal: {
@@ -320,6 +337,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     mobileFooter: {
       hide: true,
     },
+    mobileLayout: defaultMobileLayout,
   },
 
   dashboard: {
@@ -347,6 +365,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     mobileFooter: {
       hide: false,
     },
+    mobileLayout: defaultMobileLayout,
   },
 }
 
@@ -385,6 +404,10 @@ export function mergeLayoutConfig(
     mobileFooter: {
       ...baseConfig.mobileFooter,
       ...overrides.mobileFooter,
+    },
+    mobileLayout: {
+      ...baseConfig.mobileLayout,
+      ...overrides.mobileLayout,
     },
     sidebarWidth: overrides.sidebarWidth || baseConfig.sidebarWidth,
   }

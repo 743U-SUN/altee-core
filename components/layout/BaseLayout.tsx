@@ -15,6 +15,14 @@ const MobileFooter = dynamic(
   }
 )
 
+const MobileSidebarSheet = dynamic(
+  () => import("./MobileSidebarSheet").then(mod => ({ default: mod.MobileSidebarSheet })),
+  { 
+    loading: () => null,
+    ssr: false
+  }
+)
+
 interface BaseLayoutProps {
   variant?: LayoutVariant
   overrides?: LayoutOverrides
@@ -31,6 +39,53 @@ export function BaseLayout({
     return mergeLayoutConfig(baseConfig, overrides)
   }, [variant, overrides])
 
+  // 縦並びレイアウトの場合
+  if (finalConfig.mobileLayout.verticalLayout) {
+    return (
+      <div className="min-h-svh w-full">
+        {/* デスクトップ用のサイドバーレイアウト */}
+        <div className="hidden lg:flex">
+          <SidebarProvider
+            style={{
+              "--sidebar-width": finalConfig.sidebarWidth || "350px",
+            } as React.CSSProperties}
+          >
+            <Sidebar 
+              firstSidebarConfig={finalConfig.firstSidebar}
+              secondSidebarConfig={finalConfig.secondSidebar}
+              verticalMobileLayout={false}
+            />
+            <SidebarInset>
+              <Header config={finalConfig.header} />
+              <main className="flex flex-1 flex-col gap-4 p-4">
+                {children}
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+        </div>
+
+        {/* モバイル用の縦並びレイアウト */}
+        <div className="lg:hidden">
+          <Header config={finalConfig.header} />
+          <MobileSidebarSheet
+            open={false}
+            onOpenChange={() => {}}
+            secondSidebarContent={finalConfig.secondSidebar.content}
+            verticalLayout={true}
+          />
+          <main className="flex flex-1 flex-col gap-4 p-4 pb-20">
+            {children}
+          </main>
+          <MobileFooter 
+            sidebarConfig={finalConfig.firstSidebar} 
+            mobileFooterConfig={finalConfig.mobileFooter}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // 通常レイアウト
   return (
     <SidebarProvider
       style={{
@@ -40,10 +95,11 @@ export function BaseLayout({
       <Sidebar 
         firstSidebarConfig={finalConfig.firstSidebar}
         secondSidebarConfig={finalConfig.secondSidebar}
+        verticalMobileLayout={finalConfig.mobileLayout.verticalLayout}
       />
       <SidebarInset>
         <Header config={finalConfig.header} />
-        <main className="flex flex-1 flex-col gap-4 p-4 pb-20 md:pb-4">
+        <main className="flex flex-1 flex-col gap-4 p-4 pb-20 lg:pb-4">
           {children}
         </main>
       </SidebarInset>

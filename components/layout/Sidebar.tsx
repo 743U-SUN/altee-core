@@ -35,11 +35,13 @@ const MobileSidebarSheet = dynamic(
 interface SidebarProps extends React.ComponentProps<typeof SidebarPrimitive> {
   firstSidebarConfig: SidebarConfig
   secondSidebarConfig: { content?: React.ReactNode }
+  verticalMobileLayout?: boolean
 }
 
 export function Sidebar({ 
   firstSidebarConfig, 
   secondSidebarConfig, 
+  verticalMobileLayout = false,
   ...props 
 }: SidebarProps) {
   const [activeItem, setActiveItem] = React.useState(
@@ -59,13 +61,13 @@ export function Sidebar({
   return (
     <SidebarPrimitive
       collapsible="icon"
-      className="overflow-hidden *:data-[sidebar=sidebar]:flex-row"
+      className={`overflow-hidden *:data-[sidebar=sidebar]:flex-row ${verticalMobileLayout ? 'lg:hidden' : ''}`}
       {...props}
     >
       {/* First Sidebar */}
       <SidebarPrimitive
         collapsible="none"
-        className="w-[calc(var(--sidebar-width-icon)+1px)]! border-r"
+        className={`w-[calc(var(--sidebar-width-icon)+1px)]! border-r ${verticalMobileLayout ? 'lg:hidden' : ''}`}
       >
         <SidebarHeader>
           <SidebarMenu>
@@ -121,7 +123,7 @@ export function Sidebar({
       </SidebarPrimitive>
 
       {/* Second Sidebar */}
-      <SidebarPrimitive collapsible="none" className="hidden flex-1 md:flex">
+      <SidebarPrimitive collapsible="none" className="hidden flex-1 lg:flex">
         <SidebarContent>
           {secondSidebarConfig.content || (
             <div className="p-4 text-muted-foreground text-sm">
@@ -136,6 +138,7 @@ export function Sidebar({
         open={openMobile}
         onOpenChange={setOpenMobile}
         secondSidebarContent={secondSidebarConfig.content}
+        verticalLayout={verticalMobileLayout}
       />
     </SidebarPrimitive>
   )
