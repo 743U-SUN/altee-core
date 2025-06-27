@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { User, UserCircle, Share2, Smartphone, HelpCircle } from "lucide-react"
+import { User, Logs, UserCircle, Share2, Smartphone, HelpCircle } from "lucide-react"
 import { SetupChecker } from "./setup-checker"
 
 const settingsItems = [
@@ -16,6 +16,12 @@ const settingsItems = [
     href: "/dashboard/profile",
     icon: UserCircle,
   },
+  {
+    title: "ユーザーデータ設定",
+    description: "ユーザーデータの編集",
+    href: "/dashboard/userdata",
+    icon: Logs,
+  },  
   {
     title: "SNSリンク設定",
     description: "ソーシャルメディアのリンクを管理",

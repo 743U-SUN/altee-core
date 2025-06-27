@@ -17,13 +17,13 @@ import { MediaType } from '@prisma/client'
 import { toast } from 'sonner'
 
 const uploadSchema = z.object({
-  uploadType: z.enum(['THUMBNAIL', 'CONTENT', 'SYSTEM']),
+  uploadType: z.enum(['THUMBNAIL', 'CONTENT', 'SYSTEM', 'ICON']),
   description: z.string().optional(),
   altText: z.string().optional(),
   tags: z.string().optional(),
 })
 
-type AdminMediaType = 'THUMBNAIL' | 'CONTENT' | 'SYSTEM'
+type AdminMediaType = 'THUMBNAIL' | 'CONTENT' | 'SYSTEM' | 'ICON'
 
 type UploadFormData = z.infer<typeof uploadSchema>
 
@@ -160,6 +160,10 @@ export function MediaUploadForm() {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="SYSTEM" id="system" />
                   <Label htmlFor="system">システム画像</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="ICON" id="icon" />
+                  <Label htmlFor="icon">カスタムアイコン</Label>
                 </div>
               </RadioGroup>
             </div>

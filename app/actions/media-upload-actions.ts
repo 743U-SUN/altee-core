@@ -84,6 +84,9 @@ export async function uploadMediaFileAction(
       case 'SYSTEM':
         containerName = 'system'
         break
+      case 'ICON':
+        containerName = 'admin-icons'
+        break
       default:
         return { success: false, error: '無効なアップロードタイプです' }
     }

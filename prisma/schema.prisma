@@ -236,6 +236,7 @@ enum MediaType {
   PROFILE    // プロフィール画像
   BACKGROUND // 背景画像
   LINK_ICON  // リンクアイコン
+  ICON       // カスタムアイコン
 }
 
 model UserProfile {

@@ -6,15 +6,7 @@ import { Button } from "@/components/ui/button"
 import { GripVertical, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 import type { UserData } from "@/types/userdata"
-import {
-  User, Users, UserCheck, Crown, Activity, Heart, Zap, Scale,
-  Star, ThumbsUp, Award, Medal, Book, Music, Camera, Coffee,
-  Utensils, Dumbbell, Bike, Mountain, Waves, Home, MapPin,
-  Car, Plane, Calendar, Clock, Sun, Moon, Mail, Phone,
-  MessageCircle, Globe, Briefcase, GraduationCap, Code, Laptop,
-  Gift, Tag, Flag, Target, Gamepad2, Palette
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { UserDataIconRenderer } from "./UserDataIconRenderer"
 
 // EditUserDataModalの遅延読み込み
 const EditUserDataModal = dynamic(() => import("../edit-userdata-modal").then(mod => ({ default: mod.EditUserDataModal })), {
@@ -122,19 +114,6 @@ export function DragDropUserDataList({ userData, onDataChange, onEditData }: Dra
     }
   }
 
-  // アイコンマッピング（型安全）
-  const iconMap: Record<string, LucideIcon> = {
-    User, Users, UserCheck, Crown, Activity, Heart, Zap, Scale,
-    Star, ThumbsUp, Award, Medal, Book, Music, Camera, Coffee,
-    Utensils, Dumbbell, Bike, Mountain, Waves, Home, MapPin,
-    Car, Plane, Calendar, Clock, Sun, Moon, Mail, Phone,
-    MessageCircle, Globe, Briefcase, GraduationCap, Code, Laptop,
-    Gift, Tag, Flag, Target, Gamepad2, Palette
-  }
-
-  const getIcon = (iconName: string): LucideIcon => {
-    return iconMap[iconName] || User
-  }
 
   return (
     <DndContext
@@ -151,7 +130,6 @@ export function DragDropUserDataList({ userData, onDataChange, onEditData }: Dra
               onEdit={() => onEditData(data)}
               onVisibilityToggle={() => handleVisibilityToggle(data)}
               onDelete={() => handleDeleteData(data)}
-              getIcon={getIcon}
             />
           ))}
         </div>
@@ -161,7 +139,6 @@ export function DragDropUserDataList({ userData, onDataChange, onEditData }: Dra
         {activeItem && (
           <UserDataItemCard
             data={activeItem}
-            getIcon={getIcon}
             isDragging
           />
         )}
@@ -175,14 +152,12 @@ function SortableUserDataItem({
   data, 
   onEdit, 
   onVisibilityToggle, 
-  onDelete, 
-  getIcon
+  onDelete
 }: {
   data: UserData
   onEdit: () => void
   onVisibilityToggle: () => void
   onDelete: () => void
-  getIcon: (iconName: string) => LucideIcon
 }) {
   const {
     attributes,
@@ -202,7 +177,6 @@ function SortableUserDataItem({
     <div ref={setNodeRef} style={style}>
       <UserDataItemCard
         data={data}
-        getIcon={getIcon}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
         onEdit={onEdit}
@@ -216,7 +190,6 @@ function SortableUserDataItem({
 // データアイテムカード
 function UserDataItemCard({
   data,
-  getIcon,
   isDragging = false,
   dragHandleProps,
   onEdit,
@@ -224,14 +197,12 @@ function UserDataItemCard({
   onDelete
 }: {
   data: UserData
-  getIcon: (iconName: string) => LucideIcon
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
   onEdit?: () => void
   onVisibilityToggle?: () => void
   onDelete?: () => void
 }) {
-  const IconComponent = getIcon(data.icon)
 
   return (
     <div className={`border rounded-lg p-4 bg-card ${isDragging ? 'shadow-lg opacity-50' : ''}`}>
@@ -243,7 +214,7 @@ function UserDataItemCard({
         )}
 
         <div className="flex-shrink-0">
-          <IconComponent className="h-6 w-6 text-foreground" />
+          <UserDataIconRenderer iconName={data.icon} className="h-6 w-6 text-foreground" />
         </div>
 
         <div className="flex-1 min-w-0">

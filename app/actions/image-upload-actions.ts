@@ -34,7 +34,7 @@ export async function uploadImageAction(
     let bucket: string
     let key: string
     
-    if (folder === 'article-thumbnails' || folder === 'article-images' || folder === 'system-assets' || folder === 'user-icons' || folder === 'admin-links' || folder === 'user-links') {
+    if (folder === 'article-thumbnails' || folder === 'article-images' || folder === 'system-assets' || folder === 'user-icons' || folder === 'admin-links' || folder === 'user-links' || folder === 'admin-icons') {
       // 専用コンテナに直接保存
       bucket = folder
       
@@ -90,7 +90,8 @@ export async function uploadImageAction(
         uploadType: 
           folder === 'article-thumbnails' ? 'THUMBNAIL' :
           folder === 'user-icons' ? 'PROFILE' :
-          folder === 'system-assets' ? 'SYSTEM' : 'CONTENT',
+          folder === 'system-assets' ? 'SYSTEM' :
+          folder === 'admin-icons' ? 'ICON' : 'CONTENT',
         uploaderId: session.user.id,
       }
     })

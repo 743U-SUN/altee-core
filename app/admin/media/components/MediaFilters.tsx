@@ -147,6 +147,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
                 <SelectItem value="system-assets">system-assets</SelectItem>
                 <SelectItem value="images">images</SelectItem>
                 <SelectItem value="user-icons">user-icons</SelectItem>
+                <SelectItem value="admin-icons">admin-icons</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -167,6 +168,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
                 <SelectItem value="THUMBNAIL">サムネイル</SelectItem>
                 <SelectItem value="CONTENT">コンテンツ</SelectItem>
                 <SelectItem value="SYSTEM">システム</SelectItem>
+                <SelectItem value="ICON">アイコン</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -234,7 +236,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
             )}
             {uploadType && (
               <Badge variant="secondary">
-                タイプ: {uploadType === 'THUMBNAIL' ? 'サムネイル' : uploadType === 'CONTENT' ? 'コンテンツ' : 'システム'}
+                タイプ: {uploadType === 'THUMBNAIL' ? 'サムネイル' : uploadType === 'CONTENT' ? 'コンテンツ' : uploadType === 'SYSTEM' ? 'システム' : 'アイコン'}
               </Badge>
             )}
             {tags && (
