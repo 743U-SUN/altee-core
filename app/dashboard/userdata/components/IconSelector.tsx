@@ -30,6 +30,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState("lucide")
   const [isLoading, setIsLoading] = useState(false)
+  const [svgContent, setSvgContent] = useState<Record<string, string>>({})
 
   // カスタムアイコンとタグを読み込み
   useEffect(() => {
@@ -43,6 +44,34 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
         
         if (iconsResult.success && iconsResult.icons) {
           setCustomIcons(iconsResult.icons)
+          
+          // 各SVGファイルの内容を取得してcurrentColor対応にする
+          const svgPromises = iconsResult.icons.map(async (icon) => {
+            try {
+              const response = await fetch(icon.url)
+              const svgText = await response.text()
+              
+              // SVGの内容をcurrentColor対応に変換
+              const currentColorSvg = svgText
+                .replace(/fill="[^"]*"/g, 'fill="currentColor"')
+                .replace(/stroke="[^"]*"/g, 'stroke="currentColor"')
+                .replace(/fill:[^;'"]+/g, 'fill:currentColor')
+                .replace(/stroke:[^;'"]+/g, 'stroke:currentColor')
+              
+              return { id: icon.id, svg: currentColorSvg }
+            } catch (error) {
+              console.error(`Failed to load SVG for icon ${icon.id}:`, error)
+              return { id: icon.id, svg: '' }
+            }
+          })
+          
+          const svgResults = await Promise.all(svgPromises)
+          const svgMap = svgResults.reduce((acc, { id, svg }) => {
+            acc[id] = svg
+            return acc
+          }, {} as Record<string, string>)
+          
+          setSvgContent(svgMap)
         }
         
         if (tagsResult.success && tagsResult.tags) {
@@ -113,35 +142,17 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
   return (
     <div className="space-y-4">
       {/* 現在選択されているアイコンの表示 */}
-      {selectedIcon && (
+      {selectedIcon && !isCustomIcon(selectedIcon) && (
         <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
           <div className="flex-shrink-0">
             {(() => {
-              if (isCustomIcon(selectedIcon)) {
-                const customIcon = getCustomIconById(selectedIcon)
-                if (customIcon) {
-                  return (
-                    <img 
-                      src={customIcon.url} 
-                      alt={customIcon.originalName}
-                      className="h-6 w-6"
-                    />
-                  )
-                }
-              }
               const IconComponent = getIconComponent(selectedIcon)
               return <IconComponent className="h-6 w-6" />
             })()}
           </div>
           <div>
             <div className="font-medium text-sm">
-              {(() => {
-                if (isCustomIcon(selectedIcon)) {
-                  const customIcon = getCustomIconById(selectedIcon)
-                  return customIcon?.originalName || selectedIcon
-                }
-                return COMMON_ICONS.find(icon => icon.name === selectedIcon)?.label || selectedIcon
-              })()}
+              {COMMON_ICONS.find(icon => icon.name === selectedIcon)?.label || selectedIcon}
             </div>
             <div className="text-xs text-muted-foreground">選択中のアイコン</div>
           </div>
@@ -209,7 +220,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
                   <Badge
                     key={tag}
                     variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                    className="cursor-pointer hover:bg-primary/80"
+                    className="cursor-pointer hover:bg-primary/80 flex items-center justify-center text-center leading-none pb-1.5"
                     onClick={() => toggleTag(tag)}
                   >
                     {tag}
@@ -238,6 +249,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
               <div className="grid grid-cols-8 gap-2 p-4">
                 {filteredCustomIcons.map((icon) => {
                   const isSelected = selectedIcon === `custom:${icon.id}`
+                  const svg = svgContent[icon.id]
                   
                   return (
                     <Button
@@ -248,11 +260,18 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
                       onClick={() => onIconSelect(`custom:${icon.id}`)}
                       title={icon.originalName}
                     >
-                      <img 
-                        src={icon.url} 
-                        alt={icon.originalName}
-                        className="h-5 w-5"
-                      />
+                      {svg ? (
+                        <div 
+                          className="h-5 w-5 flex items-center justify-center"
+                          dangerouslySetInnerHTML={{ __html: svg }}
+                        />
+                      ) : (
+                        <img 
+                          src={icon.url} 
+                          alt={icon.originalName}
+                          className="h-5 w-5"
+                        />
+                      )}
                     </Button>
                   )
                 })}
