@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
+import Image from "next/image"
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -14,7 +15,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { SidebarConfig, defaultBrand } from "@/lib/layout-config"
+import { SidebarConfig, defaultBrand, iconMap, IconName } from "@/lib/layout-config"
 
 const NavUser = dynamic(
   () => import("@/components/navigation/nav-user").then(mod => ({ default: mod.NavUser })),
@@ -56,7 +57,16 @@ export function Sidebar({
 
   // ブランド設定（デフォルト値を使用）
   const brand = firstSidebarConfig.brand || defaultBrand
-  const BrandIcon = brand.icon
+  
+  // アイコンを解決する関数
+  const getBrandIcon = (icon: IconName | React.ComponentType<{ className?: string }>) => {
+    if (typeof icon === 'string') {
+      return iconMap[icon]
+    }
+    return icon
+  }
+  
+  const BrandIcon = getBrandIcon(brand.icon)
 
   return (
     <SidebarPrimitive
@@ -74,9 +84,22 @@ export function Sidebar({
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
                 <a href={brand.url || "#"}>
-                  <div className={`${brand.iconBgColor || "bg-sidebar-primary"} text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg`}>
-                    <BrandIcon className="size-4" />
-                  </div>
+                  {brand.brandImage ? (
+                    <div className="aspect-square size-8 overflow-hidden rounded-lg">
+                      <Image
+                        src={brand.brandImage}
+                        alt="User Avatar"
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className={`${brand.iconBgColor || "bg-sidebar-primary"} text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg`}>
+                      <BrandIcon className="size-4" />
+                    </div>
+                  )}
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{brand.title}</span>
                     <span className="truncate text-xs">{brand.subtitle}</span>

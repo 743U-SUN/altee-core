@@ -1,5 +1,27 @@
 import { Home, Users, Link, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
 
+// アイコンマッピング
+export const iconMap = {
+  Home,
+  Users,
+  Link,
+  Tag,
+  Logs,
+  Settings,
+  Image,
+  BarChart3,
+  Shield,
+  UserCircle,
+  Command,
+  Building,
+  NotebookPen,
+  Share2,
+  HelpCircle,
+  CogIcon,
+} as const
+
+export type IconName = keyof typeof iconMap
+
 // 型定義
 export interface NavItem {
   title: string
@@ -18,8 +40,9 @@ export interface UserData {
 }
 
 export interface BrandConfig {
-  icon: React.ComponentType<{ className?: string }>
+  icon: IconName | React.ComponentType<{ className?: string }>
   iconBgColor?: string
+  brandImage?: string
   title: string
   subtitle: string
   url?: string
@@ -36,6 +59,7 @@ export interface SidebarConfig {
 export interface HeaderConfig {
   title?: string
   titleIcon?: React.ComponentType<{ className?: string }>
+  titleImage?: string
   titleUrl?: string
   titleIconBgColor?: string
   rightContent?: React.ReactNode
@@ -88,7 +112,7 @@ export const defaultUser: UserData = {
 
 // デフォルトブランド設定
 export const defaultBrand: BrandConfig = {
-  icon: Command,
+  icon: "Command",
   iconBgColor: "bg-sidebar-primary",
   title: "Altee Core",
   subtitle: "v1.0",
@@ -246,7 +270,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     sidebarWidth: "400px",
     firstSidebar: {
       brand: {
-        icon: Shield,
+        icon: "Shield",
         iconBgColor: "bg-red-600",
         title: "Admin Panel",
         subtitle: "System",
@@ -274,7 +298,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     sidebarWidth: "720px",
     firstSidebar: {
       brand: {
-        icon: UserCircle,
+        icon: "UserCircle",
         iconBgColor: "bg-blue-600",
         title: "User Profile",
         subtitle: "Settings",
@@ -304,7 +328,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     sidebarWidth: "280px",
     firstSidebar: {
       brand: {
-        icon: Building,
+        icon: "Building",
         iconBgColor: "bg-green-600",
         title: "Public Site",
         subtitle: "Welcome",
@@ -357,7 +381,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
     sidebarWidth: "350px",
     firstSidebar: {
       brand: {
-        icon: Settings,
+        icon: "Settings",
         iconBgColor: "bg-blue-600",
         title: "Dashboard",
         subtitle: "Settings",

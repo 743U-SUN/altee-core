@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import Image from "next/image"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { HeaderConfig } from "@/lib/layout-config"
@@ -46,7 +47,18 @@ export function Header({ config }: HeaderProps) {
         <div className="flex items-center gap-2">
           {config.titleUrl ? (
             <Link href={config.titleUrl} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              {config.titleIcon && (
+              {config.titleImage ? (
+                <div className="w-6 h-6 rounded-md overflow-hidden">
+                  <Image
+                    src={config.titleImage}
+                    alt="User Avatar"
+                    width={24}
+                    height={24}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : config.titleIcon && (
                 <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
                   <config.titleIcon className="w-4 h-4 text-white" />
                 </div>
@@ -55,7 +67,18 @@ export function Header({ config }: HeaderProps) {
             </Link>
           ) : (
             <>
-              {config.titleIcon && (
+              {config.titleImage ? (
+                <div className="w-6 h-6 rounded-md overflow-hidden">
+                  <Image
+                    src={config.titleImage}
+                    alt="User Avatar"
+                    width={24}
+                    height={24}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : config.titleIcon && (
                 <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
                   <config.titleIcon className="w-4 h-4 text-white" />
                 </div>
@@ -72,25 +95,27 @@ export function Header({ config }: HeaderProps) {
         </div>
       )}
 
-      {!config.hideUserMenu && !config.rightContent && (
+      {!config.rightContent && (
         <div className="ml-auto flex items-center gap-2">
           {!config.hideModeToggle && <ModeToggle />}
-          {config.user ? (
-            <NavUserHeader user={config.user} />
-          ) : (
-            <Button
-              variant="ghost"
-              className="h-8 w-8 rounded-full hover:bg-accent"
-              asChild
-            >
-              <Link href="/auth/signin">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    <CircleUserRound className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-            </Button>
+          {!config.hideUserMenu && (
+            config.user ? (
+              <NavUserHeader user={config.user} />
+            ) : (
+              <Button
+                variant="ghost"
+                className="h-8 w-8 rounded-full hover:bg-accent"
+                asChild
+              >
+                <Link href="/auth/signin">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      <CircleUserRound className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
+              </Button>
+            )
           )}
         </div>
       )}

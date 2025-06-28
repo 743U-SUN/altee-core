@@ -1,5 +1,7 @@
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getUserNavData } from "@/lib/user-data"
+import { getUserByHandle } from "@/lib/handle-utils"
+import { notFound } from "next/navigation"
 
 export default async function HandleLayout({
   children,
@@ -8,8 +10,13 @@ export default async function HandleLayout({
   children: React.ReactNode
   params: Promise<{ handle: string }>
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { handle } = await params
+  
+  // ページ対象のユーザー情報を取得
+  const targetUser = await getUserByHandle(handle)
+  if (!targetUser) {
+    notFound()
+  }
   const secondSidebarContent = (
     <div className="relative h-full w-full overflow-hidden">
       {/* 背景画像 */}
@@ -106,11 +113,44 @@ export default async function HandleLayout({
 
   const user = await getUserNavData()
 
+  // ヘッダー用のユーザー情報を準備
+  const userTitle = targetUser.characterName || targetUser.name || `@${targetUser.handle}`
+  
+  // プロフィール画像の優先順位: カスタム画像 > OAuth画像
+  let userAvatar: string | undefined
+  if (targetUser.profile?.profileImage?.storageKey) {
+    userAvatar = `/api/files/${targetUser.profile.profileImage.storageKey}`
+  } else if (targetUser.image) {
+    userAvatar = targetUser.image
+  }
+
+  // サイドバー用のブランド情報を準備
+  const brandTitle = targetUser.characterName || targetUser.name || `@${targetUser.handle}`
+  const brandSubtitle = targetUser.handle ? `@${targetUser.handle}` : "User Profile"
+
   return (
     <BaseLayout 
       variant="user-profile"
       user={user}
       overrides={{
+        firstSidebar: {
+          brand: {
+            icon: "UserCircle", // ユーザーアバターがない場合のフォールバック
+            iconBgColor: "bg-blue-600",
+            brandImage: userAvatar, // ユーザーアバターを設定（なければundefined）
+            title: brandTitle,
+            subtitle: brandSubtitle,
+            url: `/${targetUser.handle}`,
+          },
+          hideUser: true, // サイドバーのnav-userを非表示
+        },
+        header: {
+          title: userTitle,
+          titleImage: userAvatar,
+          titleUrl: `/${targetUser.handle}`,
+          hideUserMenu: true, // ヘッダーのnav-user-headerを非表示
+          hideModeToggle: false, // モードトグルは表示
+        },
         secondSidebar: {
           content: secondSidebarContent
         }

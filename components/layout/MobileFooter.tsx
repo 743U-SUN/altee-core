@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { SidebarConfig, MobileFooterConfig } from "@/lib/layout-config"
+import { SidebarConfig, MobileFooterConfig, iconMap, IconName } from "@/lib/layout-config"
 import { useIsMobile } from "@/hooks/use-mobile"
 
 interface MobileFooterProps {
@@ -31,7 +31,15 @@ export function MobileFooter({ sidebarConfig, mobileFooterConfig, className }: M
   // ブランドが存在しない場合は何も表示しない
   if (!brand) return null
 
-  const BrandIcon = brand.icon
+  // アイコンを解決する関数
+  const getBrandIcon = (icon: IconName | React.ComponentType<{ className?: string }>) => {
+    if (typeof icon === 'string') {
+      return iconMap[icon]
+    }
+    return icon
+  }
+
+  const BrandIcon = getBrandIcon(brand.icon)
 
   return (
     <footer
