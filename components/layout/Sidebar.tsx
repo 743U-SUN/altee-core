@@ -115,7 +115,7 @@ export function Sidebar({
           </SidebarGroup>
         </SidebarContent>
         
-        {!firstSidebarConfig.hideUser && firstSidebarConfig.user && (
+        {!firstSidebarConfig.hideUser && (
           <SidebarFooter>
             <NavUser user={firstSidebarConfig.user} />
           </SidebarFooter>

@@ -9,9 +9,12 @@ export interface NavItem {
 }
 
 export interface UserData {
-  name: string
-  email: string
-  avatar: string
+  id: string
+  name: string | null
+  email: string | null
+  characterName: string | null
+  handle: string | null
+  avatar: string | null
 }
 
 export interface BrandConfig {
@@ -40,6 +43,7 @@ export interface HeaderConfig {
   hideNotifications?: boolean
   hideSidebarTrigger?: boolean
   hideModeToggle?: boolean
+  user?: UserData | null
 }
 
 export interface MobileFooterConfig {
@@ -74,8 +78,11 @@ export interface LayoutOverrides {
 
 // デフォルトユーザーデータ
 export const defaultUser: UserData = {
+  id: "default",
   name: "shadcn",
   email: "m@example.com",
+  characterName: null,
+  handle: null,
   avatar: "/avatars/shadcn.jpg",
 }
 

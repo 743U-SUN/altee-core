@@ -2,10 +2,13 @@ import Link from "next/link"
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getUserNavData } from "@/lib/user-data"
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getUserNavData()
+  
   return (
-    <BaseLayout variant="default">
+    <BaseLayout variant="default" user={user}>
       <div className="flex flex-col gap-8">
         {/* Hero Section */}
         <div className="text-center space-y-4">

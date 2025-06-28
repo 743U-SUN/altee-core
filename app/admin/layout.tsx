@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getAdminStats } from "@/app/actions/admin-stats"
 import { getSidebarContent } from "@/lib/sidebar-content-registry"
+import { getUserNavData } from "@/lib/user-data"
 
 export default async function AdminLayout({
   children,
@@ -30,9 +31,13 @@ export default async function AdminLayout({
   const stats = await getAdminStats()
   const adminSidebarContent = getSidebarContent("admin", stats)
   
+  // ユーザー情報を取得
+  const user = await getUserNavData()
+  
   return (
     <BaseLayout 
       variant="admin"
+      user={user}
       overrides={{
         secondSidebar: {
           content: adminSidebarContent

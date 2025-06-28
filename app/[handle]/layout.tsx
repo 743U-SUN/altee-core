@@ -1,4 +1,5 @@
 import { BaseLayout } from "@/components/layout/BaseLayout"
+import { getUserNavData } from "@/lib/user-data"
 
 export default async function HandleLayout({
   children,
@@ -103,9 +104,12 @@ export default async function HandleLayout({
     </div>
   )
 
+  const user = await getUserNavData()
+
   return (
     <BaseLayout 
       variant="user-profile"
+      user={user}
       overrides={{
         secondSidebar: {
           content: secondSidebarContent

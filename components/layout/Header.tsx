@@ -5,6 +5,9 @@ import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { HeaderConfig } from "@/lib/layout-config"
+import { CircleUserRound } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 const NavUserHeader = dynamic(
   () => import("@/components/navigation/nav-user-header").then(mod => ({ default: mod.NavUserHeader })),
@@ -72,13 +75,23 @@ export function Header({ config }: HeaderProps) {
       {!config.hideUserMenu && !config.rightContent && (
         <div className="ml-auto flex items-center gap-2">
           {!config.hideModeToggle && <ModeToggle />}
-          <NavUserHeader 
-            user={{
-              name: "shadcn",
-              email: "m@example.com", 
-              avatar: "/avatars/shadcn.jpg"
-            }}
-          />
+          {config.user ? (
+            <NavUserHeader user={config.user} />
+          ) : (
+            <Button
+              variant="ghost"
+              className="h-8 w-8 rounded-full hover:bg-accent"
+              asChild
+            >
+              <Link href="/auth/signin">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>
+                    <CircleUserRound className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            </Button>
+          )}
         </div>
       )}
 

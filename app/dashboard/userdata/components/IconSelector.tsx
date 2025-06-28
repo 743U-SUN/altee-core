@@ -133,11 +133,6 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
     return iconName.startsWith('custom:')
   }
 
-  // カスタムアイコンのIDからアイコン情報を取得
-  const getCustomIconById = (iconId: string) => {
-    const id = iconId.replace('custom:', '')
-    return customIcons.find(icon => icon.id === id)
-  }
 
   return (
     <div className="space-y-4">

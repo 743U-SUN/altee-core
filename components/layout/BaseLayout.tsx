@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
-import { getLayoutConfig, mergeLayoutConfig, LayoutVariant, LayoutOverrides } from "@/lib/layout-config"
+import { getLayoutConfig, mergeLayoutConfig, LayoutVariant, LayoutOverrides, UserData } from "@/lib/layout-config"
 
 const MobileFooter = dynamic(
   () => import("./MobileFooter").then(mod => ({ default: mod.MobileFooter })),
@@ -26,18 +26,31 @@ const MobileSidebarSheet = dynamic(
 interface BaseLayoutProps {
   variant?: LayoutVariant
   overrides?: LayoutOverrides
+  user?: UserData | null
   children: React.ReactNode
 }
 
 export function BaseLayout({ 
   variant = 'default', 
   overrides, 
+  user,
   children 
 }: BaseLayoutProps) {
   const finalConfig = useMemo(() => {
     const baseConfig = getLayoutConfig(variant)
-    return mergeLayoutConfig(baseConfig, overrides)
-  }, [variant, overrides])
+    const configWithUser = mergeLayoutConfig(baseConfig, {
+      ...overrides,
+      firstSidebar: {
+        ...overrides?.firstSidebar,
+        user: user || undefined
+      },
+      header: {
+        ...overrides?.header,
+        user: user || undefined
+      }
+    })
+    return configWithUser
+  }, [variant, overrides, user])
 
   // 縦並びレイアウトの場合
   if (finalConfig.mobileLayout.verticalLayout) {

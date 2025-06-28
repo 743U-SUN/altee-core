@@ -1,5 +1,6 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 
@@ -98,7 +99,7 @@ export async function getIconTags(): Promise<{
         containerName: 'admin-icons',
         uploadType: 'ICON',
         deletedAt: null,
-        tags: { not: null }
+        tags: { not: Prisma.DbNull }
       },
       select: {
         tags: true,

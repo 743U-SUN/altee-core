@@ -1,6 +1,7 @@
 import { BaseLayout } from "@/components/layout/BaseLayout"
+import { getUserNavData } from "@/lib/user-data"
 
-export default function ProfileLayout({
+export default async function ProfileLayout({
   children,
 }: {
   children: React.ReactNode
@@ -99,9 +100,12 @@ export default function ProfileLayout({
     </div>
   )
 
+  const user = await getUserNavData()
+
   return (
     <BaseLayout 
       variant="user-profile"
+      user={user}
       overrides={{
         secondSidebar: {
           content: secondSidebarContent
