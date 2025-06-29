@@ -1,4 +1,6 @@
-import { Home, Users, Link, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
+import { Home, Users, Link,Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
+import type { UserNotification } from "@/types/notifications"
+import type { UserContact } from "@/types/contacts"
 
 // アイコンマッピング
 export const iconMap = {
@@ -7,6 +9,7 @@ export const iconMap = {
   Link,
   Tag,
   Logs,
+  Bell,
   Settings,
   Image,
   BarChart3,
@@ -68,6 +71,11 @@ export interface HeaderConfig {
   hideSidebarTrigger?: boolean
   hideModeToggle?: boolean
   user?: UserData | null
+  notificationData?: {
+    userId: string
+    notification: UserNotification | null
+    contact: UserContact | null
+  }
 }
 
 export interface MobileFooterConfig {
@@ -231,6 +239,12 @@ const dashboardNavItems: NavItem[] = [
     icon: HelpCircle,
     isActive: false,
   },
+  {
+    title: "通知設定",
+    url: "/dashboard/notifications",
+    icon: Bell,
+    isActive: false,
+  },  
   {
     title: "Home",
     url: "/",

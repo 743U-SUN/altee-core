@@ -26,6 +26,22 @@ const ModeToggle = dynamic(
   }
 )
 
+const NotificationIcon = dynamic(
+  () => import("@/components/notification/NotificationIcon").then(mod => ({ default: mod.NotificationIcon })),
+  { 
+    loading: () => <div className="w-9 h-9 bg-muted rounded-md animate-pulse" />,
+    ssr: false
+  }
+)
+
+const ContactIcon = dynamic(
+  () => import("@/components/notification/ContactIcon").then(mod => ({ default: mod.ContactIcon })),
+  { 
+    loading: () => <div className="w-9 h-9 bg-muted rounded-md animate-pulse" />,
+    ssr: false
+  }
+)
+
 interface HeaderProps {
   config: HeaderConfig
 }
@@ -97,6 +113,22 @@ export function Header({ config }: HeaderProps) {
 
       {!config.rightContent && (
         <div className="ml-auto flex items-center gap-2">
+          {/* 通知アイコン（ModeToggleの左側に配置） */}
+          {!config.hideNotifications && config.notificationData && (
+            <>
+              {config.notificationData.notification && (
+                <NotificationIcon 
+                  notification={config.notificationData.notification}
+                  userId={config.notificationData.userId}
+                />
+              )}
+              {config.notificationData.contact && (
+                <ContactIcon 
+                  contact={config.notificationData.contact}
+                />
+              )}
+            </>
+          )}
           {!config.hideModeToggle && <ModeToggle />}
           {!config.hideUserMenu && (
             config.user ? (
@@ -117,12 +149,6 @@ export function Header({ config }: HeaderProps) {
               </Button>
             )
           )}
-        </div>
-      )}
-
-      {!config.hideNotifications && (
-        <div className="flex items-center gap-2">
-          {/* 将来的に通知コンポーネントを追加 */}
         </div>
       )}
     </header>

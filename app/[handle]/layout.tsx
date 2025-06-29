@@ -1,6 +1,8 @@
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getUserNavData } from "@/lib/user-data"
 import { getUserByHandle } from "@/lib/handle-utils"
+import { getUserNotification } from "@/app/actions/notification-actions"
+import { getUserContact } from "@/app/actions/contact-actions"
 import { notFound } from "next/navigation"
 
 export default async function HandleLayout({
@@ -113,6 +115,12 @@ export default async function HandleLayout({
 
   const user = await getUserNavData()
 
+  // 通知・連絡方法データを取得
+  const [notificationResult, contactResult] = await Promise.all([
+    getUserNotification(targetUser.id),
+    getUserContact(targetUser.id)
+  ])
+
   // ヘッダー用のユーザー情報を準備
   const userTitle = targetUser.characterName || targetUser.name || `@${targetUser.handle}`
   
@@ -150,6 +158,11 @@ export default async function HandleLayout({
           titleUrl: `/${targetUser.handle}`,
           hideUserMenu: true, // ヘッダーのnav-user-headerを非表示
           hideModeToggle: false, // モードトグルは表示
+          notificationData: {
+            userId: targetUser.id,
+            notification: notificationResult.success ? (notificationResult.data ?? null) : null,
+            contact: contactResult.success ? (contactResult.data ?? null) : null,
+          },
         },
         secondSidebar: {
           content: secondSidebarContent

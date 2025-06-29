@@ -29,6 +29,8 @@ model User {
   userLinks              UserLink[]   // ユーザーのSNSリンク
   faqCategories          FaqCategory[] // FAQカテゴリー
   userData               UserData[]   // ユーザーデータ
+  notification           UserNotification? // お知らせ（1対1）
+  contact                UserContact?  // 連絡方法（1対1）
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -127,6 +129,8 @@ model MediaFile {
   articles            Article[]      // サムネイル用リレーション
   profileImages       UserProfile[]  @relation("ProfileImage")
   linkIcons           UserLink[]     @relation("LinkIcon")
+  notificationImages  UserNotification[] @relation("NotificationImage")
+  contactImages       UserContact[]  @relation("ContactImage")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   
@@ -230,13 +234,15 @@ enum UserRole {
 }
 
 enum MediaType {
-  THUMBNAIL  // 記事サムネイル
-  CONTENT    // 記事内画像
-  SYSTEM     // システム専用画像
-  PROFILE    // プロフィール画像
-  BACKGROUND // 背景画像
-  LINK_ICON  // リンクアイコン
-  ICON       // カスタムアイコン
+  THUMBNAIL    // 記事サムネイル
+  CONTENT      // 記事内画像
+  SYSTEM       // システム専用画像
+  PROFILE      // プロフィール画像
+  BACKGROUND   // 背景画像
+  LINK_ICON    // リンクアイコン
+  ICON         // カスタムアイコン
+  NOTIFICATION // 通知画像
+  CONTACT      // 連絡方法画像
 }
 
 model UserProfile {
@@ -365,4 +371,43 @@ model UserData {
   @@index([userId])
   @@index([sortOrder])
   @@map("user_data")
+}
+
+model UserNotification {
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  isEnabled   Boolean    @default(false)
+  title       String?
+  content     String?
+  linkUrl     String?
+  buttonText  String?
+  imageId     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  image       MediaFile? @relation("NotificationImage", fields: [imageId], references: [id])
+  
+  @@index([userId])
+  @@index([updatedAt])
+  @@map("user_notifications")
+}
+
+model UserContact {
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  isEnabled   Boolean    @default(false)
+  title       String?
+  content     String?
+  linkUrl     String?
+  buttonText  String?
+  imageId     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  image       MediaFile? @relation("ContactImage", fields: [imageId], references: [id])
+  
+  @@index([userId])
+  @@map("user_contacts")
 }
