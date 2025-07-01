@@ -31,7 +31,7 @@ export default async function UserDevicesPage() {
             <CardHeader>
               <CardTitle>登録デバイス</CardTitle>
               <CardDescription>
-                Amazon URLから新しいデバイスを追加するか、既存のデバイスから選択できます。
+                ドラッグ&ドロップで並び替えができます。設定したデバイスは公開プロフィールに表示されます。
               </CardDescription>
             </CardHeader>
             <CardContent>

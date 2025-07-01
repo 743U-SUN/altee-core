@@ -508,6 +508,7 @@ model UserDevice {
   deviceId       String
   isPublic       Boolean   @default(true)  // 公開/非公開設定
   review         String?   // ユーザーレビュー
+  sortOrder      Int       @default(0)     // 表示順序
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   
@@ -518,6 +519,7 @@ model UserDevice {
   @@index([userId])
   @@index([deviceId])
   @@index([isPublic])
+  @@index([sortOrder])
   @@map("user_devices")
 }
 

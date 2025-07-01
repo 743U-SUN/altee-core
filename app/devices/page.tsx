@@ -54,7 +54,7 @@ async function DeviceContent({ searchParams }: {
 
   return (
     <DeviceListSection
-      initialDevices={devices as DeviceWithDetails[]}
+      devices={devices as DeviceWithDetails[]}
       categories={categories}
       brands={brands}
       initialFilters={searchParams}

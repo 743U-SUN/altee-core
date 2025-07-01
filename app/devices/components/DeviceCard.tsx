@@ -1,11 +1,9 @@
-'use client'
-
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ExternalLink, Users, Eye } from "lucide-react"
+import { Users, Eye } from "lucide-react"
 import { DeviceImage } from "@/components/devices/device-image"
 import { DeviceWithDetails } from '@/types/device'
+import { AmazonLinkButton } from './AmazonLinkButton'
 
 interface DeviceCardProps {
   device: DeviceWithDetails
@@ -28,13 +26,7 @@ export function DeviceCard({ device }: DeviceCardProps) {
               </Badge>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.open(device.amazonUrl, '_blank')}
-          >
-            <ExternalLink className="h-3 w-3" />
-          </Button>
+          <AmazonLinkButton amazonUrl={device.amazonUrl} />
         </div>
       </CardHeader>
       

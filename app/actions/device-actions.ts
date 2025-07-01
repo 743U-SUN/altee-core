@@ -677,6 +677,7 @@ export async function getUserDevices(userId: string) {
         device: {
           include: {
             category: true,
+            brand: true,
             attributes: {
               include: {
                 categoryAttribute: true
@@ -685,7 +686,10 @@ export async function getUserDevices(userId: string) {
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
     })
   } catch (error) {
     console.error('ユーザーデバイス一覧取得エラー:', error)
@@ -932,7 +936,10 @@ export async function getUserPublicDevicesByHandle(handle: string): Promise<User
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
     })
 
     return { 
@@ -970,10 +977,39 @@ export async function getUserPublicDevices(userId: string) {
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
     })
   } catch (error) {
     console.error('ユーザー公開デバイス取得エラー:', error)
     return []
+  }
+}
+
+// ユーザーデバイスの並び順更新
+export async function reorderUserDevices(userId: string, deviceIds: string[]) {
+  try {
+    // トランザクションで一括更新
+    await prisma.$transaction(
+      deviceIds.map((deviceId, index) =>
+        prisma.userDevice.updateMany({
+          where: {
+            id: deviceId,
+            userId: userId // セキュリティ: 自分のデバイスのみ更新可能
+          },
+          data: {
+            sortOrder: index
+          }
+        })
+      )
+    )
+
+    revalidatePath('/dashboard/devices')
+    return { success: true }
+  } catch (error) {
+    console.error('デバイス並び順更新エラー:', error)
+    return { success: false, error: 'デバイスの並び順更新に失敗しました' }
   }
 }
