@@ -136,6 +136,22 @@ export default async function HandleLayout({
   const brandTitle = targetUser.characterName || targetUser.name || `@${targetUser.handle}`
   const brandSubtitle = targetUser.handle ? `@${targetUser.handle}` : "User Profile"
 
+  // 動的なnavItemsを生成
+  const navItems = [
+    {
+      title: "Devices",
+      url: `/${targetUser.handle}/devices`,
+      icon: "MonitorSmartphone" as const,
+      isActive: false,
+    },
+    {
+      title: "Settings",
+      url: `/profile/settings`,
+      icon: "Settings" as const,
+      isActive: false,
+    }
+  ]
+
   return (
     <BaseLayout 
       variant="user-profile"
@@ -150,6 +166,7 @@ export default async function HandleLayout({
             subtitle: brandSubtitle,
             url: `/${targetUser.handle}`,
           },
+          navItems: navItems, // 動的なnavItemsを追加
           hideUser: true, // サイドバーのnav-userを非表示
         },
         header: {

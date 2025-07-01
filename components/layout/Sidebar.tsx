@@ -127,7 +127,10 @@ export function Sidebar({
                       asChild
                     >
                       <a href={item.url}>
-                        <item.icon />
+                        {typeof item.icon === 'string' 
+                          ? React.createElement(iconMap[item.icon as IconName])
+                          : React.createElement(item.icon)
+                        }
                         <span>{item.title}</span>
                       </a>
                     </SidebarMenuButton>

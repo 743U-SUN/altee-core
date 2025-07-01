@@ -30,7 +30,7 @@ export type IconName = keyof typeof iconMap
 export interface NavItem {
   title: string
   url: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: IconName | React.ComponentType<{ className?: string }>
   isActive?: boolean
 }
 
@@ -200,20 +200,7 @@ const adminNavItems: NavItem[] = [
   }
 ]
 
-const userProfileNavItems: NavItem[] = [
-  {
-    title: "Devices",
-    url: "/devices",
-    icon: MonitorSmartphone,
-    isActive: true,
-  },
-  {
-    title: "Settings",
-    url: "/profile/settings",
-    icon: Settings,
-    isActive: false,
-  }
-]
+// userProfileNavItemsは削除（動的に生成するため）
 
 const dashboardNavItems: NavItem[] = [
   {
@@ -331,7 +318,7 @@ export const layoutConfigs: Record<LayoutVariant, LayoutConfig> = {
         subtitle: "Settings",
         url: "/profile",
       },
-      navItems: userProfileNavItems,
+      navItems: [], // デフォルトは空配列、動的に設定される
       user: defaultUser,
       hideUser: false,
     },

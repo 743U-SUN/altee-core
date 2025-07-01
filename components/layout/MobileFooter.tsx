@@ -62,7 +62,9 @@ export function MobileFooter({ sidebarConfig, mobileFooterConfig, className }: M
 
         {/* ナビゲーション項目 */}
         {navItems.map((item) => {
-          const ItemIcon = item.icon
+          const ItemIcon = typeof item.icon === 'string' 
+            ? iconMap[item.icon as IconName]
+            : item.icon
           return (
             <Link
               key={item.title}
