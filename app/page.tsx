@@ -111,11 +111,6 @@ export default async function HomePage() {
               ダッシュボードを見る
             </Link>
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/demo/database-test">
-              データベーステスト
-            </Link>
-          </Button>
         </div>
 
         {/* Development Info */}
