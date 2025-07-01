@@ -31,6 +31,7 @@ model User {
   userData               UserData[]   // ユーザーデータ
   notification           UserNotification? // お知らせ（1対1）
   contact                UserContact?  // 連絡方法（1対1）
+  userDevices            UserDevice[] // ユーザー所有デバイス
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -410,4 +411,136 @@ model UserContact {
   
   @@index([userId])
   @@map("user_contacts")
+}
+
+// ===== Device System =====
+
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    @unique // Logitech、Razer、HHKB等
+  slug        String    @unique
+  logoUrl     String?   // ブランドロゴのURL
+  website     String?   // 公式サイト
+  description String?   // ブランド説明
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // リレーション
+  devices     Device[]
+  
+  @@index([sortOrder])
+  @@index([name])
+  @@map("brands")
+}
+
+model DeviceCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique // マウス、キーボード、ヘッドセット等
+  slug        String    @unique
+  icon        String?   // Lucideアイコン名
+  description String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // リレーション
+  attributes  CategoryAttribute[]
+  devices     Device[]
+  
+  @@index([sortOrder])
+  @@map("device_categories")
+}
+
+model CategoryAttribute {
+  id           String          @id @default(cuid())
+  categoryId   String
+  name         String          // DPI、ボタン数、接続方式等
+  type         AttributeType   // SELECT, NUMBER, TEXT, BOOLEAN
+  unit         String?         // グラム、Hz等の単位
+  options      Json?           // SELECT型の選択肢配列
+  required     Boolean         @default(false)
+  sortOrder    Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  category     DeviceCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  // リレーション
+  deviceAttributes DeviceAttribute[]
+  
+  @@index([categoryId])
+  @@index([sortOrder])
+  @@map("category_attributes")
+}
+
+model Device {
+  id               String         @id @default(cuid())
+  asin             String         @unique // Amazon商品識別番号
+  name             String         // 商品名
+  description      String?        // 商品説明
+  categoryId       String
+  brandId          String?        // ブランドID（オプショナル）
+  amazonUrl        String         // 元のAmazon URL
+  amazonImageUrl   String?        // Amazon OG画像URL（直リンク）
+  ogTitle          String?        // OG情報から取得したタイトル
+  ogDescription    String?        // OG情報から取得した説明
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  
+  category         DeviceCategory @relation(fields: [categoryId], references: [id])
+  brand            Brand?         @relation(fields: [brandId], references: [id])
+  
+  // リレーション
+  userDevices      UserDevice[]
+  attributes       DeviceAttribute[]
+  
+  @@index([asin])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([createdAt])
+  @@map("devices")
+}
+
+model UserDevice {
+  id             String    @id @default(cuid())
+  userId         String
+  deviceId       String
+  isPublic       Boolean   @default(true)  // 公開/非公開設定
+  review         String?   // ユーザーレビュー
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device         Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, deviceId]) // 同じユーザーが同じデバイスを複数登録可能（複数のマウス等）
+  @@index([userId])
+  @@index([deviceId])
+  @@index([isPublic])
+  @@map("user_devices")
+}
+
+model DeviceAttribute {
+  id                   String            @id @default(cuid())
+  deviceId             String
+  categoryAttributeId  String
+  value                String            // 属性値（文字列として保存）
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  
+  device               Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  categoryAttribute    CategoryAttribute @relation(fields: [categoryAttributeId], references: [id], onDelete: Cascade)
+  
+  @@unique([deviceId, categoryAttributeId]) // 1つのデバイスに対して1つの属性につき1つの値
+  @@index([deviceId])
+  @@index([categoryAttributeId])
+  @@map("device_attributes")
+}
+
+enum AttributeType {
+  SELECT   // 選択肢から選択
+  NUMBER   // 数値入力
+  TEXT     // 自由入力
+  BOOLEAN  // Yes/No
 }

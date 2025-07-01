@@ -1,4 +1,4 @@
-import { Home, Users, Link,Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
+import { Home, Users, MonitorSmartphone, Link, Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
 import type { UserNotification } from "@/types/notifications"
 import type { UserContact } from "@/types/contacts"
 
@@ -21,6 +21,7 @@ export const iconMap = {
   Share2,
   HelpCircle,
   CogIcon,
+  MonitorSmartphone,
 } as const
 
 export type IconName = keyof typeof iconMap
@@ -174,6 +175,12 @@ const adminNavItems: NavItem[] = [
     isActive: false,
   },  
   {
+    title: "Devices",
+    url: "/admin/devices",
+    icon: MonitorSmartphone,
+    isActive: false,
+  },    
+  {
     title: "Article",
     url: "/admin/articles",
     icon: NotebookPen,
@@ -195,9 +202,9 @@ const adminNavItems: NavItem[] = [
 
 const userProfileNavItems: NavItem[] = [
   {
-    title: "Profile",
-    url: "/profile",
-    icon: UserCircle,
+    title: "Devices",
+    url: "/devices",
+    icon: MonitorSmartphone,
     isActive: true,
   },
   {
@@ -233,6 +240,12 @@ const dashboardNavItems: NavItem[] = [
     icon: Share2,
     isActive: false,
   },
+  {
+    title: "デバイス管理",
+    url: "/dashboard/devices",
+    icon: MonitorSmartphone,
+    isActive: false,
+  },  
   {
     title: "FAQ管理",
     url: "/dashboard/faq",
