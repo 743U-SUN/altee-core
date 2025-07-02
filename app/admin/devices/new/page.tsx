@@ -7,8 +7,8 @@ import { DeviceForm } from '../components/DeviceForm'
 export default function NewDevicePage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="outline" size="sm" asChild>
+      <div className="space-y-4">
+        <Button variant="outline" size="sm" asChild className="w-fit">
           <Link href="/admin/devices">
             <ArrowLeft className="mr-2 h-4 w-4" />
             戻る
