@@ -13,7 +13,7 @@ export default async function HomePage() {
         {/* Hero Section */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
-            Welcome to Altee Core
+            Welcome to Altee
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Next.js 15 + shadcn/ui + Prisma を使用したモダンなウェブアプリ
