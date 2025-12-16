@@ -19,6 +19,16 @@ const nextConfig: NextConfig = {
         hostname: 'images-na.ssl-images-amazon.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com',
+        pathname: '/**',
+      },
     ],
     minimumCacheTTL: 86400, // 24時間キャッシュ
   },

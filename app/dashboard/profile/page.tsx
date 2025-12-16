@@ -37,12 +37,12 @@ export default async function ProfilePage() {
               <CardDescription>他のユーザーに表示される画像です</CardDescription>
             </CardHeader>
             <CardContent>
-              <ProfileImageSection 
+              <ProfileImageSection
                 initialImage={profile?.profileImage ? {
                   id: profile.profileImage.id,
                   name: profile.profileImage.fileName,
                   originalName: profile.profileImage.originalName,
-                  url: `https://object-storage.c3j1.conoha.io/v1/AUTH_0bf5238d06034983a552682e781f9e25/${profile.profileImage.storageKey}`,
+                  url: `/api/files/${profile.profileImage.storageKey}`,
                   key: profile.profileImage.storageKey,
                   size: profile.profileImage.fileSize,
                   type: profile.profileImage.mimeType,

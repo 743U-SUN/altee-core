@@ -20,12 +20,12 @@ services:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
       - DATABASE_URL=postgresql://postgres:password@db:5432/altee_dev?schema=public
-      - STORAGE_ENDPOINT=http://s3proxy:80
-      - STORAGE_ACCESS_KEY=altee-access-key
-      - STORAGE_SECRET_KEY=altee-secret-key-12345
-      - STORAGE_BUCKET=images
-      - STORAGE_REGION=c3j1
-      - STORAGE_FORCE_PATH_STYLE=true
+      - STORAGE_ENDPOINT=https://61edd3141ab2f4e0778c420d0fd61f7a.r2.cloudflarestorage.com
+      - STORAGE_ACCESS_KEY=4eac9a8ea885313fa5fe21c00759be9a
+      - STORAGE_SECRET_KEY=27582681dd770f6e0a95c8513fee18f9aaa92bd873deafe9dd64b80609d7339a
+      - STORAGE_BUCKET=altee-images
+      - STORAGE_REGION=auto
+      - STORAGE_FORCE_PATH_STYLE=false
       - NEXT_PUBLIC_STORAGE_URL=http://localhost:3000/api/files
     command: npm run dev
     restart: unless-stopped
@@ -67,28 +67,6 @@ services:
     command: npx prisma studio --hostname 0.0.0.0 --port 5555
     depends_on:
       - db
-    networks:
-      - altee-network
-
-  s3proxy:
-    image: andrewgaul/s3proxy:2.6.0
-    container_name: altee-core-s3proxy-dev
-    ports:
-      - "8081:80"  # S3Proxy API（コンテナ内では80番ポート）
-    environment:
-      - S3PROXY_AUTHORIZATION=aws-v2-or-v4
-      - S3PROXY_IDENTITY=${CONOHA_ACCESS_KEY}
-      - S3PROXY_CREDENTIAL=${CONOHA_SECRET_KEY}
-      - S3PROXY_IGNORE_UNKNOWN_HEADERS=true
-      - JCLOUDS_PROVIDER=openstack-swift
-      - JCLOUDS_ENDPOINT=https://identity.c3j1.conoha.io/v3
-      - JCLOUDS_IDENTITY=${CONOHA_TENANT_NAME}:${CONOHA_API_USER}
-      - JCLOUDS_CREDENTIAL=${CONOHA_API_PASSWORD}
-      - JCLOUDS_REGIONS=c3j1
-      - JCLOUDS_REGION=c3j1
-      - JCLOUDS_KEYSTONE_VERSION=3
-      - JCLOUDS_KEYSTONE_SCOPE=project:${CONOHA_TENANT_NAME}
-    restart: unless-stopped
     networks:
       - altee-network
 

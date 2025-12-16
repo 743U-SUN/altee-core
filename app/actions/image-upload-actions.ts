@@ -30,22 +30,19 @@ export async function uploadImageAction(
     const extension = fileName.split('.').pop() || ''
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
     
-    // コンテナとキーを決定（専用コンテナ対応）
-    let bucket: string
+    // バケットとキーを決定（Cloudflare R2対応）
+    // R2では単一バケット内にフォルダ構造で整理
+    const bucket = STORAGE_BUCKET  // 常に "altee-images" を使用
     let key: string
-    
+
     if (folder === 'article-thumbnails' || folder === 'article-images' || folder === 'system-assets' || folder === 'user-icons' || folder === 'admin-links' || folder === 'user-links' || folder === 'admin-icons' || folder === 'user-notifications' || folder === 'user-contacts') {
-      // 専用コンテナに直接保存
-      bucket = folder
-      
-      // Swift最適化された階層構造: YYYY/MM/filename
+      // 日付ベースの階層構造: folder/YYYY/MM/filename
       const date = new Date()
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
-      key = `${year}/${month}/${uniqueFileName}`
+      key = `${folder}/${year}/${month}/${uniqueFileName}`
     } else {
-      // 従来の方式（imagesコンテナ内フォルダ）
-      bucket = STORAGE_BUCKET
+      // その他: folder/filename
       key = `${folder}/${uniqueFileName}`
     }
     
@@ -103,7 +100,7 @@ export async function uploadImageAction(
       id: mediaFile.id, // データベースのIDを使用
       name: uniqueFileName,
       originalName: fileName,
-      url: `/api/files/${bucket}/${key}`,
+      url: `/api/files/${mediaFile.storageKey}`, // storageKeyを使用（既にバケット名含む）
       key: `${bucket}/${key}`, // 完全なストレージキー
       size: processedFile.size,
       type: processedFile.type,
@@ -187,18 +184,12 @@ export async function deleteImageAction(
       return { success: false, error: '削除権限がありません' }
     }
 
-    // オブジェクトストレージからファイルを削除
-    // storageKeyの形式: "container/path/file.ext" または "file.ext"
+    // Cloudflare R2からファイルを削除
+    // storageKeyの形式: "altee-images/folder/path/file.ext"
     const storageKeyParts = fileKey.split('/')
-    let bucket = STORAGE_BUCKET
-    let objectKey = fileKey
-    
-    // 専用コンテナの場合（例: "article-thumbnails/2024/12/file.webp"）
-    if (storageKeyParts.length > 1) {
-      bucket = storageKeyParts[0] // "article-thumbnails"
-      objectKey = storageKeyParts.slice(1).join('/') // "2024/12/file.webp"
-    }
-    
+    const bucket = storageKeyParts[0]  // "altee-images"
+    const objectKey = storageKeyParts.slice(1).join('/')  // "folder/path/file.ext"
+
     await storageClient.send(new DeleteObjectCommand({
       Bucket: bucket,
       Key: objectKey,

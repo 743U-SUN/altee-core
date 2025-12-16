@@ -9,27 +9,20 @@ export async function GET(
   try {
     // paramsを解決
     const resolvedParams = await params
-    
-    // パスの最初の部分をコンテナ名、残りをキーとして解析
-    const [containerName, ...keyParts] = resolvedParams.path
-    
-    // 専用コンテナかどうかを判定
-    let bucket: string
-    let key: string
-    
-    if (containerName === 'article-thumbnails' || containerName === 'article-images' || containerName === 'system' || containerName === 'user-icons' || containerName === 'admin-links' || containerName === 'user-links' || containerName === 'admin-icons' || containerName === 'user-notifications' || containerName === 'user-contacts') {
-      // 専用コンテナの場合
-      bucket = containerName
-      key = keyParts.join('/')
-    } else {
-      // 従来のimagesコンテナの場合
-      bucket = STORAGE_BUCKET
-      key = resolvedParams.path.join('/')
-    }
-    
+
+    // Cloudflare R2対応: 単一バケット内のパス構造
+    const bucket = STORAGE_BUCKET  // 常に "altee-images"
+
+    // URLパスからバケット名を除外してキーを生成
+    // URL例: /api/files/altee-images/user-icons/2025/12/xxx.webp
+    // → path: ["altee-images", "user-icons", "2025", "12", "xxx.webp"]
+    // → key: "user-icons/2025/12/xxx.webp" (最初のaltee-imagesを除外)
+    const pathParts = resolvedParams.path
+    const key = pathParts[0] === bucket ? pathParts.slice(1).join('/') : pathParts.join('/')
+
     console.log(`Fetching file from ${bucket}: ${key}`)
-    
-    // ConoHaからファイルを取得
+
+    // Cloudflare R2からファイルを取得
     const response = await storageClient.send(new GetObjectCommand({
       Bucket: bucket,
       Key: key,
@@ -38,9 +31,10 @@ export async function GET(
     if (!response.Body) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
-    
+
     // ストリームをバッファに変換
-    const buffer = await response.Body.transformToByteArray()
+    const bytes = await response.Body.transformToByteArray()
+    const buffer = Buffer.from(bytes)
     
     // レスポンスヘッダーを設定
     const headers = new Headers()
