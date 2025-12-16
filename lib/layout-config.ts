@@ -41,6 +41,7 @@ export interface UserData {
   characterName: string | null
   handle: string | null
   avatar: string | null
+  role?: string | null
 }
 
 export interface BrandConfig {

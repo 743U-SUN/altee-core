@@ -5,6 +5,7 @@ import {
   ChevronsUpDown,
   LogOut,
   Settings,
+  Shield,
 } from "lucide-react"
 import Link from "next/link"
 import { logoutAction } from "@/app/actions/auth"
@@ -109,6 +110,14 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              {user.role === 'ADMIN' && (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin">
+                    <Shield />
+                    Admin
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <Link href="/dashboard">
                   <Settings />

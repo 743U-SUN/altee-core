@@ -8,6 +8,7 @@ export interface UserNavData {
   characterName: string | null
   handle: string | null
   avatar: string | null
+  role?: string | null
 }
 
 /**
@@ -54,6 +55,7 @@ export async function getUserNavData(): Promise<UserNavData | null> {
     email: user.email,
     characterName: user.characterName,
     handle: user.handle,
-    avatar
+    avatar,
+    role: user.role
   }
 }
