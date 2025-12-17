@@ -105,3 +105,34 @@ export async function getUserProfile(userId?: string) {
     return { success: false, error: "プロフィールの取得に失敗しました" }
   }
 }
+
+/**
+ * 背景画像一覧を取得
+ */
+export async function getBackgroundImages() {
+  try {
+    const backgroundImages = await prisma.mediaFile.findMany({
+      where: {
+        uploadType: 'BACKGROUND',
+        deletedAt: null, // 削除されていないもののみ
+      },
+      select: {
+        id: true,
+        storageKey: true,
+        fileName: true,
+        originalName: true,
+        description: true,
+        altText: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    return { success: true, data: backgroundImages }
+  } catch (error) {
+    console.error("背景画像取得エラー:", error)
+    return { success: false, error: "背景画像の取得に失敗しました" }
+  }
+}

@@ -55,7 +55,7 @@ export default async function ProfilePage() {
           </Card>
 
           {/* 背景画像 */}
-          <BackgroundImageSection />
+          <BackgroundImageSection currentBackgroundKey={profile?.backgroundImageKey} />
 
           {/* 基本情報 */}
           <Card>
