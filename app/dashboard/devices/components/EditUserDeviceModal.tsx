@@ -92,7 +92,9 @@ export function EditUserDeviceModal({
           <CardContent>
             <div className="flex items-start space-x-4">
               <DeviceImage
-                src={userDevice.device.amazonImageUrl}
+                imageStorageKey={userDevice.device.imageStorageKey}
+                customImageUrl={userDevice.device.customImageUrl}
+                amazonImageUrl={userDevice.device.amazonImageUrl}
                 alt={userDevice.device.name}
                 width={80}
                 height={80}

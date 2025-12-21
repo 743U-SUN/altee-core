@@ -206,7 +206,7 @@ export function MultipleIconUploadSection({
                       alt={icon.iconName}
                       width={48}
                       height={48}
-                      className="object-contain"
+                      className="object-contain dark:brightness-0 dark:invert"
                       unoptimized
                     />
                   </div>

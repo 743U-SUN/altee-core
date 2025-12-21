@@ -46,6 +46,8 @@ const CONTAINER_OPTIONS = [
   { value: 'article-images', label: '記事画像' },
   { value: 'article-thumbnails', label: '記事サムネイル' },
   { value: 'images', label: '汎用画像' },
+  { value: 'system-assets', label: 'システム画像' },
+  { value: 'backgrounds', label: '背景画像' },
 ]
 
 const ITEMS_PER_PAGE = 12

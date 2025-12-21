@@ -1,7 +1,7 @@
 'use server'
 
 import { PutObjectCommand } from '@aws-sdk/client-s3'
-import { storageClient } from '@/lib/storage'
+import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { MediaType } from '@prisma/client'
@@ -72,33 +72,33 @@ export async function uploadMediaFileAction(
     const extension = fileName.split('.').pop() || ''
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
     
-    // uploadTypeに基づいてコンテナを決定
-    let containerName: string
+    // uploadTypeに基づいてフォルダを決定
+    let folder: string
     switch (metadata.uploadType) {
       case 'THUMBNAIL':
-        containerName = 'article-thumbnails'
+        folder = 'article-thumbnails'
         break
       case 'CONTENT':
-        containerName = 'article-images'
+        folder = 'article-images'
         break
       case 'SYSTEM':
-        containerName = 'system'
+        folder = 'system-assets'
         break
       case 'ICON':
-        containerName = 'admin-icons'
+        folder = 'admin-icons'
         break
       case 'BACKGROUND':
-        containerName = 'backgrounds'
+        folder = 'backgrounds'
         break
       default:
         return { success: false, error: '無効なアップロードタイプです' }
     }
 
-    // Swift最適化された階層構造: YYYY/MM/filename
+    // Swift最適化された階層構造: folder/YYYY/MM/filename
     const date = new Date()
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
-    const key = `${year}/${month}/${uniqueFileName}`
+    const key = `${folder}/${year}/${month}/${uniqueFileName}`
     
     let processedFile = file
     
@@ -113,9 +113,9 @@ export async function uploadMediaFileAction(
 
     // S3へのアップロード
     const fileBuffer = Buffer.from(await processedFile.arrayBuffer())
-    
+
     const command = new PutObjectCommand({
-      Bucket: containerName,
+      Bucket: STORAGE_BUCKET,
       Key: key,
       Body: fileBuffer,
       ContentType: fileType,
@@ -125,11 +125,11 @@ export async function uploadMediaFileAction(
     await storageClient.send(command)
 
     // データベースに保存
-    const storageKey = `${containerName}/${key}`
+    const storageKey = `${STORAGE_BUCKET}/${key}`
     const mediaFile = await prisma.mediaFile.create({
       data: {
         storageKey,
-        containerName,
+        containerName: folder, // フォルダ名を保存（バケット名ではなく）
         originalName: fileName,
         fileName: uniqueFileName,
         fileSize: fileBuffer.length,

@@ -87,7 +87,7 @@ const createEditLinkFormSchema = (linkTypes: LinkType[]) => {
   }).refine((data) => {
     // URLパターンのバリデーション
     const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
-    
+
     if (selectedLinkType?.urlPattern) {
       try {
         const regex = new RegExp(selectedLinkType.urlPattern)
@@ -103,6 +103,16 @@ const createEditLinkFormSchema = (linkTypes: LinkType[]) => {
   }, {
     message: "このサービスの有効なURLを入力してください",
     path: ["url"] // エラーをurlフィールドに表示
+  }).refine((data) => {
+    // カスタムリンクの場合はcustomLabelが必須
+    const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
+    if (selectedLinkType?.isCustom) {
+      return !!data.customLabel && data.customLabel.trim().length > 0
+    }
+    return true
+  }, {
+    message: "カスタムリンクのラベル名は必須です",
+    path: ["customLabel"]
   })
 }
 
@@ -152,6 +162,7 @@ export function EditLinkModal({ link, linkTypes, onLinkUpdated }: EditLinkModalP
     setIsSubmitting(true)
     try {
       const result = await updateUserLink(link.id, {
+        linkTypeId: data.linkTypeId,
         url: data.url,
         customLabel: data.customLabel || undefined,
         customIconId: data.customIconId || undefined,
@@ -201,9 +212,25 @@ export function EditLinkModal({ link, linkTypes, onLinkUpdated }: EditLinkModalP
     }
   }
 
-  const handleCustomIconDelete = () => {
-    setUploadedCustomIcon(null)
-    form.setValue("customIconId", "")
+  const handleCustomIconDelete = async () => {
+    if (!uploadedCustomIcon) return
+
+    try {
+      // カスタムアイコンを即座に削除
+      const result = await updateUserLink(link.id, {
+        customIconId: null as unknown as undefined, // nullを渡してDBから削除
+      })
+
+      if (result.success) {
+        setUploadedCustomIcon(null)
+        form.setValue("customIconId", "")
+        toast.success("カスタムアイコンを削除しました")
+      } else {
+        toast.error(result.error || "カスタムアイコンの削除に失敗しました")
+      }
+    } catch {
+      toast.error("カスタムアイコンの削除に失敗しました")
+    }
   }
 
   const handlePresetIconSelected = (iconId: string) => {

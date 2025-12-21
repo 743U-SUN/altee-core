@@ -183,6 +183,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
                 return (
                   <Button
                     key={icon.name}
+                    type="button"
                     variant={isSelected ? "default" : "ghost"}
                     size="sm"
                     className="h-10 w-10 flex items-center justify-center p-2"
@@ -224,6 +225,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
               </div>
               {selectedTags.length > 0 && (
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedTags([])}
@@ -249,6 +251,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
                   return (
                     <Button
                       key={icon.id}
+                      type="button"
                       variant={isSelected ? "default" : "ghost"}
                       size="sm"
                       className="h-10 w-10 flex items-center justify-center p-2"

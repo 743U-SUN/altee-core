@@ -105,7 +105,7 @@ export function PresetIconSelector({
                   alt="アイコン"
                   width={32}
                   height={32}
-                  className="object-contain"
+                  className="object-contain dark:brightness-0 dark:invert"
                   unoptimized
                 />
               </div>

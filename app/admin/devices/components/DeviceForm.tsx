@@ -27,6 +27,7 @@ import type { CategoryAttribute } from '@prisma/client'
 
 const deviceSchema = z.object({
   amazonUrl: z.string().min(1, 'Amazon URLを入力してください'),
+  customImageUrl: z.string().url('有効なURLを入力してください').optional().or(z.literal('')),
   name: z.string().min(1, 'デバイス名を入力してください'),
   description: z.string().optional(),
   categoryId: z.string().min(1, 'カテゴリを選択してください'),
@@ -47,6 +48,8 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
   const [asin, setAsin] = useState<string>('')
   const [isLoadingOg, setIsLoadingOg] = useState(false)
   const [attributes, setAttributes] = useState<{ [key: string]: string }>({})
+  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
+  const [isLoadingCustomImage, setIsLoadingCustomImage] = useState(false)
 
   const {
     register,
@@ -58,6 +61,7 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
     resolver: zodResolver(deviceSchema),
     defaultValues: initialData ? {
       amazonUrl: initialData.amazonUrl || '',
+      customImageUrl: initialData.customImageUrl || '',
       name: initialData.name || '',
       description: initialData.description || '',
       categoryId: initialData.categoryId || '',
@@ -66,6 +70,7 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
 
   const watchedCategoryId = watch('categoryId')
   const watchedAmazonUrl = watch('amazonUrl')
+  const watchedCustomImageUrl = watch('customImageUrl')
 
   // カテゴリデータ取得
   useEffect(() => {
@@ -138,6 +143,37 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
     }
   }
 
+  // カスタム画像URLの確認
+  const handleCustomImageCheck = async () => {
+    const url = watchedCustomImageUrl?.trim()
+    if (!url) {
+      setCustomImagePreview(null)
+      return
+    }
+
+    setIsLoadingCustomImage(true)
+
+    try {
+      // 画像URLの検証（実際に画像を読み込んで確認）
+      const img = new Image()
+      img.onload = () => {
+        setCustomImagePreview(url)
+        toast.success('画像を確認しました')
+        setIsLoadingCustomImage(false)
+      }
+      img.onerror = () => {
+        toast.error('画像の読み込みに失敗しました。URLを確認してください')
+        setCustomImagePreview(null)
+        setIsLoadingCustomImage(false)
+      }
+      img.src = url
+    } catch {
+      toast.error('画像URL確認中にエラーが発生しました')
+      setCustomImagePreview(null)
+      setIsLoadingCustomImage(false)
+    }
+  }
+
   // 属性値の更新
   const handleAttributeChange = (attributeId: string, value: string) => {
     setAttributes(prev => ({
@@ -160,6 +196,7 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
       categoryId: data.categoryId,
       amazonUrl: data.amazonUrl,
       amazonImageUrl: ogData?.image,
+      customImageUrl: data.customImageUrl || undefined,
       ogTitle: ogData?.title,
       ogDescription: ogData?.description,
       attributes
@@ -204,6 +241,54 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
         )}
       </div>
 
+      {/* カスタム画像URL */}
+      <div className="space-y-2">
+        <Label htmlFor="customImageUrl">カスタム画像URL（オプション）</Label>
+        <div className="flex space-x-2">
+          <Input
+            {...register('customImageUrl')}
+            placeholder="https://example.com/image.jpg"
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            onClick={handleCustomImageCheck}
+            disabled={isLoadingCustomImage || !watchedCustomImageUrl}
+            variant="outline"
+          >
+            {isLoadingCustomImage ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              '確認'
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Amazon画像が存在しない場合や、別の画像を使用したい場合に指定してください。
+        </p>
+        {errors.customImageUrl && (
+          <p className="text-sm text-destructive">{errors.customImageUrl.message}</p>
+        )}
+      </div>
+
+      {/* カスタム画像プレビュー */}
+      {customImagePreview && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">カスタム画像プレビュー</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <DeviceImage
+              customImageUrl={customImagePreview}
+              alt="カスタム画像プレビュー"
+              width={200}
+              height={200}
+              className="flex-shrink-0"
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* OG情報プレビュー */}
       {ogData && (
         <Card>
@@ -213,7 +298,7 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
           <CardContent className="flex space-x-4">
             {ogData.image && (
               <DeviceImage
-                src={ogData.image}
+                amazonImageUrl={ogData.image}
                 alt={ogData.title || 'デバイス画像'}
                 width={100}
                 height={100}

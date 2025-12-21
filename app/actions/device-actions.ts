@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import ogs from 'open-graph-scraper'
 import { UserDeviceForPublicPage } from '@/types/device'
+import { auth } from '@/auth'
 
 // Amazon URL解析結果の型
 export interface AmazonUrlResult {
@@ -426,6 +427,7 @@ export interface CreateDeviceData {
   brandId?: string
   amazonUrl: string
   amazonImageUrl?: string
+  customImageUrl?: string
   ogTitle?: string
   ogDescription?: string
   attributes?: { [attributeId: string]: string }
@@ -434,6 +436,20 @@ export interface CreateDeviceData {
 // デバイス作成
 export async function createDevice(data: CreateDeviceData) {
   try {
+    // 画像URLがある場合はR2にダウンロード・アップロード
+    // カスタムURL優先、なければAmazon画像URL
+    let imageStorageKey: string | undefined = undefined
+    const imageUrl = data.customImageUrl || data.amazonImageUrl
+    if (imageUrl) {
+      const uploadResult = await downloadAndUploadDeviceImage(imageUrl, data.asin)
+      if (uploadResult.success) {
+        imageStorageKey = uploadResult.storageKey
+      } else {
+        console.error('画像アップロード失敗:', uploadResult.error)
+        // 画像アップロード失敗してもデバイス作成は続行
+      }
+    }
+
     const device = await prisma.device.create({
       data: {
         asin: data.asin,
@@ -443,6 +459,8 @@ export async function createDevice(data: CreateDeviceData) {
         brandId: data.brandId,
         amazonUrl: data.amazonUrl,
         amazonImageUrl: data.amazonImageUrl,
+        customImageUrl: data.customImageUrl,
+        imageStorageKey,
         ogTitle: data.ogTitle,
         ogDescription: data.ogDescription,
       },
@@ -544,18 +562,77 @@ export async function getDevice(id: string) {
 // デバイス更新
 export async function updateDevice(id: string, data: Partial<CreateDeviceData>) {
   try {
+    // 現在のデバイス情報を取得
+    const currentDevice = await prisma.device.findUnique({
+      where: { id }
+    })
+
+    if (!currentDevice) {
+      return { success: false, error: 'デバイスが見つかりません' }
+    }
+
+    // 画像URLが変更された場合の処理
+    let imageStorageKey: string | null | undefined = currentDevice.imageStorageKey
+    const newImageUrl = data.customImageUrl || data.amazonImageUrl
+    const oldImageUrl = currentDevice.customImageUrl || currentDevice.amazonImageUrl
+
+    console.log('画像URL更新チェック:', {
+      newImageUrl,
+      oldImageUrl,
+      'data.customImageUrl': data.customImageUrl,
+      'data.amazonImageUrl': data.amazonImageUrl,
+      'currentDevice.customImageUrl': currentDevice.customImageUrl,
+      'currentDevice.amazonImageUrl': currentDevice.amazonImageUrl
+    })
+
+    // 画像URLが変更された場合
+    if (newImageUrl && newImageUrl !== oldImageUrl) {
+      console.log('画像URLが変更されました。アップロード開始...')
+      // 古い画像を削除
+      if (currentDevice.imageStorageKey) {
+        await deleteDeviceImageFromR2(currentDevice.imageStorageKey)
+      }
+
+      // 新しい画像をダウンロード・アップロード
+      const uploadResult = await downloadAndUploadDeviceImage(newImageUrl, currentDevice.asin)
+      if (uploadResult.success) {
+        imageStorageKey = uploadResult.storageKey || null
+        console.log('画像アップロード成功:', imageStorageKey)
+      } else {
+        console.error('画像アップロード失敗:', uploadResult.error)
+        imageStorageKey = null
+      }
+    } else {
+      console.log('画像URLは変更されていません。アップロードをスキップ')
+    }
+
+    // undefined値を除外し、リレーションフィールドは別途処理
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.description !== undefined) updateData.description = data.description
+    if (data.amazonUrl !== undefined) updateData.amazonUrl = data.amazonUrl
+    if (data.amazonImageUrl !== undefined) updateData.amazonImageUrl = data.amazonImageUrl
+    if (data.customImageUrl !== undefined) updateData.customImageUrl = data.customImageUrl
+    if (imageStorageKey !== undefined) updateData.imageStorageKey = imageStorageKey
+    if (data.ogTitle !== undefined) updateData.ogTitle = data.ogTitle
+    if (data.ogDescription !== undefined) updateData.ogDescription = data.ogDescription
+
+    // リレーションフィールド（categoryId, brandId）の処理
+    if (data.categoryId !== undefined) {
+      updateData.category = { connect: { id: data.categoryId } }
+    }
+    if (data.brandId !== undefined) {
+      if (data.brandId === null || data.brandId === '') {
+        updateData.brand = { disconnect: true }
+      } else {
+        updateData.brand = { connect: { id: data.brandId } }
+      }
+    }
+
     const device = await prisma.device.update({
       where: { id },
-      data: {
-        name: data.name,
-        description: data.description,
-        categoryId: data.categoryId,
-        brandId: data.brandId,
-        amazonUrl: data.amazonUrl,
-        amazonImageUrl: data.amazonImageUrl,
-        ogTitle: data.ogTitle,
-        ogDescription: data.ogDescription,
-      },
+      data: updateData,
     })
 
     // 属性データの更新
@@ -589,17 +666,38 @@ export async function updateDevice(id: string, data: Partial<CreateDeviceData>) 
 }
 
 // デバイス削除
-export async function deleteDevice(id: string) {
+export async function deleteDevice(id: string, force: boolean = false) {
   try {
-    // ユーザーデバイスが存在する場合は削除不可
+    // ユーザーデバイスの使用状況をチェック
     const userDeviceCount = await prisma.userDevice.count({
       where: { deviceId: id }
     })
 
-    if (userDeviceCount > 0) {
-      return { success: false, error: 'ユーザーが使用中のデバイスは削除できません' }
+    if (userDeviceCount > 0 && !force) {
+      return {
+        success: false,
+        error: `このデバイスは${userDeviceCount}人のユーザーが使用中です`,
+        usageCount: userDeviceCount,
+        requiresForce: true
+      }
     }
 
+    // 強制削除の場合（Cascadeで自動削除されるため、明示的な削除は不要）
+    if (force && userDeviceCount > 0) {
+      // デバイス削除（CascadeでUserDevice、DeviceAttributeも自動削除）
+      await prisma.device.delete({
+        where: { id }
+      })
+
+      revalidatePath('/admin/devices')
+      return {
+        success: true,
+        deletedUserDevices: userDeviceCount,
+        message: `デバイスと${userDeviceCount}人のユーザーの所有情報を削除しました`
+      }
+    }
+
+    // 通常削除（使用中でない場合）
     await prisma.device.delete({
       where: { id }
     })
@@ -1011,5 +1109,194 @@ export async function reorderUserDevices(userId: string, deviceIds: string[]) {
   } catch (error) {
     console.error('デバイス並び順更新エラー:', error)
     return { success: false, error: 'デバイスの並び順更新に失敗しました' }
+  }
+}
+
+// デバイス画像をR2から削除（ヘルパー関数）
+async function deleteDeviceImageFromR2(imageStorageKey: string): Promise<void> {
+  try {
+    const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
+    const { storageClient } = await import('@/lib/storage')
+
+    // R2から削除
+    await storageClient.send(new DeleteObjectCommand({
+      Bucket: 'altee-images',
+      Key: imageStorageKey
+    }))
+
+    // MediaFileからも削除
+    await prisma.mediaFile.deleteMany({
+      where: { storageKey: `altee-images/${imageStorageKey}` }
+    })
+  } catch (error) {
+    console.error('画像削除エラー:', error)
+    // 削除失敗しても続行（エラーを投げない）
+  }
+}
+
+// Amazon画像またはカスタムURLから画像をダウンロードしてR2にアップロード
+export async function downloadAndUploadDeviceImage(imageUrl: string, asin: string, uploaderId?: string): Promise<{
+  success: boolean
+  storageKey?: string
+  error?: string
+}> {
+  try {
+    // アップロード者IDを取得（引数で渡されない場合はセッションから取得）
+    let finalUploaderId = uploaderId
+    if (!finalUploaderId) {
+      const session = await auth()
+      if (!session?.user?.id) {
+        return { success: false, error: '認証が必要です' }
+      }
+      finalUploaderId = session.user.id
+    }
+
+    // 画像をダウンロード
+    const response = await fetch(imageUrl)
+    if (!response.ok) {
+      return { success: false, error: '画像のダウンロードに失敗しました' }
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    // Content-Typeから拡張子を決定
+    const contentType = response.headers.get('content-type') || 'image/jpeg'
+    let extension = 'jpg'
+    if (contentType.includes('png')) extension = 'png'
+    else if (contentType.includes('gif')) extension = 'gif'
+    else if (contentType.includes('webp')) extension = 'webp'
+
+    // ファイル名: device-images/{asin}.{ext}
+    const fileName = `${asin}.${extension}`
+    const folder = 'device-images'
+    const storageKey = `${folder}/${fileName}`
+    const fullStorageKey = `altee-images/${storageKey}`
+
+    // R2にアップロード
+    const { PutObjectCommand } = await import('@aws-sdk/client-s3')
+    const { storageClient } = await import('@/lib/storage')
+
+    await storageClient.send(new PutObjectCommand({
+      Bucket: 'altee-images',
+      Key: storageKey,
+      Body: buffer,
+      ContentType: contentType,
+    }))
+
+    // MediaFileに記録（既存の場合は更新）
+    await prisma.mediaFile.upsert({
+      where: { storageKey: fullStorageKey },
+      create: {
+        storageKey: fullStorageKey,
+        fileName,
+        originalName: fileName,
+        fileSize: buffer.length,
+        mimeType: contentType,
+        uploadType: 'SYSTEM',
+        containerName: folder,
+        uploaderId: finalUploaderId,
+      },
+      update: {
+        fileName,
+        originalName: fileName,
+        fileSize: buffer.length,
+        mimeType: contentType,
+        uploaderId: finalUploaderId,
+      }
+    })
+
+    return { success: true, storageKey }
+  } catch (error) {
+    console.error('画像ダウンロード・アップロードエラー:', error)
+    return { success: false, error: '画像の保存に失敗しました' }
+  }
+}
+
+// デバイス画像を更新（Amazonから再取得してR2に保存）
+export async function refreshDeviceImage(deviceId: string): Promise<{
+  success: boolean
+  message?: string
+  error?: string
+}> {
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId }
+    })
+
+    if (!device) {
+      return { success: false, error: 'デバイスが見つかりません' }
+    }
+
+    // カスタムURLまたはAmazon URL
+    const imageUrl = device.customImageUrl || device.amazonImageUrl
+    if (!imageUrl) {
+      return { success: false, error: '画像URLが登録されていません' }
+    }
+
+    // 古い画像を削除（存在する場合）
+    if (device.imageStorageKey) {
+      await deleteDeviceImageFromR2(device.imageStorageKey)
+    }
+
+    // 新しい画像をダウンロード・アップロード
+    const uploadResult = await downloadAndUploadDeviceImage(imageUrl, device.asin)
+
+    if (!uploadResult.success) {
+      return { success: false, error: uploadResult.error }
+    }
+
+    // デバイス情報を更新
+    await prisma.device.update({
+      where: { id: deviceId },
+      data: { imageStorageKey: uploadResult.storageKey }
+    })
+
+    revalidatePath('/admin/devices')
+    revalidatePath(`/admin/devices/${deviceId}`)
+
+    return { success: true, message: '画像を更新しました' }
+  } catch (error) {
+    console.error('デバイス画像更新エラー:', error)
+    return { success: false, error: '画像の更新に失敗しました' }
+  }
+}
+
+// 全デバイスの画像を一括更新
+export async function refreshAllDeviceImages(): Promise<{
+  success: boolean
+  updated: number
+  failed: number
+  message?: string
+}> {
+  try {
+    const devices = await prisma.device.findMany({
+      where: {
+        amazonImageUrl: { not: null }
+      }
+    })
+
+    let updated = 0
+    let failed = 0
+
+    for (const device of devices) {
+      const result = await refreshDeviceImage(device.id)
+      if (result.success) {
+        updated++
+      } else {
+        failed++
+        console.error(`デバイス ${device.name} (${device.asin}) の画像更新失敗:`, result.error)
+      }
+    }
+
+    return {
+      success: true,
+      updated,
+      failed,
+      message: `${updated}個のデバイス画像を更新しました${failed > 0 ? `（${failed}個失敗）` : ''}`
+    }
+  } catch (error) {
+    console.error('一括画像更新エラー:', error)
+    return { success: false, updated: 0, failed: 0, message: '一括更新に失敗しました' }
   }
 }

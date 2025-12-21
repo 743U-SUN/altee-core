@@ -36,10 +36,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user.email && await isEmailBlacklisted(user.email)) {
         return false
       }
-      
+
+      // アクティブ状態チェック
+      if (user.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { isActive: true }
+        })
+
+        if (dbUser && !dbUser.isActive) {
+          // 非アクティブなアカウントはログイン拒否
+          return '/auth/suspended'
+        }
+      }
+
       // OAuth画像URLを取得・更新
       if (!account || !profile || !user.id) return true
-      
+
       const oauthImageUrl = extractOAuthImageUrl(account.provider, profile as any)
       if (oauthImageUrl) {
         const updated = await updateUserImage(user.id, oauthImageUrl)
@@ -47,7 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.image = oauthImageUrl
         }
       }
-      
+
       return true
     },
     async session({ session, user }) {

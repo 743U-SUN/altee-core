@@ -41,7 +41,9 @@ export function UserPublicDeviceCard({ userDevice }: UserPublicDeviceCardProps) 
       <CardContent className="space-y-4 flex-1 flex flex-col">
         <div className="flex items-start space-x-3">
           <DeviceImage
-            src={device.amazonImageUrl}
+            imageStorageKey={device.imageStorageKey}
+            customImageUrl={device.customImageUrl}
+            amazonImageUrl={device.amazonImageUrl}
             alt={device.name}
             width={80}
             height={80}

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus } from "lucide-react"
@@ -18,9 +19,8 @@ interface AddUserDataModalProps {
   onDataAdded: (data: UserData) => void
 }
 
-// フォームスキーマ
+// フォームスキーマ（iconはフォーム外で管理）
 const userDataFormSchema = z.object({
-  icon: z.string().min(1, "アイコンを選択してください"),
   field: z.string()
     .min(1, "項目名を入力してください")
     .max(50, "項目名は50文字以内で入力してください"),
@@ -34,21 +34,27 @@ type UserDataFormData = z.infer<typeof userDataFormSchema>
 export function AddUserDataModal({ onDataAdded }: AddUserDataModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedIcon, setSelectedIcon] = useState<string>("")
 
   const form = useForm<UserDataFormData>({
     resolver: zodResolver(userDataFormSchema),
     defaultValues: {
-      icon: "",
       field: "",
       value: "",
     },
   })
 
   const onSubmit = async (data: UserDataFormData) => {
+    // アイコンの手動バリデーション
+    if (!selectedIcon) {
+      toast.error("アイコンを選択してください")
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const result = await createUserData({
-        icon: data.icon,
+        icon: selectedIcon,
         field: data.field,
         value: data.value,
         isVisible: true,
@@ -73,6 +79,7 @@ export function AddUserDataModal({ onDataAdded }: AddUserDataModalProps) {
     setIsOpen(open)
     if (!open) {
       form.reset()
+      setSelectedIcon("")
     }
   }
 
@@ -91,22 +98,13 @@ export function AddUserDataModal({ onDataAdded }: AddUserDataModalProps) {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="icon"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>アイコン</FormLabel>
-                  <FormControl>
-                    <IconSelector
-                      selectedIcon={field.value}
-                      onIconSelect={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <Label>アイコン</Label>
+              <IconSelector
+                selectedIcon={selectedIcon}
+                onIconSelect={setSelectedIcon}
+              />
+            </div>
 
             <FormField
               control={form.control}

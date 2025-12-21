@@ -34,12 +34,16 @@ const linkTypeFormSchema = z.object({
 })
 
 interface AddLinkTypeModalProps {
+  linkTypes: Array<{ id: string; isCustom: boolean }>
   onLinkTypeAdded?: () => void
 }
 
-export function AddLinkTypeModal({ onLinkTypeAdded }: AddLinkTypeModalProps = {}) {
+export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 既存のカスタムリンクタイプがあるかチェック
+  const hasCustomLinkType = linkTypes.some(lt => lt.isCustom)
 
   const form = useForm({
     resolver: zodResolver(linkTypeFormSchema),
@@ -173,12 +177,18 @@ export function AddLinkTypeModal({ onLinkTypeAdded }: AddLinkTypeModalProps = {}
                       <FormLabel className="text-base">カスタムリンク</FormLabel>
                       <div className="text-sm text-muted-foreground">
                         ユーザーが自由にラベルを設定できるタイプ
+                        {hasCustomLinkType && (
+                          <span className="block text-xs text-amber-600 mt-1">
+                            ※ カスタムリンクタイプは既に存在します
+                          </span>
+                        )}
                       </div>
                     </div>
                     <FormControl>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        disabled={hasCustomLinkType}
                       />
                     </FormControl>
                   </FormItem>

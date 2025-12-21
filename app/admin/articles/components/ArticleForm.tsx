@@ -32,16 +32,6 @@ interface ArticleFormProps {
   article?: Article
 }
 
-// スラッグ生成用ヘルパー
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 255)
-}
-
 export function ArticleForm({ article }: ArticleFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [thumbnail, setThumbnail] = useState<UploadedFile[]>(
@@ -56,7 +46,7 @@ export function ArticleForm({ article }: ArticleFormProps) {
       uploadedAt: new Date().toISOString()
     }] : []
   )
-  
+
   // カテゴリ・タグ選択状態
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     article?.categories?.map(cat => cat.categoryId) || []
@@ -64,9 +54,8 @@ export function ArticleForm({ article }: ArticleFormProps) {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
     article?.tags?.map(tag => tag.tagId) || []
   )
-  
+
   // 記事内画像は表示不要（プレビューなし）
-  const [autoSlug, setAutoSlug] = useState(!article) // 新規作成時のみ自動生成
   const router = useRouter()
 
   const form = useForm<FormValues>({
@@ -79,16 +68,6 @@ export function ArticleForm({ article }: ArticleFormProps) {
       published: article?.published || false,
     },
   })
-
-  const handleTitleChange = (title: string) => {
-    if (autoSlug) {
-      form.setValue('slug', generateSlug(title))
-    }
-  }
-
-  const handleSlugChange = () => {
-    setAutoSlug(false) // 手動でスラッグを変更した場合、自動生成を停止
-  }
 
   const handleExport = () => {
     try {
@@ -188,8 +167,6 @@ export function ArticleForm({ article }: ArticleFormProps) {
             <div className="lg:col-span-2 space-y-6">
               <BasicInfoSection
                 control={form.control}
-                onTitleChange={handleTitleChange}
-                onSlugChange={handleSlugChange}
               />
 
               <ContentEditor

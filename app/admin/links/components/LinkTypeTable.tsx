@@ -100,7 +100,7 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
                 alt={linkType.displayName}
                 width={24}
                 height={24}
-                className="object-contain"
+                className="object-contain dark:brightness-0 dark:invert"
               />
             ) : (
               <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
@@ -150,10 +150,9 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
               <Edit className="mr-2 h-4 w-4" />
               編集
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => onDelete(linkType.id)}
               className="text-destructive"
-              disabled={(linkType._count?.userLinks || 0) > 0}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               削除
@@ -228,25 +227,54 @@ export function LinkTypeTable() {
 
   // 削除
   const handleDelete = async (id: string) => {
-    if (!confirm("このリンクタイプを削除しますか？")) return
-
     try {
-      // 楽観的更新
-      await mutate(
-        linkTypes.filter(lt => lt.id !== id),
-        false
-      )
+      // まず通常削除を試みる
+      const result = await deleteLinkType(id, false)
 
-      const result = await deleteLinkType(id)
-      
-      if (result.success) {
+      // 使用中の場合は確認ダイアログを表示
+      if (!result.success && result.requiresForce) {
+        const usageCount = result.usageCount || 0
+        const confirmMessage =
+          `⚠️ このリンクタイプは${usageCount}個のユーザーリンクで使用中です。\n\n` +
+          `削除すると、これらのリンクもすべて削除されます。\n` +
+          `この操作は取り消せません。\n\n` +
+          `削除しますか？`
+
+        if (!confirm(confirmMessage)) {
+          return
+        }
+
+        // 強制削除を実行
+        await mutate(
+          linkTypes.filter(lt => lt.id !== id),
+          false
+        )
+
+        const forceResult = await deleteLinkType(id, true)
+
+        if (forceResult.success) {
+          toast.success(forceResult.message || "リンクタイプを削除しました")
+          mutate()
+        } else {
+          toast.error(forceResult.error || "削除に失敗しました")
+          mutate()
+        }
+      } else if (result.success) {
+        // 通常削除成功
+        if (!confirm("このリンクタイプを削除しますか？")) return
+
+        await mutate(
+          linkTypes.filter(lt => lt.id !== id),
+          false
+        )
+
         toast.success("リンクタイプを削除しました")
         mutate()
       } else {
         toast.error(result.error || "削除に失敗しました")
-        mutate()
       }
-    } catch {
+    } catch (error) {
+      console.error('Delete error:', error)
       toast.error("削除に失敗しました")
       mutate()
     }
@@ -316,7 +344,7 @@ export function LinkTypeTable() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>リンクタイプ一覧</CardTitle>
-            <AddLinkTypeModal onLinkTypeAdded={() => mutate()} />
+            <AddLinkTypeModal linkTypes={linkTypes} onLinkTypeAdded={() => mutate()} />
           </div>
         </CardHeader>
         <CardContent>

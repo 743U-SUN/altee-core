@@ -183,7 +183,9 @@ export function ExistingDeviceSelector({
               <CardContent className="p-3">
                 <div className="flex items-center space-x-3">
                   <DeviceImage
-                    src={device.amazonImageUrl}
+                    imageStorageKey={device.imageStorageKey}
+                    customImageUrl={device.customImageUrl}
+                    amazonImageUrl={device.amazonImageUrl}
                     alt={device.name}
                     width={50}
                     height={50}

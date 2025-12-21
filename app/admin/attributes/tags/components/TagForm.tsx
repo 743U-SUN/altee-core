@@ -30,19 +30,8 @@ interface TagFormProps {
   mode: 'create' | 'edit'
 }
 
-// スラッグ生成用ヘルパー
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 100)
-}
-
 export function TagForm({ tag, mode }: TagFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [autoSlug, setAutoSlug] = useState(mode === 'create') // 新規作成時のみ自動生成
   const router = useRouter()
 
   const form = useForm<FormValues>({
@@ -54,16 +43,6 @@ export function TagForm({ tag, mode }: TagFormProps) {
       color: tag?.color || '',
     },
   })
-
-  const handleNameChange = (name: string) => {
-    if (autoSlug) {
-      form.setValue('slug', generateSlug(name))
-    }
-  }
-
-  const handleSlugChange = () => {
-    setAutoSlug(false) // 手動でスラッグを変更した場合、自動生成を停止
-  }
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true)
@@ -127,10 +106,6 @@ export function TagForm({ tag, mode }: TagFormProps) {
                       <FormControl>
                         <Input
                           {...field}
-                          onChange={(e) => {
-                            field.onChange(e)
-                            handleNameChange(e.target.value)
-                          }}
                           placeholder="タグ名を入力"
                         />
                       </FormControl>
@@ -152,10 +127,6 @@ export function TagForm({ tag, mode }: TagFormProps) {
                       <FormControl>
                         <Input
                           {...field}
-                          onChange={(e) => {
-                            field.onChange(e)
-                            handleSlugChange()
-                          }}
                           placeholder="tag-slug"
                         />
                       </FormControl>

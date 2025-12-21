@@ -271,7 +271,7 @@ function LinkItemCard({
               alt={getDisplayName(link)}
               width={24}
               height={24}
-              className="rounded"
+              className="rounded dark:brightness-0 dark:invert"
             />
           ) : (
             <div className="w-6 h-6 bg-muted rounded" />

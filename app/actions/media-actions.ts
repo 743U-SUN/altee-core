@@ -18,12 +18,12 @@ async function requireAdminAuth() {
 function getS3Client() {
   return new S3Client({
     endpoint: process.env.STORAGE_ENDPOINT,
-    region: process.env.STORAGE_REGION || 'c3j1',
+    region: process.env.STORAGE_REGION || 'auto',
     credentials: {
       accessKeyId: process.env.STORAGE_ACCESS_KEY!,
       secretAccessKey: process.env.STORAGE_SECRET_KEY!,
     },
-    forcePathStyle: true,
+    forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE === 'true',
   })
 }
 
@@ -402,11 +402,27 @@ export async function cleanupExpiredFiles() {
   // ストレージから物理削除
   for (const file of expiredFiles) {
     try {
-      const [containerName, ...keyParts] = file.storageKey.split('/')
-      const objectKey = keyParts.join('/')
+      // storageKeyの形式を判定して適切なBucketとKeyを決定
+      let bucket: string
+      let objectKey: string
+
+      if (file.storageKey.startsWith('altee-images/')) {
+        // 新形式: "altee-images/folder/YYYY/MM/filename.ext"
+        // Bucket: altee-images
+        // Key: folder/YYYY/MM/filename.ext
+        const [bucketPart, ...keyParts] = file.storageKey.split('/')
+        bucket = bucketPart
+        objectKey = keyParts.join('/')
+      } else {
+        // 旧形式（ConoHa時代）: "folder/YYYY/MM/filename.ext"
+        // Bucket: altee-images（現在のバケット）
+        // Key: folder/YYYY/MM/filename.ext（全体をKeyとして使用）
+        bucket = process.env.STORAGE_BUCKET || 'altee-images'
+        objectKey = file.storageKey
+      }
 
       await s3Client.send(new DeleteObjectCommand({
-        Bucket: containerName,
+        Bucket: bucket,
         Key: objectKey,
       }))
 

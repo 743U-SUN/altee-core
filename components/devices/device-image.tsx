@@ -1,11 +1,13 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface DeviceImageProps {
-  src: string | null | undefined
+  imageStorageKey?: string | null
+  customImageUrl?: string | null
+  amazonImageUrl?: string | null
   alt: string
   width?: number
   height?: number
@@ -13,34 +15,56 @@ interface DeviceImageProps {
   priority?: boolean
 }
 
-export function DeviceImage({ 
-  src, 
-  alt, 
-  width = 300, 
-  height = 300, 
+export function DeviceImage({
+  imageStorageKey,
+  customImageUrl,
+  amazonImageUrl,
+  alt,
+  width = 300,
+  height = 300,
   className,
-  priority = false 
+  priority = false
 }: DeviceImageProps) {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  // srcが無効な場合は最初からフォールバック画像を表示
-  const shouldUseFallback = !src || hasError
+  // R2優先、フォールバックでカスタムURL、次にAmazon画像、最後にプレースホルダー
+  const getImageSrc = () => {
+    if (hasError) return '/images/device-placeholder.svg'
+    if (imageStorageKey) {
+      console.log('[DeviceImage] Using R2:', imageStorageKey)
+      return `/api/files/${imageStorageKey}`
+    }
+    if (customImageUrl) {
+      console.log('[DeviceImage] Using customImageUrl:', customImageUrl)
+      return customImageUrl
+    }
+    if (amazonImageUrl) {
+      console.log('[DeviceImage] Using amazonImageUrl:', amazonImageUrl)
+      return amazonImageUrl
+    }
+    console.log('[DeviceImage] Using placeholder')
+    return '/images/device-placeholder.svg'
+  }
+
+  const src = getImageSrc()
+  const isExternalUrl = src.startsWith('http')
 
   return (
     <div className={cn("relative overflow-hidden rounded-md", className)}>
       <Image
-        src={shouldUseFallback ? '/images/device-placeholder.svg' : src}
+        src={src}
         alt={alt}
         width={width}
         height={height}
         priority={priority}
-        unoptimized={!shouldUseFallback} // 外部URLの場合はunoptimized
+        unoptimized={isExternalUrl} // 外部URLの場合はunoptimized
         className={cn(
           "object-cover transition-opacity duration-300",
           isLoading ? "opacity-0" : "opacity-100"
         )}
-        onError={() => {
+        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+          console.error('[DeviceImage] Image load error:', src, e)
           setHasError(true)
           setIsLoading(false)
         }}
@@ -48,7 +72,7 @@ export function DeviceImage({
           setIsLoading(false)
         }}
       />
-      
+
       {/* ローディング状態の表示 */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted">

@@ -1,7 +1,7 @@
 'use server'
 
-import { ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { storageClient } from '@/lib/storage'
+import { ListObjectsV2Command, DeleteObjectCommand, type ListObjectsV2CommandOutput } from '@aws-sdk/client-s3'
+import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 
@@ -14,11 +14,10 @@ async function requireAdminAuth() {
   return session
 }
 
-// 全コンテナのファイル一覧を取得
+// 全ストレージファイル一覧を取得（単一バケット構造に対応）
 export async function getAllStorageFiles() {
   await requireAdminAuth()
-  
-  const containers = ['article-thumbnails', 'article-images', 'images']
+
   const allFiles: Array<{
     container: string
     key: string
@@ -26,31 +25,39 @@ export async function getAllStorageFiles() {
     lastModified: string
     storageKey: string
   }> = []
-  
+
   try {
-    for (const container of containers) {
-      const command = new ListObjectsV2Command({
-        Bucket: container,
-        MaxKeys: 1000
+    // Cloudflare R2では単一バケット内の全ファイルを取得
+    let continuationToken: string | undefined = undefined
+
+    do {
+      const command: ListObjectsV2Command = new ListObjectsV2Command({
+        Bucket: STORAGE_BUCKET,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken
       })
-      
-      const response = await storageClient.send(command)
-      
-      if (response.Contents) {
-        for (const obj of response.Contents) {
+
+      const result: ListObjectsV2CommandOutput = await storageClient.send(command)
+
+      if (result.Contents) {
+        for (const obj of result.Contents) {
           if (obj.Key) {
+            // Key形式: "folder/YYYY/MM/filename.ext"
+            // const folder = obj.Key.split('/')[0] || 'unknown'
             allFiles.push({
-              container,
+              container: STORAGE_BUCKET,
               key: obj.Key,
               size: obj.Size || 0,
               lastModified: obj.LastModified?.toISOString() || '',
-              storageKey: `${container}/${obj.Key}`
+              storageKey: `${STORAGE_BUCKET}/${obj.Key}`
             })
           }
         }
       }
-    }
-    
+
+      continuationToken = result.IsTruncated ? result.NextContinuationToken : undefined
+    } while (continuationToken)
+
     return {
       success: true,
       files: allFiles,
@@ -114,28 +121,44 @@ export async function detectOrphanFiles() {
 // 孤立ファイルを削除
 export async function cleanupOrphanFiles(orphanKeys: string[]) {
   await requireAdminAuth()
-  
+
   const deletedFiles: string[] = []
   const errors: string[] = []
-  
+
   try {
     for (const storageKey of orphanKeys) {
       try {
-        const [container, ...keyParts] = storageKey.split('/')
-        const objectKey = keyParts.join('/')
-        
+        // storageKeyの形式を判定して適切なBucketとKeyを決定
+        let bucket: string
+        let objectKey: string
+
+        if (storageKey.startsWith('altee-images/')) {
+          // 新形式: "altee-images/folder/YYYY/MM/filename.ext"
+          // Bucket: altee-images
+          // Key: folder/YYYY/MM/filename.ext
+          const [bucketPart, ...keyParts] = storageKey.split('/')
+          bucket = bucketPart
+          objectKey = keyParts.join('/')
+        } else {
+          // 旧形式（ConoHa時代）: "folder/YYYY/MM/filename.ext"
+          // Bucket: altee-images（現在のバケット）
+          // Key: folder/YYYY/MM/filename.ext（全体をKeyとして使用）
+          bucket = STORAGE_BUCKET
+          objectKey = storageKey
+        }
+
         await storageClient.send(new DeleteObjectCommand({
-          Bucket: container,
+          Bucket: bucket,
           Key: objectKey
         }))
-        
+
         deletedFiles.push(storageKey)
       } catch (error) {
         const errorMsg = `${storageKey}: ${error instanceof Error ? error.message : 'Unknown error'}`
         errors.push(errorMsg)
       }
     }
-    
+
     return {
       success: true,
       deletedCount: deletedFiles.length,
@@ -157,18 +180,25 @@ export async function cleanupOrphanFiles(orphanKeys: string[]) {
 // 削除統計を取得
 export async function getDeletionStats() {
   await requireAdminAuth()
-  
+
   try {
     const orphanResult = await detectOrphanFiles()
     const storageResult = await getAllStorageFiles()
-    
+
     if (!orphanResult.success || !storageResult.success) {
       throw new Error('統計データの取得に失敗しました')
     }
-    
+
     // 孤立ファイルの合計サイズを計算
     const orphanTotalSize = orphanResult.orphans.reduce((sum, file) => sum + file.size, 0)
-    
+
+    // フォルダ別統計（keyの最初の部分で分類）
+    const folderStats: Record<string, number> = {}
+    for (const file of storageResult.files) {
+      const folder = file.key.split('/')[0] || 'unknown'
+      folderStats[folder] = (folderStats[folder] || 0) + 1
+    }
+
     return {
       success: true,
       stats: {
@@ -176,11 +206,7 @@ export async function getDeletionStats() {
         dbFiles: orphanResult.dbTotal || 0,
         orphanFiles: orphanResult.count,
         orphanSizeMB: Math.round(orphanTotalSize / 1024 / 1024 * 100) / 100,
-        containers: {
-          'article-thumbnails': storageResult.files.filter(f => f.container === 'article-thumbnails').length,
-          'article-images': storageResult.files.filter(f => f.container === 'article-images').length,
-          'images': storageResult.files.filter(f => f.container === 'images').length
-        }
+        folders: folderStats
       }
     }
   } catch (error) {

@@ -232,7 +232,9 @@ function DeviceItemCard({
 
         <div className="flex-shrink-0">
           <DeviceImage
-            src={device.device.amazonImageUrl}
+            imageStorageKey={device.device.imageStorageKey}
+            customImageUrl={device.device.customImageUrl}
+            amazonImageUrl={device.device.amazonImageUrl}
             alt={device.device.name}
             width={48}
             height={48}

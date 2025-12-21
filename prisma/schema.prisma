@@ -483,6 +483,8 @@ model Device {
   brandId          String?        // ブランドID（オプショナル）
   amazonUrl        String         // 元のAmazon URL
   amazonImageUrl   String?        // Amazon OG画像URL（直リンク）
+  customImageUrl   String?        // カスタム画像URL（手動指定）
+  imageStorageKey  String?        // R2に保存された画像のキー（device-images/xxx）
   ogTitle          String?        // OG情報から取得したタイトル
   ogDescription    String?        // OG情報から取得した説明
   createdAt        DateTime       @default(now())

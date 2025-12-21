@@ -47,7 +47,7 @@ const createLinkFormSchema = (linkTypes: LinkType[]) => {
   }).refine((data) => {
     // URLパターンのバリデーション
     const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
-    
+
     if (selectedLinkType?.urlPattern) {
       try {
         const regex = new RegExp(selectedLinkType.urlPattern)
@@ -63,6 +63,16 @@ const createLinkFormSchema = (linkTypes: LinkType[]) => {
   }, {
     message: "このサービスの有効なURLを入力してください",
     path: ["url"] // エラーをurlフィールドに表示
+  }).refine((data) => {
+    // カスタムリンクの場合はcustomLabelが必須
+    const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
+    if (selectedLinkType?.isCustom) {
+      return !!data.customLabel && data.customLabel.trim().length > 0
+    }
+    return true
+  }, {
+    message: "カスタムリンクのラベル名は必須です",
+    path: ["customLabel"]
   })
 }
 

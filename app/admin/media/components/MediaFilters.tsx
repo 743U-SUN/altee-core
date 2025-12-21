@@ -129,25 +129,30 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
             </div>
           </div>
 
-          {/* コンテナ名 */}
+          {/* フォルダ名 */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">コンテナ</label>
+            <label className="text-sm font-medium">フォルダ</label>
             <Select value={containerName || undefined} onValueChange={(value) => {
               const newValue = value === "all" ? "" : value
               setContainerName(newValue)
               applyFilters({ containerName: newValue })
             }}>
               <SelectTrigger>
-                <SelectValue placeholder="すべてのコンテナ" />
+                <SelectValue placeholder="すべてのフォルダ" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">すべてのコンテナ</SelectItem>
-                <SelectItem value="article-thumbnails">article-thumbnails</SelectItem>
-                <SelectItem value="article-images">article-images</SelectItem>
-                <SelectItem value="system-assets">system-assets</SelectItem>
-                <SelectItem value="images">images</SelectItem>
-                <SelectItem value="user-icons">user-icons</SelectItem>
-                <SelectItem value="admin-icons">admin-icons</SelectItem>
+                <SelectItem value="all">すべてのフォルダ</SelectItem>
+                <SelectItem value="article-thumbnails">article-thumbnails (記事サムネイル)</SelectItem>
+                <SelectItem value="article-images">article-images (記事画像)</SelectItem>
+                <SelectItem value="system-assets">system-assets (システム)</SelectItem>
+                <SelectItem value="images">images (汎用画像)</SelectItem>
+                <SelectItem value="user-icons">user-icons (プロフィール画像)</SelectItem>
+                <SelectItem value="admin-icons">admin-icons (管理者アイコン)</SelectItem>
+                <SelectItem value="backgrounds">backgrounds (背景画像)</SelectItem>
+                <SelectItem value="user-links">user-links (ユーザーリンクアイコン)</SelectItem>
+                <SelectItem value="admin-links">admin-links (管理者リンクアイコン)</SelectItem>
+                <SelectItem value="user-notifications">user-notifications (通知画像)</SelectItem>
+                <SelectItem value="user-contacts">user-contacts (連絡方法画像)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -165,10 +170,15 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">すべてのタイプ</SelectItem>
-                <SelectItem value="THUMBNAIL">サムネイル</SelectItem>
-                <SelectItem value="CONTENT">コンテンツ</SelectItem>
+                <SelectItem value="THUMBNAIL">記事サムネイル</SelectItem>
+                <SelectItem value="CONTENT">記事内画像</SelectItem>
                 <SelectItem value="SYSTEM">システム</SelectItem>
-                <SelectItem value="ICON">アイコン</SelectItem>
+                <SelectItem value="ICON">管理者アイコン</SelectItem>
+                <SelectItem value="BACKGROUND">背景画像</SelectItem>
+                <SelectItem value="PROFILE">プロフィール画像</SelectItem>
+                <SelectItem value="LINK_ICON">リンクアイコン</SelectItem>
+                <SelectItem value="NOTIFICATION">通知画像</SelectItem>
+                <SelectItem value="CONTACT">連絡方法画像</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -231,12 +241,23 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
             )}
             {containerName && (
               <Badge variant="secondary">
-                コンテナ: {containerName}
+                フォルダ: {containerName}
               </Badge>
             )}
             {uploadType && (
               <Badge variant="secondary">
-                タイプ: {uploadType === 'THUMBNAIL' ? 'サムネイル' : uploadType === 'CONTENT' ? 'コンテンツ' : uploadType === 'SYSTEM' ? 'システム' : 'アイコン'}
+                タイプ: {
+                  uploadType === 'THUMBNAIL' ? '記事サムネイル' :
+                  uploadType === 'CONTENT' ? '記事内画像' :
+                  uploadType === 'SYSTEM' ? 'システム' :
+                  uploadType === 'ICON' ? '管理者アイコン' :
+                  uploadType === 'BACKGROUND' ? '背景画像' :
+                  uploadType === 'PROFILE' ? 'プロフィール画像' :
+                  uploadType === 'LINK_ICON' ? 'リンクアイコン' :
+                  uploadType === 'NOTIFICATION' ? '通知画像' :
+                  uploadType === 'CONTACT' ? '連絡方法画像' :
+                  uploadType
+                }
               </Badge>
             )}
             {tags && (

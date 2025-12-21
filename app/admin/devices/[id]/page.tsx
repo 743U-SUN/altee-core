@@ -31,6 +31,7 @@ export default async function DeviceEditPage({ params }: DeviceEditPageProps) {
     description: device.description || '',
     categoryId: device.categoryId,
     amazonImageUrl: device.amazonImageUrl || undefined,
+    customImageUrl: device.customImageUrl || undefined,
     ogTitle: device.ogTitle || undefined,
     ogDescription: device.ogDescription || undefined,
     attributes: existingAttributes

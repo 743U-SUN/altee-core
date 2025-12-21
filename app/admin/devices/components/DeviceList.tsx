@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DeviceImage } from '@/components/devices/device-image'
 import { DeleteDeviceButton } from './DeleteDeviceButton'
+import { RefreshDeviceImageButton } from './RefreshDeviceImageButton'
 
 type DeviceWithCategory = {
   id: string
@@ -13,6 +14,8 @@ type DeviceWithCategory = {
   description: string | null
   amazonUrl: string
   amazonImageUrl: string | null
+  customImageUrl: string | null
+  imageStorageKey: string | null
   category: {
     name: string
   }
@@ -41,7 +44,9 @@ export async function DeviceList() {
           className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
         >
           <DeviceImage
-            src={device.amazonImageUrl}
+            imageStorageKey={device.imageStorageKey}
+            customImageUrl={device.customImageUrl}
+            amazonImageUrl={device.amazonImageUrl}
             alt={device.name}
             width={80}
             height={80}
@@ -81,15 +86,19 @@ export async function DeviceList() {
           </div>
           
           <div className="flex items-center space-x-2">
+            <RefreshDeviceImageButton
+              deviceId={device.id}
+              deviceName={device.name}
+            />
             <Button variant="outline" size="sm" asChild>
               <Link href={`/admin/devices/${device.id}`}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>
-            <DeleteDeviceButton 
-              deviceId={device.id} 
+            <DeleteDeviceButton
+              deviceId={device.id}
               deviceName={device.name}
-              hasUsers={device.userDevices.length > 0}
+              userCount={device.userDevices.length}
             />
           </div>
         </div>

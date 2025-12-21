@@ -79,16 +79,18 @@ export async function uploadImageAction(
     const mediaFile = await prisma.mediaFile.create({
       data: {
         storageKey: `${bucket}/${key}`, // 完全なストレージキー
-        containerName: bucket, // 実際のコンテナ名
+        containerName: folder, // フォルダ名を使用
         originalName: fileName,
         fileName: uniqueFileName,
         fileSize: processedFile.size,
         mimeType: processedFile.type,
-        uploadType: 
+        uploadType:
           folder === 'article-thumbnails' ? 'THUMBNAIL' :
           folder === 'user-icons' ? 'PROFILE' :
           folder === 'system-assets' ? 'SYSTEM' :
           folder === 'admin-icons' ? 'ICON' :
+          folder === 'admin-links' ? 'LINK_ICON' :
+          folder === 'user-links' ? 'LINK_ICON' :
           folder === 'user-notifications' ? 'NOTIFICATION' :
           folder === 'user-contacts' ? 'CONTACT' : 'CONTENT',
         uploaderId: session.user.id,

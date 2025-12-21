@@ -164,13 +164,13 @@ async function MediaStatistics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">コンテナ数</CardTitle>
+            <CardTitle className="text-sm font-medium">フォルダ数</CardTitle>
             <ImageIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.containerStats.length}</div>
             <p className="text-xs text-muted-foreground">
-              アクティブなコンテナ
+              アクティブなフォルダ
             </p>
           </CardContent>
         </Card>
@@ -195,8 +195,8 @@ async function MediaStatistics() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>コンテナ別統計</CardTitle>
-            <CardDescription>各コンテナのファイル数と容量</CardDescription>
+            <CardTitle>フォルダ別統計</CardTitle>
+            <CardDescription>各フォルダのファイル数と容量</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -210,9 +210,6 @@ async function MediaStatistics() {
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {container.fileCount.toLocaleString()} ファイル • {formatFileSize(container.totalSize)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    制限: {container.fileCount > 500000 ? '50万ファイル超過' : `${(500000 - container.fileCount).toLocaleString()}ファイル残り`}
                   </div>
                 </div>
               ))}

@@ -77,7 +77,9 @@ export function UserDeviceCard({ userDevice, userId, onUpdate, onDelete }: UserD
         <CardContent className="space-y-3">
           <div className="flex items-start space-x-3">
             <DeviceImage
-              src={userDevice.device.amazonImageUrl}
+              imageStorageKey={userDevice.device.imageStorageKey}
+              customImageUrl={userDevice.device.customImageUrl}
+              amazonImageUrl={userDevice.device.amazonImageUrl}
               alt={userDevice.device.name}
               width={80}
               height={80}

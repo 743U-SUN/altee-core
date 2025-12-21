@@ -31,11 +31,7 @@ interface Stats {
   dbFiles: number
   orphanFiles: number
   orphanSizeMB: number
-  containers: {
-    'article-thumbnails': number
-    'article-images': number
-    'images': number
-  }
+  folders: Record<string, number>
 }
 
 export default function CleanupPage() {
@@ -249,17 +245,13 @@ export default function CleanupPage() {
 
           {stats && (
             <div>
-              <h3 className="font-semibold mb-2">コンテナ別ファイル数</h3>
-              <div className="flex gap-2">
-                <Badge variant="outline">
-                  article-thumbnails: {stats.containers['article-thumbnails']}
-                </Badge>
-                <Badge variant="outline">
-                  article-images: {stats.containers['article-images']}
-                </Badge>
-                <Badge variant="outline">
-                  images: {stats.containers.images}
-                </Badge>
+              <h3 className="font-semibold mb-2">フォルダ別ファイル数</h3>
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(stats.folders).map(([folder, count]) => (
+                  <Badge key={folder} variant="outline">
+                    {folder}: {count}
+                  </Badge>
+                ))}
               </div>
             </div>
           )}

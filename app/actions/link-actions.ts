@@ -35,7 +35,7 @@ const userLinkSchema = z.object({
   customLabel: z.string()
     .max(10, "カスタムラベルは10文字以内で入力してください")
     .optional(),
-  customIconId: z.string().optional(),
+  customIconId: z.string().nullable().optional(),
   selectedLinkTypeIconId: z.string().optional(),
   isVisible: z.boolean().default(true),
 })
@@ -141,6 +141,47 @@ export async function updateUserLink(linkId: string, data: Partial<z.infer<typeo
       return { success: false, error: "リンクが見つかりません" }
     }
 
+    // カスタムアイコンの削除処理（nullが渡された場合）
+    if (validatedData.customIconId === null && existingLink.customIconId) {
+      try {
+        // 古いカスタムアイコンを論理削除
+        const now = new Date()
+        const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
+
+        await prisma.mediaFile.update({
+          where: { id: existingLink.customIconId },
+          data: {
+            deletedAt: now,
+            deletedBy: session.user.id,
+            scheduledDeletionAt: scheduledDeletionAt,
+          },
+        })
+      } catch (error) {
+        console.error('カスタムアイコンの削除に失敗:', error)
+        // 削除失敗してもリンク更新は続行
+      }
+    }
+    // 新しいカスタムアイコンがアップロードされた場合、古いアイコンを削除
+    else if (validatedData.customIconId && existingLink.customIconId && validatedData.customIconId !== existingLink.customIconId) {
+      try {
+        // 古いカスタムアイコンを論理削除
+        const now = new Date()
+        const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
+
+        await prisma.mediaFile.update({
+          where: { id: existingLink.customIconId },
+          data: {
+            deletedAt: now,
+            deletedBy: session.user.id,
+            scheduledDeletionAt: scheduledDeletionAt,
+          },
+        })
+      } catch (error) {
+        console.error('古いカスタムアイコンの削除に失敗:', error)
+        // 削除失敗してもリンク更新は続行
+      }
+    }
+
     // リンクを更新
     const userLink = await prisma.userLink.update({
       where: { id: linkId },
@@ -178,6 +219,26 @@ export async function deleteUserLink(linkId: string) {
 
     if (!existingLink) {
       return { success: false, error: "リンクが見つかりません" }
+    }
+
+    // カスタムアイコンがあれば論理削除
+    if (existingLink.customIconId) {
+      try {
+        const now = new Date()
+        const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
+
+        await prisma.mediaFile.update({
+          where: { id: existingLink.customIconId },
+          data: {
+            deletedAt: now,
+            deletedBy: session.user.id,
+            scheduledDeletionAt: scheduledDeletionAt,
+          },
+        })
+      } catch (error) {
+        console.error('カスタムアイコンの削除に失敗:', error)
+        // 削除失敗してもリンク削除は続行
+      }
     }
 
     // リンクを削除
@@ -353,22 +414,85 @@ export async function updateLinkType(linkTypeId: string, data: Partial<z.infer<t
 }
 
 // 管理者用: リンクタイプを削除
-export async function deleteLinkType(linkTypeId: string) {
+export async function deleteLinkType(linkTypeId: string, force: boolean = false) {
   try {
     const session = await auth()
     if (!session?.user?.id || session.user.role !== "ADMIN") {
       return { success: false, error: "管理者権限が必要です" }
     }
 
-    // 使用中のリンクタイプは削除できない
+    // 使用中のリンクタイプをチェック
     const usageCount = await prisma.userLink.count({
       where: { linkTypeId }
     })
 
-    if (usageCount > 0) {
-      return { success: false, error: `このリンクタイプは${usageCount}個のリンクで使用中のため削除できません` }
+    if (usageCount > 0 && !force) {
+      return {
+        success: false,
+        error: `このリンクタイプは${usageCount}個のリンクで使用中です`,
+        usageCount,
+        requiresForce: true
+      }
     }
 
+    // 強制削除の場合
+    if (force && usageCount > 0) {
+      // 1. 関連するアイコンのストレージキーを取得
+      const linkTypeIcons = await prisma.linkTypeIcon.findMany({
+        where: { linkTypeId },
+        select: { iconKey: true }
+      })
+
+      // 2. ユーザーリンクを削除
+      await prisma.userLink.deleteMany({
+        where: { linkTypeId }
+      })
+
+      // 3. リンクタイプを削除（カスケードでLinkTypeIconも削除される）
+      await prisma.linkType.delete({
+        where: { id: linkTypeId }
+      })
+
+      // 4. 孤立した画像ファイルを削除
+      if (linkTypeIcons.length > 0) {
+        for (const icon of linkTypeIcons) {
+          const storageKey = `altee-images/${icon.iconKey}`
+
+          // MediaFileから削除
+          await prisma.mediaFile.deleteMany({
+            where: { storageKey }
+          })
+
+          // R2から物理削除
+          try {
+            const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
+            const { storageClient } = await import('@/lib/storage')
+
+            // storageKeyの形式を判定
+            const [bucket, ...keyParts] = storageKey.split('/')
+            const objectKey = keyParts.join('/')
+
+            await storageClient.send(new DeleteObjectCommand({
+              Bucket: bucket,
+              Key: objectKey
+            }))
+          } catch (error) {
+            console.error(`Failed to delete icon from R2: ${icon.iconKey}`, error)
+            // R2削除失敗してもエラーにしない（孤立ファイルとして残る）
+          }
+        }
+      }
+
+      revalidatePath("/admin/links")
+      return {
+        success: true,
+        deletedLinks: usageCount,
+        deletedIcons: linkTypeIcons.length,
+        message: `リンクタイプと${usageCount}個のユーザーリンク、${linkTypeIcons.length}個のアイコンを削除しました`
+      }
+    }
+
+    // 通常削除（使用中でない場合）
     await prisma.linkType.delete({
       where: { id: linkTypeId }
     })
@@ -376,7 +500,8 @@ export async function deleteLinkType(linkTypeId: string) {
     revalidatePath("/admin/links")
     return { success: true }
 
-  } catch {
+  } catch (error) {
+    console.error('LinkType deletion error:', error)
     return { success: false, error: "リンクタイプの削除に失敗しました" }
   }
 }

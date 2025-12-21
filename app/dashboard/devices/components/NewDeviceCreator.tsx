@@ -178,7 +178,7 @@ export function NewDeviceCreator({
               <div className="flex items-start space-x-4">
                 {ogData.image && (
                   <DeviceImage
-                    src={ogData.image}
+                    amazonImageUrl={ogData.image}
                     alt={ogData.title || '商品画像'}
                     width={80}
                     height={80}

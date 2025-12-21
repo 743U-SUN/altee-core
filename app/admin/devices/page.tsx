@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DeviceList } from './components/DeviceList'
+import { RefreshAllImagesButton } from './components/RefreshAllImagesButton'
 
 export default function AdminDevicesPage() {
   return (
@@ -15,12 +16,15 @@ export default function AdminDevicesPage() {
             Amazon商品URLから登録されたデバイスを管理できます
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/devices/new">
-            <Plus className="mr-2 h-4 w-4" />
-            新規デバイス登録
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <RefreshAllImagesButton />
+          <Button asChild>
+            <Link href="/admin/devices/new">
+              <Plus className="mr-2 h-4 w-4" />
+              新規デバイス登録
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>

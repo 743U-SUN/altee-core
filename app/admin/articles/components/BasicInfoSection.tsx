@@ -9,11 +9,9 @@ import type { FormValues } from './types'
 
 interface BasicInfoSectionProps {
   control: Control<FormValues>
-  onTitleChange: (title: string) => void
-  onSlugChange: () => void
 }
 
-export function BasicInfoSection({ control, onTitleChange, onSlugChange }: BasicInfoSectionProps) {
+export function BasicInfoSection({ control }: BasicInfoSectionProps) {
   return (
     <Card>
       <CardHeader>
@@ -28,13 +26,9 @@ export function BasicInfoSection({ control, onTitleChange, onSlugChange }: Basic
             <FormItem>
               <FormLabel>タイトル</FormLabel>
               <FormControl>
-                <Input 
+                <Input
                   placeholder="記事のタイトルを入力"
                   {...field}
-                  onChange={(e) => {
-                    field.onChange(e)
-                    onTitleChange(e.target.value)
-                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -49,13 +43,9 @@ export function BasicInfoSection({ control, onTitleChange, onSlugChange }: Basic
             <FormItem>
               <FormLabel>スラッグ</FormLabel>
               <FormControl>
-                <Input 
+                <Input
                   placeholder="article-slug"
                   {...field}
-                  onChange={(e) => {
-                    field.onChange(e)
-                    onSlugChange()
-                  }}
                 />
               </FormControl>
               <FormDescription>

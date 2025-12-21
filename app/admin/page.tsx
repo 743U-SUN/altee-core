@@ -15,7 +15,17 @@ export default function AdminPage() {
           <h3 className="font-semibold mb-2">リンク管理</h3>
           <p className="text-sm text-muted-foreground">SNSリンクタイプとアイコンの管理</p>
         </Link>
-        
+
+        <Link href="/admin/devices" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+          <h3 className="font-semibold mb-2">デバイス管理</h3>
+          <p className="text-sm text-muted-foreground">登録デバイスの管理と編集</p>
+        </Link>
+
+        <Link href="/admin/articles" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+          <h3 className="font-semibold mb-2">記事管理</h3>
+          <p className="text-sm text-muted-foreground">ブログ記事の作成と管理</p>
+        </Link>
+
         <Link href="/admin/media" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
           <h3 className="font-semibold mb-2">メディア管理</h3>
           <p className="text-sm text-muted-foreground">画像ファイルの管理と統計</p>
