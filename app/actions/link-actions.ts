@@ -45,6 +45,21 @@ const reorderLinksSchema = z.object({
   linkIds: z.array(z.string()).min(1, "並び替えるリンクが必要です"),
 })
 
+// カスタムアイコン削除用のヘルパー関数
+async function scheduleCustomIconDeletion(iconId: string, userId: string) {
+  const now = new Date()
+  const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
+
+  await prisma.mediaFile.update({
+    where: { id: iconId },
+    data: {
+      deletedAt: now,
+      deletedBy: userId,
+      scheduledDeletionAt: scheduledDeletionAt,
+    },
+  })
+}
+
 // LinkType作成・更新用のスキーマ（管理者用）
 const linkTypeSchema = z.object({
   name: z.string().min(1, "名前は必須です"),
@@ -144,18 +159,7 @@ export async function updateUserLink(linkId: string, data: Partial<z.infer<typeo
     // カスタムアイコンの削除処理（nullが渡された場合）
     if (validatedData.customIconId === null && existingLink.customIconId) {
       try {
-        // 古いカスタムアイコンを論理削除
-        const now = new Date()
-        const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
-
-        await prisma.mediaFile.update({
-          where: { id: existingLink.customIconId },
-          data: {
-            deletedAt: now,
-            deletedBy: session.user.id,
-            scheduledDeletionAt: scheduledDeletionAt,
-          },
-        })
+        await scheduleCustomIconDeletion(existingLink.customIconId, session.user.id)
       } catch (error) {
         console.error('カスタムアイコンの削除に失敗:', error)
         // 削除失敗してもリンク更新は続行
@@ -164,18 +168,7 @@ export async function updateUserLink(linkId: string, data: Partial<z.infer<typeo
     // 新しいカスタムアイコンがアップロードされた場合、古いアイコンを削除
     else if (validatedData.customIconId && existingLink.customIconId && validatedData.customIconId !== existingLink.customIconId) {
       try {
-        // 古いカスタムアイコンを論理削除
-        const now = new Date()
-        const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
-
-        await prisma.mediaFile.update({
-          where: { id: existingLink.customIconId },
-          data: {
-            deletedAt: now,
-            deletedBy: session.user.id,
-            scheduledDeletionAt: scheduledDeletionAt,
-          },
-        })
+        await scheduleCustomIconDeletion(existingLink.customIconId, session.user.id)
       } catch (error) {
         console.error('古いカスタムアイコンの削除に失敗:', error)
         // 削除失敗してもリンク更新は続行

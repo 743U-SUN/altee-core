@@ -19,6 +19,7 @@ import { createUserLink } from "@/app/actions/link-actions"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
 import type { UploadedFile } from "@/types/image-upload"
 import type { UserLink, LinkType } from "@/types/link-type"
+import { urlPatternValidator, customLabelValidator } from "@/lib/validations/link-validations"
 
 // プリセットアイコン選択の遅延読み込み
 const PresetIconSelector = dynamic(() => import("./components/PresetIconSelector").then(mod => ({ default: mod.PresetIconSelector })), {
@@ -44,33 +45,10 @@ const createLinkFormSchema = (linkTypes: LinkType[]) => {
       .max(10, "カスタムラベルは10文字以内で入力してください")
       .optional(),
     customIconId: z.string().optional(),
-  }).refine((data) => {
-    // URLパターンのバリデーション
-    const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
-
-    if (selectedLinkType?.urlPattern) {
-      try {
-        const regex = new RegExp(selectedLinkType.urlPattern)
-        if (!regex.test(data.url)) {
-          return false
-        }
-      } catch {
-        // 正規表現が無効な場合はパターンチェックをスキップ
-        return true
-      }
-    }
-    return true
-  }, {
+  }).refine(urlPatternValidator(linkTypes), {
     message: "このサービスの有効なURLを入力してください",
-    path: ["url"] // エラーをurlフィールドに表示
-  }).refine((data) => {
-    // カスタムリンクの場合はcustomLabelが必須
-    const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
-    if (selectedLinkType?.isCustom) {
-      return !!data.customLabel && data.customLabel.trim().length > 0
-    }
-    return true
-  }, {
+    path: ["url"]
+  }).refine(customLabelValidator(linkTypes), {
     message: "カスタムリンクのラベル名は必須です",
     path: ["customLabel"]
   })
@@ -179,9 +157,6 @@ export function AddLinkModal({ linkTypes, onLinkAdded }: AddLinkModalProps) {
 
   const handlePresetIconSelected = (iconId: string) => {
     setSelectedPresetIconId(iconId)
-    // プリセットアイコンの場合はcustomIconIdは使わない
-    // サーバー側で対応する必要がある
-    // toastは保存時のみ表示するため削除
   }
 
   const handleOpenChange = (open: boolean) => {

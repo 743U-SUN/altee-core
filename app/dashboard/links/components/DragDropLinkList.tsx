@@ -32,6 +32,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { deleteUserLink, reorderUserLinks, updateUserLink } from "@/app/actions/link-actions"
+import { getLinkIconSrc, getLinkDisplayName } from "@/lib/utils/link-icon-utils"
 
 interface DragDropLinkListProps {
   userLinks: UserLink[]
@@ -115,35 +116,6 @@ export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLi
     }
   }
 
-  const getIconSrc = (link: UserLink) => {
-    if (link.customIcon) {
-      return `/api/files/${link.customIcon.storageKey}`
-    }
-    
-    // 選択されたプリセットアイコンがある場合はそれを表示
-    if (link.selectedLinkTypeIcon) {
-      return `/api/files/${link.selectedLinkTypeIcon.iconKey}`
-    }
-    
-    // 選択されたアイコンがない場合はデフォルトアイコンを表示
-    if (link.linkType.icons && link.linkType.icons.length > 0) {
-      const defaultIcon = link.linkType.icons.find(icon => icon.isDefault)
-      if (defaultIcon) {
-        return `/api/files/${defaultIcon.iconKey}`
-      }
-      // デフォルトがない場合は最初のアイコンを使用
-      return `/api/files/${link.linkType.icons[0].iconKey}`
-    }
-    
-    return null
-  }
-
-  const getDisplayName = (link: UserLink) => {
-    if (link.linkType.isCustom && link.customLabel) {
-      return link.customLabel
-    }
-    return link.linkType.displayName
-  }
 
   return (
     <DndContext
@@ -161,8 +133,6 @@ export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLi
               onEdit={() => onEditLink(link)}
               onVisibilityToggle={() => handleVisibilityToggle(link)}
               onDelete={() => handleDeleteLink(link)}
-              getIconSrc={getIconSrc}
-              getDisplayName={getDisplayName}
             />
           ))}
         </div>
@@ -172,8 +142,6 @@ export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLi
         {activeItem && (
           <LinkItemCard
             link={activeItem}
-            getIconSrc={getIconSrc}
-            getDisplayName={getDisplayName}
             isDragging
           />
         )}
@@ -183,22 +151,18 @@ export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLi
 }
 
 // ソート可能なリンクアイテム
-function SortableLinkItem({ 
-  link, 
+function SortableLinkItem({
+  link,
   linkTypes,
-  onEdit, 
-  onVisibilityToggle, 
-  onDelete, 
-  getIconSrc, 
-  getDisplayName 
+  onEdit,
+  onVisibilityToggle,
+  onDelete,
 }: {
   link: UserLink
   linkTypes: LinkType[]
   onEdit: () => void
   onVisibilityToggle: () => void
   onDelete: () => void
-  getIconSrc: (link: UserLink) => string | null
-  getDisplayName: (link: UserLink) => string
 }) {
   const {
     attributes,
@@ -219,8 +183,6 @@ function SortableLinkItem({
       <LinkItemCard
         link={link}
         linkTypes={linkTypes}
-        getIconSrc={getIconSrc}
-        getDisplayName={getDisplayName}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
         onEdit={onEdit}
@@ -235,8 +197,6 @@ function SortableLinkItem({
 function LinkItemCard({
   link,
   linkTypes,
-  getIconSrc,
-  getDisplayName,
   isDragging = false,
   dragHandleProps,
   onEdit,
@@ -245,15 +205,14 @@ function LinkItemCard({
 }: {
   link: UserLink
   linkTypes?: LinkType[]
-  getIconSrc: (link: UserLink) => string | null
-  getDisplayName: (link: UserLink) => string
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
   onEdit?: () => void
   onVisibilityToggle?: () => void
   onDelete?: () => void
 }) {
-  const iconSrc = getIconSrc(link)
+  const iconSrc = getLinkIconSrc(link)
+  const displayName = getLinkDisplayName(link)
 
   return (
     <div className={`border rounded-lg p-4 bg-card ${isDragging ? 'shadow-lg opacity-50' : ''}`}>
@@ -268,7 +227,7 @@ function LinkItemCard({
           {iconSrc ? (
             <Image
               src={iconSrc}
-              alt={getDisplayName(link)}
+              alt={displayName}
               width={24}
               height={24}
               className="rounded dark:brightness-0 dark:invert"
@@ -279,7 +238,7 @@ function LinkItemCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-sm">{getDisplayName(link)}</div>
+          <div className="font-medium text-sm">{displayName}</div>
           <div className="text-xs text-muted-foreground truncate">{link.url}</div>
         </div>
 
