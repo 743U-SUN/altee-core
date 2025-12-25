@@ -28,7 +28,7 @@ interface SortableParentItemProps<TParent extends SortableParentItemType, TChild
   onDeleteParent: (itemId: string) => Promise<void>;
   onUpdateParentState: (newState: Partial<ItemState>) => void;
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
-  onToggleChildListAccordion: (parentId: string, value: string | undefined) => void;
+  onToggleChildListAccordion: (parentId: string, value: string) => void;
 }
 
 function SortableParentItemComponent<TParent extends SortableParentItemType, TChild extends SortableChildItem>({
@@ -66,10 +66,10 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   const isParentFieldsOpen = parentState.accordionOpen[parentFieldsAccordionKey] || false;
 
   // 親フィールドのアコーディオン開閉
-  const handleParentFieldsAccordionChange = (value: string | undefined) => {
+  const handleParentFieldsAccordionChange = (value: string) => {
     const newAccordionState: { [itemId: string]: boolean } = { ...parentState.accordionOpen };
 
-    if (value) {
+    if (value && value !== '') {
       // 開く
       newAccordionState[parentFieldsAccordionKey] = true;
     } else {

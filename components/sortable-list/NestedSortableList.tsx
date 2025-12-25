@@ -189,13 +189,13 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
   };
 
   // 子アイテムリストのアコーディオン開閉
-  const handleChildListAccordionChange = (parentId: string, value: string | undefined) => {
+  const handleChildListAccordionChange = (parentId: string, value: string) => {
     const newAccordionState: { [itemId: string]: boolean } = {};
-    if (value) {
+    if (value && value !== '') {
       // 開く
       newAccordionState[parentId] = true;
     }
-    // valueがない場合は閉じる（空のオブジェクト）
+    // valueが空文字列の場合は閉じる（空のオブジェクト）
 
     setChildStates(prev => ({
       ...prev,

@@ -38,15 +38,15 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
 // 子アイテムのアコーディオン開閉を切り替え
 const handleChildAccordionChange = (
   parentId: string,
-  value: string | undefined,
+  value: string,
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void
 ) => {
-  // valueがundefinedまたは空文字列の場合は閉じる、それ以外は開く
+  // valueが空文字列の場合は閉じる、それ以外は開く
   const newAccordionState: { [itemId: string]: boolean } = {};
-  if (value) {
+  if (value && value !== '') {
     newAccordionState[value] = true;
   }
-  // valueがない場合は全て閉じる（空のオブジェクト）
+  // valueが空文字列の場合は全て閉じる（空のオブジェクト）
 
   onUpdateChildState(parentId, {
     accordionOpen: newAccordionState
