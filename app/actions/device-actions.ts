@@ -1005,6 +1005,12 @@ export interface UserPublicDevicesResult {
 // 特定ユーザーの公開デバイス取得（ハンドル指定）
 export async function getUserPublicDevicesByHandle(handle: string): Promise<UserPublicDevicesResult> {
   try {
+    // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
+    const { isReservedHandle } = await import('@/lib/reserved-handles')
+    if (isReservedHandle(handle)) {
+      return { success: false, error: 'ユーザーが見つかりません' }
+    }
+
     // まずハンドルからユーザーを検索
     const user = await prisma.user.findUnique({
       where: { handle },

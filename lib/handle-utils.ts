@@ -97,7 +97,12 @@ async function generateHandleSuggestion(baseHandle: string): Promise<string> {
 export async function getUserByHandle(handle: string) {
   try {
     const normalizedHandle = handle.toLowerCase();
-    
+
+    // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
+    if (isReservedHandle(normalizedHandle)) {
+      return null;
+    }
+
     const user = await prisma.user.findUnique({
       where: { handle: normalizedHandle },
       include: {

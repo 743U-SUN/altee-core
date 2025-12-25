@@ -1,6 +1,7 @@
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getUserNavData } from "@/lib/user-data"
 import { getUserByHandle } from "@/lib/handle-utils"
+import { isReservedHandle } from "@/lib/reserved-handles"
 import { getUserNotification } from "@/app/actions/notification-actions"
 import { getUserContact } from "@/app/actions/contact-actions"
 import { notFound } from "next/navigation"
@@ -13,7 +14,12 @@ export default async function HandleLayout({
   params: Promise<{ handle: string }>
 }) {
   const { handle } = await params
-  
+
+  // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
+  if (isReservedHandle(handle)) {
+    notFound()
+  }
+
   // ページ対象のユーザー情報を取得
   const targetUser = await getUserByHandle(handle)
   if (!targetUser) {
