@@ -107,67 +107,64 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
         isDragging ? 'border-primary' : 'border-border'
       } p-2 md:p-6`}
     >
-      {/* 親アイテムのヘッダー */}
-      <div className="flex items-center gap-4 mb-4">
-        {/* ドラッグハンドル & インデックス */}
-        <div
-          className="flex items-center gap-2 cursor-grab active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-5 w-5 text-muted-foreground" />
-          <div className="w-8 h-8 bg-primary/10 text-primary text-sm font-medium rounded-full flex items-center justify-center">
-            {index + 1}
-          </div>
-        </div>
-
-        {/* 親アイテム名表示 */}
-        <div className="flex-1">
-          <h3 className="text-lg font-medium text-card-foreground">
-            {config.parentConfig.itemDisplayName(parentItem, index)}
-          </h3>
-        </div>
-
-        {/* 削除ボタン */}
-        {config.parentConfig.onDelete && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDeleteParent(parentItem.id)}
-            disabled={isDeleting}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-      </div>
-
-      {/* カテゴリー情報編集（アコーディオン内） */}
+      {/* カテゴリー情報編集（アコーディオン） */}
       <Accordion
         type="single"
         collapsible
         value={isParentFieldsOpen ? parentFieldsAccordionKey : ''}
-        onValueChange={(value) => {
-          console.log('[SortableParentItem] Parent fields accordion onValueChange:', { parentItemId: parentItem.id, value, isParentFieldsOpen });
-          handleParentFieldsAccordionChange(value);
-        }}
+        onValueChange={handleParentFieldsAccordionChange}
         className="mb-4"
       >
         <AccordionItem value={parentFieldsAccordionKey} className="border-none">
-          <AccordionTrigger className="hover:no-underline py-2">
-            <div className="text-sm font-medium">
-              カテゴリー情報を編集
+          {/* 親アイテムのヘッダー（アコーディオントリガー含む） */}
+          <div className="flex items-center gap-4 mb-4">
+            {/* ドラッグハンドル & インデックス */}
+            <div
+              className="flex items-center gap-2 cursor-grab active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-5 w-5 text-muted-foreground" />
+              <div className="w-8 h-8 bg-primary/10 text-primary text-sm font-medium rounded-full flex items-center justify-center">
+                {index + 1}
+              </div>
             </div>
-          </AccordionTrigger>
+
+            {/* 親アイテム名表示（アコーディオントリガー） - 横幅いっぱいに */}
+            <div className="flex-1 min-w-0">
+              <AccordionTrigger className="w-full hover:no-underline py-2 [&[data-state=open]>h3]:text-primary">
+                <h3 className="text-lg font-medium text-card-foreground transition-colors text-left">
+                  {config.parentConfig.itemDisplayName(parentItem, index)}
+                </h3>
+              </AccordionTrigger>
+            </div>
+
+            {/* 削除ボタン */}
+            {config.parentConfig.onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteParent(parentItem.id);
+                }}
+                disabled={isDeleting}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
+
           <AccordionContent>
             <div
-              className="space-y-4"
+              className="space-y-4 pb-4"
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
             >

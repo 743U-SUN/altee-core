@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Accordion } from '@/components/ui/accordion';
 import { Plus, Loader2, MessageCircleQuestion } from 'lucide-react';
@@ -35,24 +35,6 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
 }
 
-// 子アイテムのアコーディオン開閉を切り替え
-const handleChildAccordionChange = (
-  parentId: string,
-  value: string,
-  onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void
-) => {
-  // valueが空文字列の場合は閉じる、それ以外は開く
-  const newAccordionState: { [itemId: string]: boolean } = {};
-  if (value && value !== '') {
-    newAccordionState[value] = true;
-  }
-  // valueが空文字列の場合は全て閉じる（空のオブジェクト）
-
-  onUpdateChildState(parentId, {
-    accordionOpen: newAccordionState
-  });
-};
-
 function SortableChildListComponent<TParent extends SortableParentItem, TChild extends SortableChildItem>({
   parentId,
   childItems,
@@ -61,6 +43,8 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
   onUpdateChildState,
 }: SortableChildListProps<TParent, TChild>) {
   const [isAdding, setIsAdding] = useState(false);
+  const prevChildItemsCountRef = useRef(childItems.length);
+  const processingNewItemRef = useRef(false);
 
   // ドラッグアンドドロップ用センサー設定
   const sensors = useSensors(
@@ -71,7 +55,65 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     })
   );
 
-  // tempValues初期化は不要（InlineEditが管理）
+  // 子アイテムのアコーディオン開閉を切り替え
+  const handleChildAccordionChange = (value: string) => {
+    // valueが空文字列の場合は閉じる、それ以外は開く
+    const newAccordionState: { [itemId: string]: boolean } = {};
+
+    // 親のIDが存在する場合は保持（Q&A管理全体のアコーディオンを開いたまま）
+    if (childState.accordionOpen[parentId]) {
+      newAccordionState[parentId] = true;
+    }
+
+    // 子アイテムのアコーディオンを開く
+    if (value && value !== '') {
+      newAccordionState[value] = true;
+    }
+
+    onUpdateChildState(parentId, {
+      accordionOpen: newAccordionState
+    });
+  };
+
+  // 新しいアイテムが追加されたときに自動的にアコーディオンを開く
+  useEffect(() => {
+    const currentCount = childItems.length;
+    const prevCount = prevChildItemsCountRef.current;
+
+    // アイテムが増えた場合（新規追加）
+    if (currentCount > prevCount && !processingNewItemRef.current) {
+      processingNewItemRef.current = true;
+
+      // sortOrderでソートして最後のアイテム（新しく追加されたアイテム）を取得
+      const sortedItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
+      const newItem = sortedItems[sortedItems.length - 1];
+
+      if (newItem) {
+        // 新しいアイテムのアコーディオンを開く
+        // 重要: 親のID（Q&A管理全体のアコーディオン状態）は保持する
+        const newAccordionState: { [itemId: string]: boolean } = {};
+
+        // 親のIDが存在する場合は保持（Q&A管理全体のアコーディオンを開いたまま）
+        if (childState.accordionOpen[parentId]) {
+          newAccordionState[parentId] = true;
+        }
+
+        // 新しいアイテムのアコーディオンを開く
+        newAccordionState[newItem.id] = true;
+
+        onUpdateChildState(parentId, {
+          accordionOpen: newAccordionState
+        });
+      }
+
+      // 次のフレームでフラグをリセット
+      setTimeout(() => {
+        processingNewItemRef.current = false;
+      }, 0);
+    }
+
+    prevChildItemsCountRef.current = currentCount;
+  }, [childItems.length, parentId, onUpdateChildState, childState.accordionOpen]);
 
   // 子アイテムを追加
   const handleAddChildItem = async () => {
@@ -164,9 +206,12 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
   // sortOrderでソートされた子アイテムリストを取得
   const sortedChildItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
 
-  // 現在開いているアコーディオンのIDを取得
+  // 子アイテムのIDのセットを作成
+  const childItemIds = new Set(childItems.map(item => item.id));
+
+  // 現在開いているアコーディオンのIDを取得（子アイテムのIDのみ）
   const openAccordionId = Object.keys(childState.accordionOpen).find(
-    id => childState.accordionOpen[id] === true
+    id => childState.accordionOpen[id] === true && childItemIds.has(id)
   );
 
   return (
@@ -186,10 +231,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
             collapsible
             className="w-full space-y-0 border-b-1"
             value={openAccordionId || ''}
-            onValueChange={(value) => {
-              console.log('[SortableChildList] Accordion onValueChange:', { parentId, value, openAccordionId });
-              handleChildAccordionChange(parentId, value, onUpdateChildState);
-            }}
+            onValueChange={handleChildAccordionChange}
           >
             {sortedChildItems.map((item, index) => (
               <SortableChildItemComponent
