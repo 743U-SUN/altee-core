@@ -169,6 +169,14 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
 
   // toggleParentEditとupdateParentTempValueは不要（InlineEditが管理）
 
+  // 親アイテムの状態を更新
+  const updateParentState = (newState: Partial<ItemState>) => {
+    setParentState(prev => ({
+      ...prev,
+      ...newState
+    }));
+  };
+
   // 子アイテムの状態を更新
   const updateChildState = (parentId: string, newState: Partial<ItemState>) => {
     setChildStates(prev => ({
@@ -230,6 +238,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
                 }}
                 onEditParent={handleEditParentItem}
                 onDeleteParent={handleDeleteParentItem}
+                onUpdateParentState={updateParentState}
                 onUpdateChildState={updateChildState}
                 onToggleAccordion={toggleAccordion}
               />

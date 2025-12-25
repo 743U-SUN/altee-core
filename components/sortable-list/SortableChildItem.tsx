@@ -47,7 +47,6 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   const isDeleting = childState.isDeleting[childItem.id] || false;
@@ -76,8 +75,6 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
       className={`border border-border border-x-0 border-b-0 hover:bg-muted/50 ${
         isDragging ? 'opacity-50' : ''
       }`}
-      {...attributes}
-      {...listeners}
     >
       <AccordionItem
         key={childItem.id}
@@ -86,16 +83,17 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
       >
         <div className="relative flex items-stretch">
           {/* ドラッグハンドル */}
-          <div className="flex items-center px-2 text-muted-foreground">
+          <div
+            className="flex items-center px-2 text-muted-foreground cursor-grab active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
             <GripVertical className="h-4 w-4" />
           </div>
 
           {/* アコーディオントリガー */}
           <div className="flex-1">
-            <AccordionTrigger
-              className="hover:no-underline w-full px-4 py-4 pr-24 [&[data-state=open]>svg]:rotate-180"
-              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-            >
+            <AccordionTrigger className="hover:no-underline w-full px-4 py-4 pr-24 [&[data-state=open]>svg]:rotate-180">
               <div className="flex items-center space-x-2 text-left min-w-0 flex-1">
                 <MessageSquare className="h-4 w-4 text-blue-500 flex-shrink-0" />
                 <span className="text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap">

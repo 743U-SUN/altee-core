@@ -26,6 +26,7 @@ interface SortableParentItemProps<TParent extends SortableParentItemType, TChild
   childState: ItemState;
   onEditParent: (itemId: string, updates: Partial<TParent>) => Promise<void>;
   onDeleteParent: (itemId: string) => Promise<void>;
+  onUpdateParentState: (newState: Partial<ItemState>) => void;
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
   onToggleAccordion: (parentId: string) => void;
 }
@@ -38,6 +39,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   childState,
   onEditParent,
   onDeleteParent,
+  onUpdateParentState,
   onUpdateChildState,
   onToggleAccordion,
 }: SortableParentItemProps<TParent, TChild>) {
@@ -58,6 +60,20 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
 
   const isDeleting = parentState.isDeleting[parentItem.id] || false;
   const childItems = config.getChildItems(parentItem.id);
+
+  // 親フィールドのアコーディオン開閉状態（accordionOpenの特別なキーを使用）
+  const parentFieldsAccordionKey = `${parentItem.id}_fields`;
+  const isParentFieldsOpen = parentState.accordionOpen[parentFieldsAccordionKey] || false;
+
+  // 親フィールドのアコーディオン開閉
+  const toggleParentFieldsAccordion = () => {
+    onUpdateParentState({
+      accordionOpen: {
+        ...parentState.accordionOpen,
+        [parentFieldsAccordionKey]: !isParentFieldsOpen
+      }
+    });
+  };
 
   // フィールド単位の保存ハンドラー
   const handleFieldSave = async (fieldKey: string, newValue: string) => {
@@ -125,30 +141,47 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
         )}
       </div>
 
-      {/* InlineEdit編集フィールド（常に表示） */}
-      <div
-        className="space-y-4 mb-4"
-        onPointerDown={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+      {/* カテゴリー情報編集（アコーディオン内） */}
+      <Accordion
+        type="single"
+        collapsible
+        value={isParentFieldsOpen ? parentFieldsAccordionKey : undefined}
+        onValueChange={toggleParentFieldsAccordion}
+        className="mb-4"
       >
-        {config.parentConfig.editableFields.map((field) => (
-          <div key={field.key}>
-            <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-card-foreground mb-2 block">
-              {field.label}
-              {field.maxLength && ` (${field.maxLength}文字以内)`}
-            </Label>
+        <AccordionItem value={parentFieldsAccordionKey} className="border-none">
+          <AccordionTrigger className="hover:no-underline py-2">
+            <div className="text-sm font-medium">
+              カテゴリー情報を編集
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div
+              className="space-y-4"
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {config.parentConfig.editableFields.map((field) => (
+                <div key={field.key}>
+                  <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-card-foreground mb-2 block">
+                    {field.label}
+                    {field.maxLength && ` (${field.maxLength}文字以内)`}
+                  </Label>
 
-            <InlineEdit
-              value={(parentItem as Record<string, unknown>)[field.key] as string || ''}
-              onSave={(newValue) => handleFieldSave(field.key, newValue)}
-              placeholder={field.placeholder}
-              multiline={field.type === 'textarea'}
-              maxLength={field.maxLength}
-              rows={field.type === 'textarea' ? 4 : undefined}
-            />
-          </div>
-        ))}
-      </div>
+                  <InlineEdit
+                    value={(parentItem as Record<string, unknown>)[field.key] as string || ''}
+                    onSave={(newValue) => handleFieldSave(field.key, newValue)}
+                    placeholder={field.placeholder}
+                    multiline={field.type === 'textarea'}
+                    maxLength={field.maxLength}
+                    rows={field.type === 'textarea' ? 4 : undefined}
+                  />
+                </div>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* 子アイテムリスト（アコーディオン内） */}
       <Accordion

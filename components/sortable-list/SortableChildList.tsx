@@ -35,6 +35,35 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
 }
 
+// 子アイテムのアコーディオン開閉を切り替え
+const toggleChildItemAccordion = (
+  parentId: string,
+  childId: string,
+  childState: ItemState,
+  onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void
+) => {
+  const currentOpenId = Object.keys(childState.accordionOpen).find(
+    id => childState.accordionOpen[id] === true
+  );
+
+  // 同じアイテムをクリックした場合は閉じる、違うアイテムの場合は切り替える
+  const newAccordionState: { [itemId: string]: boolean } = {};
+  if (currentOpenId === childId) {
+    // 閉じる
+    newAccordionState[childId] = false;
+  } else {
+    // 他のを閉じて新しいのを開く
+    if (currentOpenId) {
+      newAccordionState[currentOpenId] = false;
+    }
+    newAccordionState[childId] = true;
+  }
+
+  onUpdateChildState(parentId, {
+    accordionOpen: newAccordionState
+  });
+};
+
 function SortableChildListComponent<TParent extends SortableParentItem, TChild extends SortableChildItem>({
   parentId,
   childItems,
@@ -146,6 +175,11 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
   // sortOrderでソートされた子アイテムリストを取得
   const sortedChildItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // 現在開いているアコーディオンのIDを取得
+  const openAccordionId = Object.keys(childState.accordionOpen).find(
+    id => childState.accordionOpen[id] === true
+  );
+
   return (
     <div className="space-y-3">
       {/* 子アイテム一覧 */}
@@ -158,7 +192,19 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
           items={sortedChildItems.map(item => item.id)}
           strategy={verticalListSortingStrategy}
         >
-          <Accordion type="single" collapsible className="w-full space-y-0 border-b-1">
+          <Accordion
+            type="single"
+            collapsible
+            className="w-full space-y-0 border-b-1"
+            value={openAccordionId}
+            onValueChange={(value) => {
+              if (value) {
+                toggleChildItemAccordion(parentId, value, childState, onUpdateChildState);
+              } else if (openAccordionId) {
+                toggleChildItemAccordion(parentId, openAccordionId, childState, onUpdateChildState);
+              }
+            }}
+          >
             {sortedChildItems.map((item, index) => (
               <SortableChildItemComponent
                 key={item.id}
