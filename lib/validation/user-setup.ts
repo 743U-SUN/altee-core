@@ -38,7 +38,7 @@ export const userRoleSchema = z.enum(['USER', 'GUEST'], {
 export const userSetupSchema = z.object({
   characterName: characterNameSchema,
   role: userRoleSchema,
-  handle: z.string().optional(),
+  handle: handleSchema.optional(),
 }).refine((data) => {
   // USERロールの場合はhandleが必須
   if (data.role === 'USER') {

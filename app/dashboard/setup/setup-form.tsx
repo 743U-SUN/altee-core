@@ -166,6 +166,14 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
                   {...form.register('handle')}
                   placeholder="3-20文字の英数字、アンダースコア、ハイフン"
                   className="pr-10"
+                  onChange={(e) => {
+                    // 許可される文字のみフィルタリング（小文字英数字、アンダースコア、ハイフン）
+                    const filtered = e.target.value
+                      .toLowerCase()  // 大文字を小文字に変換
+                      .replace(/[^a-z0-9_-]/g, '');  // 許可されない文字を削除
+
+                    form.setValue('handle', filtered);
+                  }}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                   {getHandleStatusIcon()}
