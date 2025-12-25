@@ -1,20 +1,20 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { InlineEdit } from '@/components/ui/inline-edit';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { GripVertical, Edit3, Save, Trash2, Loader2 } from 'lucide-react';
+import { GripVertical, Trash2, Loader2 } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { toast } from 'sonner';
 
-import { 
-  SortableParentItem as SortableParentItemType, 
-  SortableChildItem, 
-  NestedSortableListConfig, 
-  ItemState 
+import {
+  SortableParentItem as SortableParentItemType,
+  SortableChildItem,
+  NestedSortableListConfig,
+  ItemState
 } from './types';
 import { SortableChildList } from './SortableChildList';
 
@@ -26,8 +26,6 @@ interface SortableParentItemProps<TParent extends SortableParentItemType, TChild
   childState: ItemState;
   onEditParent: (itemId: string, updates: Partial<TParent>) => Promise<void>;
   onDeleteParent: (itemId: string) => Promise<void>;
-  onToggleParentEdit: (itemId: string) => void;
-  onUpdateParentTempValue: (itemId: string, fieldKey: string, value: string) => void;
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
   onToggleAccordion: (parentId: string) => void;
 }

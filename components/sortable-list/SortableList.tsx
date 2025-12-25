@@ -31,10 +31,7 @@ export function SortableList<T extends SortableItemType>({
   loading = false 
 }: SortableListProps<T>) {
   const [itemState, setItemState] = useState<ItemState>({
-    isEditing: {},
     isDeleting: {},
-    isSaving: {},
-    tempValues: {},
     accordionOpen: {},
   });
   const [isAdding, setIsAdding] = useState(false);
@@ -48,26 +45,7 @@ export function SortableList<T extends SortableItemType>({
     })
   );
 
-  // アイテムが変更されたときに一時データを初期化
-  useEffect(() => {
-    const tempValues: { [itemId: string]: { [fieldKey: string]: string } } = {};
-    
-    config.items.forEach(item => {
-      if (!itemState.tempValues[item.id]) {
-        tempValues[item.id] = {};
-        config.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
-        });
-      }
-    });
-    
-    if (Object.keys(tempValues).length > 0) {
-      setItemState(prev => ({
-        ...prev,
-        tempValues: { ...prev.tempValues, ...tempValues }
-      }));
-    }
-  }, [config.items, config.editableFields, itemState.tempValues]);
+  // tempValues初期化は不要になった（InlineEditが管理）
 
   // アイテムを追加
   const handleAddItem = async () => {
@@ -89,32 +67,17 @@ export function SortableList<T extends SortableItemType>({
     }
   };
 
-  // アイテムを編集
+  // アイテムを編集（InlineEditから呼ばれる）
   const handleEditItem = async (itemId: string, updates: Partial<T>) => {
     if (!config.onEdit) return;
 
     try {
-      setItemState(prev => ({
-        ...prev,
-        isSaving: { ...prev.isSaving, [itemId]: true }
-      }));
-      
       await config.onEdit(itemId, updates);
-      
-      setItemState(prev => ({
-        ...prev,
-        isEditing: { ...prev.isEditing, [itemId]: false }
-      }));
-      
       toast.success('保存しました');
     } catch (error) {
       console.error('Edit item error:', error);
       toast.error('保存に失敗しました');
-    } finally {
-      setItemState(prev => ({
-        ...prev,
-        isSaving: { ...prev.isSaving, [itemId]: false }
-      }));
+      throw error; // InlineEditが元に戻すためにthrow
     }
   };
 
@@ -129,21 +92,12 @@ export function SortableList<T extends SortableItemType>({
       }));
       
       await config.onDelete(itemId);
-      
-      // 一時データも削除
-      setItemState(prev => {
-        const newTempValues = { ...prev.tempValues };
-        delete newTempValues[itemId];
-        const newIsEditing = { ...prev.isEditing };
-        delete newIsEditing[itemId];
-        
-        return {
-          ...prev,
-          tempValues: newTempValues,
-          isEditing: newIsEditing,
-          isDeleting: { ...prev.isDeleting, [itemId]: false }
-        };
-      });
+
+      // 削除状態をクリア
+      setItemState(prev => ({
+        ...prev,
+        isDeleting: { ...prev.isDeleting, [itemId]: false }
+      }));
       
       toast.success('削除しました');
     } catch (error) {
@@ -185,27 +139,7 @@ export function SortableList<T extends SortableItemType>({
     }
   };
 
-  // 編集状態を切り替え
-  const toggleEdit = (itemId: string) => {
-    setItemState(prev => ({
-      ...prev,
-      isEditing: { ...prev.isEditing, [itemId]: !prev.isEditing[itemId] }
-    }));
-  };
-
-  // 一時値を更新
-  const updateTempValue = (itemId: string, fieldKey: string, value: string) => {
-    setItemState(prev => ({
-      ...prev,
-      tempValues: {
-        ...prev.tempValues,
-        [itemId]: {
-          ...prev.tempValues[itemId],
-          [fieldKey]: value
-        }
-      }
-    }));
-  };
+  // toggleEditとupdateTempValueは不要になった（InlineEditが管理）
 
   if (loading) {
     return (
@@ -239,8 +173,6 @@ export function SortableList<T extends SortableItemType>({
                 state={itemState}
                 onEdit={handleEditItem}
                 onDelete={handleDeleteItem}
-                onToggleEdit={toggleEdit}
-                onUpdateTempValue={updateTempValue}
               />
             ))}
           </div>
