@@ -188,16 +188,20 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     }));
   };
 
-  // アコーディオンの開閉を切り替え
-  const toggleAccordion = (parentId: string) => {
+  // 子アイテムリストのアコーディオン開閉
+  const handleChildListAccordionChange = (parentId: string, value: string | undefined) => {
+    const newAccordionState: { [itemId: string]: boolean } = {};
+    if (value) {
+      // 開く
+      newAccordionState[parentId] = true;
+    }
+    // valueがない場合は閉じる（空のオブジェクト）
+
     setChildStates(prev => ({
       ...prev,
       [parentId]: {
         ...prev[parentId],
-        accordionOpen: {
-          ...prev[parentId]?.accordionOpen,
-          [parentId]: !prev[parentId]?.accordionOpen?.[parentId]
-        }
+        accordionOpen: newAccordionState
       }
     }));
   };
@@ -240,7 +244,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
                 onDeleteParent={handleDeleteParentItem}
                 onUpdateParentState={updateParentState}
                 onUpdateChildState={updateChildState}
-                onToggleAccordion={toggleAccordion}
+                onToggleChildListAccordion={handleChildListAccordionChange}
               />
             ))}
           </div>

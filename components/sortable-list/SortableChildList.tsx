@@ -36,28 +36,17 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
 }
 
 // 子アイテムのアコーディオン開閉を切り替え
-const toggleChildItemAccordion = (
+const handleChildAccordionChange = (
   parentId: string,
-  childId: string,
-  childState: ItemState,
+  value: string | undefined,
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void
 ) => {
-  const currentOpenId = Object.keys(childState.accordionOpen).find(
-    id => childState.accordionOpen[id] === true
-  );
-
-  // 同じアイテムをクリックした場合は閉じる、違うアイテムの場合は切り替える
+  // valueがundefinedまたは空文字列の場合は閉じる、それ以外は開く
   const newAccordionState: { [itemId: string]: boolean } = {};
-  if (currentOpenId === childId) {
-    // 閉じる
-    newAccordionState[childId] = false;
-  } else {
-    // 他のを閉じて新しいのを開く
-    if (currentOpenId) {
-      newAccordionState[currentOpenId] = false;
-    }
-    newAccordionState[childId] = true;
+  if (value) {
+    newAccordionState[value] = true;
   }
+  // valueがない場合は全て閉じる（空のオブジェクト）
 
   onUpdateChildState(parentId, {
     accordionOpen: newAccordionState
@@ -198,11 +187,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
             className="w-full space-y-0 border-b-1"
             value={openAccordionId}
             onValueChange={(value) => {
-              if (value) {
-                toggleChildItemAccordion(parentId, value, childState, onUpdateChildState);
-              } else if (openAccordionId) {
-                toggleChildItemAccordion(parentId, openAccordionId, childState, onUpdateChildState);
-              }
+              handleChildAccordionChange(parentId, value, onUpdateChildState);
             }}
           >
             {sortedChildItems.map((item, index) => (

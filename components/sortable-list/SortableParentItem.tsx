@@ -28,7 +28,7 @@ interface SortableParentItemProps<TParent extends SortableParentItemType, TChild
   onDeleteParent: (itemId: string) => Promise<void>;
   onUpdateParentState: (newState: Partial<ItemState>) => void;
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
-  onToggleAccordion: (parentId: string) => void;
+  onToggleChildListAccordion: (parentId: string, value: string | undefined) => void;
 }
 
 function SortableParentItemComponent<TParent extends SortableParentItemType, TChild extends SortableChildItem>({
@@ -41,7 +41,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   onDeleteParent,
   onUpdateParentState,
   onUpdateChildState,
-  onToggleAccordion,
+  onToggleChildListAccordion,
 }: SortableParentItemProps<TParent, TChild>) {
   const {
     attributes,
@@ -66,12 +66,19 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   const isParentFieldsOpen = parentState.accordionOpen[parentFieldsAccordionKey] || false;
 
   // 親フィールドのアコーディオン開閉
-  const toggleParentFieldsAccordion = () => {
+  const handleParentFieldsAccordionChange = (value: string | undefined) => {
+    const newAccordionState: { [itemId: string]: boolean } = { ...parentState.accordionOpen };
+
+    if (value) {
+      // 開く
+      newAccordionState[parentFieldsAccordionKey] = true;
+    } else {
+      // 閉じる
+      delete newAccordionState[parentFieldsAccordionKey];
+    }
+
     onUpdateParentState({
-      accordionOpen: {
-        ...parentState.accordionOpen,
-        [parentFieldsAccordionKey]: !isParentFieldsOpen
-      }
+      accordionOpen: newAccordionState
     });
   };
 
@@ -146,7 +153,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
         type="single"
         collapsible
         value={isParentFieldsOpen ? parentFieldsAccordionKey : undefined}
-        onValueChange={toggleParentFieldsAccordion}
+        onValueChange={handleParentFieldsAccordionChange}
         className="mb-4"
       >
         <AccordionItem value={parentFieldsAccordionKey} className="border-none">
@@ -188,7 +195,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
         type="single"
         collapsible
         value={childState.accordionOpen[parentItem.id] ? parentItem.id : undefined}
-        onValueChange={() => onToggleAccordion(parentItem.id)}
+        onValueChange={(value) => onToggleChildListAccordion(parentItem.id, value)}
       >
         <AccordionItem value={parentItem.id} className="border-none">
           <AccordionTrigger className="hover:no-underline py-2">
