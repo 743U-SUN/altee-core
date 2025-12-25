@@ -38,8 +38,6 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   childState,
   onEditParent,
   onDeleteParent,
-  onToggleParentEdit,
-  onUpdateParentTempValue,
   onUpdateChildState,
   onToggleAccordion,
 }: SortableParentItemProps<TParent, TChild>) {
@@ -58,92 +56,24 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const isEditing = parentState.isEditing[parentItem.id] || false;
-  const isSaving = parentState.isSaving[parentItem.id] || false;
   const isDeleting = parentState.isDeleting[parentItem.id] || false;
-  const tempValues = parentState.tempValues[parentItem.id] || {};
-
   const childItems = config.getChildItems(parentItem.id);
-  
-  // フィールドエラー状態管理
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // 単一フィールドのバリデーション
-  const validateField = useCallback((fieldKey: string, value: string): string | null => {
+  // フィールド単位の保存ハンドラー
+  const handleFieldSave = async (fieldKey: string, newValue: string) => {
+    // バリデーション実行
     const field = config.parentConfig.editableFields.find(f => f.key === fieldKey);
-    if (!field) return null;
-
-    // 必須チェック
-    if (!value.trim()) {
-      return `${field.label}は必須です`;
-    }
-
-    // 文字数チェック
-    if (field.maxLength && value.length > field.maxLength) {
-      return `${field.label}は${field.maxLength}文字以内で入力してください`;
-    }
-
-    // カスタムバリデーション
-    if (field.validation) {
-      return field.validation(value);
-    }
-
-    return null;
-  }, [config.parentConfig.editableFields]);
-
-  // フィールド値変更時のハンドラー（バリデーション付き）
-  const handleFieldChange = useCallback((fieldKey: string, value: string) => {
-    // 値を更新
-    onUpdateParentTempValue(parentItem.id, fieldKey, value);
-    
-    // リアルタイムバリデーション
-    const error = validateField(fieldKey, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [fieldKey]: error || ''
-    }));
-  }, [parentItem.id, onUpdateParentTempValue, validateField]);
-
-  // 全フィールドバリデーション
-  const validateAndSave = async () => {
-    const updates: Partial<TParent> = {};
-    const newFieldErrors: Record<string, string> = {};
-    let hasError = false;
-
-    // 全フィールドをバリデーション
-    for (const field of config.parentConfig.editableFields) {
-      const value = tempValues[field.key]?.trim() || '';
-      const error = validateField(field.key, value);
-      
+    if (field?.validation) {
+      const error = field.validation(newValue);
       if (error) {
-        newFieldErrors[field.key] = error;
-        hasError = true;
-      } else {
-        (updates as Record<string, string>)[field.key] = value;
+        toast.error(error);
+        throw new Error(error); // InlineEditが元の値に戻す
       }
     }
 
-    // エラー状態を更新
-    setFieldErrors(newFieldErrors);
-
-    if (!hasError) {
-      await onEditParent(parentItem.id, updates);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      validateAndSave();
-    } else if (e.key === 'Escape') {
-      // 元の値に戻す
-      config.parentConfig.editableFields.forEach(field => {
-        onUpdateParentTempValue(parentItem.id, field.key, (parentItem as Record<string, unknown>)[field.key] as string || '');
-      });
-      // エラー状態もリセット
-      setFieldErrors({});
-      onToggleParentEdit(parentItem.id);
-    }
+    // 1フィールドだけ更新
+    const updates = { [fieldKey]: newValue } as Partial<TParent>;
+    await onEditParent(parentItem.id, updates);
   };
 
   return (
@@ -157,7 +87,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
       {/* 親アイテムのヘッダー */}
       <div className="flex items-center gap-4 mb-4">
         {/* ドラッグハンドル & インデックス */}
-        <div 
+        <div
           className="flex items-center gap-2 cursor-grab active:cursor-grabbing"
           {...attributes}
           {...listeners}
@@ -168,157 +98,82 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
           </div>
         </div>
 
-        {/* 親アイテム名表示・編集 */}
+        {/* 親アイテム名表示 */}
         <div className="flex-1">
-          {isEditing ? (
-            <div 
-              className="space-y-4"
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              {config.parentConfig.editableFields.map((field) => (
-                <div key={field.key}>
-                  <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-card-foreground">
-                    {field.label}
-                    {field.maxLength && ` (${field.maxLength}文字以内)`}
-                  </Label>
-                  
-                  {field.type === 'textarea' ? (
-                    <Textarea
-                      id={`${parentItem.id}-${field.key}`}
-                      value={tempValues[field.key] || ''}
-                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      maxLength={field.maxLength}
-                      rows={3}
-                      className={`mt-1 resize-none ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      onKeyDown={(e) => handleKeyDown(e)}
-                    />
-                  ) : (
-                    <Input
-                      id={`${parentItem.id}-${field.key}`}
-                      value={tempValues[field.key] || ''}
-                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      maxLength={field.maxLength}
-                      className={`mt-1 ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      onKeyDown={(e) => handleKeyDown(e)}
-                    />
-                  )}
-                  
-                  {/* 文字数カウントとエラーメッセージ */}
-                  <div className="flex justify-between items-start mt-1">
-                    {field.maxLength && (
-                      <div className="text-xs text-muted-foreground">
-                        {(tempValues[field.key] || '').length}/{field.maxLength}文字
-                      </div>
-                    )}
-                  </div>
-                  {fieldErrors[field.key] && (
-                    <div className="text-xs text-red-600 mt-1">
-                      {fieldErrors[field.key]}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-medium text-card-foreground">
-                {config.parentConfig.itemDisplayName(parentItem, index)}
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onToggleParentEdit(parentItem.id)}
-                className="h-6 w-6 p-0"
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <Edit3 className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
+          <h3 className="text-lg font-medium text-card-foreground">
+            {config.parentConfig.itemDisplayName(parentItem, index)}
+          </h3>
         </div>
 
-        {/* 操作ボタン */}
-        <div className="flex items-center gap-2">
-          {isEditing && (
-            <Button
-              size="sm"
-              onClick={validateAndSave}
-              disabled={isSaving}
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-
-          {config.parentConfig.onDelete && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDeleteParent(parentItem.id)}
-              disabled={isDeleting}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-        </div>
+        {/* 削除ボタン */}
+        {config.parentConfig.onDelete && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDeleteParent(parentItem.id)}
+            disabled={isDeleting}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </Button>
+        )}
       </div>
 
-      {/* 子アイテム管理アコーディオン */}
-      <div 
+      {/* InlineEdit編集フィールド（常に表示） */}
+      <div
+        className="space-y-4 mb-4"
         onPointerDown={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className="cursor-default"
       >
-        <Accordion 
-          type="single" 
-          collapsible 
-          value={childState.accordionOpen?.[parentItem.id] ? "children" : ""}
-          onValueChange={(value) => {
-            if (value !== (childState.accordionOpen?.[parentItem.id] ? "children" : "")) {
-              onToggleAccordion(parentItem.id);
-            }
-          }}
-          className="w-full border border-border rounded-sm px-0 py-2"
-        >
-          <AccordionItem value="children" className="border-0">
-            <AccordionTrigger className="hover:no-underline py-2 px-0 pr-2">
-              <div className="flex items-center gap-2 px-4">
-                <span className="text-sm font-medium text-card-foreground">
-                  {config.childConfig.childListLabel ? 
-                    config.childConfig.childListLabel(parentItem, childItems.length) :
-                    `子アイテム管理 (${childItems.length}個)`
-                  }
-                </span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-0">
-              <SortableChildList
-                parentId={parentItem.id}
-                childItems={childItems}
-                config={config}
-                childState={childState}
-                onUpdateChildState={onUpdateChildState}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        {config.parentConfig.editableFields.map((field) => (
+          <div key={field.key}>
+            <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-card-foreground mb-2 block">
+              {field.label}
+              {field.maxLength && ` (${field.maxLength}文字以内)`}
+            </Label>
+
+            <InlineEdit
+              value={(parentItem as Record<string, unknown>)[field.key] as string || ''}
+              onSave={(newValue) => handleFieldSave(field.key, newValue)}
+              placeholder={field.placeholder}
+              multiline={field.type === 'textarea'}
+              maxLength={field.maxLength}
+              rows={field.type === 'textarea' ? 4 : undefined}
+            />
+          </div>
+        ))}
       </div>
+
+      {/* 子アイテムリスト（アコーディオン内） */}
+      <Accordion
+        type="single"
+        collapsible
+        value={childState.accordionOpen[parentItem.id] ? parentItem.id : undefined}
+        onValueChange={() => onToggleAccordion(parentItem.id)}
+      >
+        <AccordionItem value={parentItem.id} className="border-none">
+          <AccordionTrigger className="hover:no-underline py-2">
+            <div className="text-sm font-medium">
+              {config.childConfig.childListLabel?.(parentItem, childItems.length) || `子アイテム (${childItems.length}個)`}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <SortableChildList
+              parentId={parentItem.id}
+              childItems={childItems}
+              config={config}
+              childState={childState}
+              onUpdateChildState={onUpdateChildState}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }

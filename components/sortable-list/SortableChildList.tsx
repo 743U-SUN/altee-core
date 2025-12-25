@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Accordion } from '@/components/ui/accordion';
 import { Plus, Loader2, MessageCircleQuestion } from 'lucide-react';
@@ -53,25 +53,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     })
   );
 
-  // 子アイテムが変更されたときに一時データを初期化
-  useEffect(() => {
-    const tempValues: { [itemId: string]: { [fieldKey: string]: string } } = {};
-    
-    childItems.forEach(item => {
-      if (!childState.tempValues[item.id]) {
-        tempValues[item.id] = {};
-        config.childConfig.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
-        });
-      }
-    });
-    
-    if (Object.keys(tempValues).length > 0) {
-      onUpdateChildState(parentId, {
-        tempValues: { ...childState.tempValues, ...tempValues }
-      });
-    }
-  }, [childItems, config.childConfig.editableFields, childState.tempValues, onUpdateChildState, parentId]);
+  // tempValues初期化は不要（InlineEditが管理）
 
   // 子アイテムを追加
   const handleAddChildItem = async () => {
@@ -98,24 +80,12 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     if (!config.childConfig.onEdit) return;
 
     try {
-      onUpdateChildState(parentId, {
-        isSaving: { ...childState.isSaving, [itemId]: true }
-      });
-      
       await config.childConfig.onEdit(parentId, itemId, updates);
-      
-      onUpdateChildState(parentId, {
-        isEditing: { ...childState.isEditing, [itemId]: false },
-        isSaving: { ...childState.isSaving, [itemId]: false }
-      });
-      
       toast.success('保存しました');
     } catch (error) {
       console.error('Edit child item error:', error);
       toast.error('保存に失敗しました');
-      onUpdateChildState(parentId, {
-        isSaving: { ...childState.isSaving, [itemId]: false }
-      });
+      throw error; // InlineEditが元に戻すためにthrow
     }
   };
 
@@ -127,21 +97,13 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
       onUpdateChildState(parentId, {
         isDeleting: { ...childState.isDeleting, [itemId]: true }
       });
-      
+
       await config.childConfig.onDelete(parentId, itemId);
-      
-      // 一時データも削除
-      const newTempValues = { ...childState.tempValues };
-      delete newTempValues[itemId];
-      const newIsEditing = { ...childState.isEditing };
-      delete newIsEditing[itemId];
-      
+
       onUpdateChildState(parentId, {
-        tempValues: newTempValues,
-        isEditing: newIsEditing,
         isDeleting: { ...childState.isDeleting, [itemId]: false }
       });
-      
+
       toast.success('削除しました');
     } catch (error) {
       console.error('Delete child item error:', error);
@@ -181,26 +143,6 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     }
   };
 
-  // 子アイテムの編集状態を切り替え
-  const toggleChildEdit = (itemId: string) => {
-    onUpdateChildState(parentId, {
-      isEditing: { ...childState.isEditing, [itemId]: !childState.isEditing[itemId] }
-    });
-  };
-
-  // 子アイテムの一時値を更新
-  const updateChildTempValue = (itemId: string, fieldKey: string, value: string) => {
-    onUpdateChildState(parentId, {
-      tempValues: {
-        ...childState.tempValues,
-        [itemId]: {
-          ...childState.tempValues[itemId],
-          [fieldKey]: value
-        }
-      }
-    });
-  };
-
   // sortOrderでソートされた子アイテムリストを取得
   const sortedChildItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -226,8 +168,6 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
                 childState={childState}
                 onEdit={handleEditChildItem}
                 onDelete={handleDeleteChildItem}
-                onToggleEdit={toggleChildEdit}
-                onUpdateTempValue={updateChildTempValue}
               />
             ))}
           </Accordion>

@@ -1,20 +1,20 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { InlineEdit } from '@/components/ui/inline-edit';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { GripVertical, Save, Trash2, Loader2, MessageSquare } from 'lucide-react';
+import { GripVertical, Trash2, Loader2, MessageSquare } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { toast } from 'sonner';
 
-import { 
-  SortableParentItem, 
-  SortableChildItem as SortableChildItemType, 
-  NestedSortableListConfig, 
-  ItemState 
+import {
+  SortableParentItem,
+  SortableChildItem as SortableChildItemType,
+  NestedSortableListConfig,
+  ItemState
 } from './types';
 
 interface SortableChildItemProps<TParent extends SortableParentItem, TChild extends SortableChildItemType> {
@@ -24,8 +24,6 @@ interface SortableChildItemProps<TParent extends SortableParentItem, TChild exte
   childState: ItemState;
   onEdit: (itemId: string, updates: Partial<TChild>) => Promise<void>;
   onDelete: (itemId: string) => Promise<void>;
-  onToggleEdit: (itemId: string) => void;
-  onUpdateTempValue: (itemId: string, fieldKey: string, value: string) => void;
 }
 
 function SortableChildItemComponent<TParent extends SortableParentItem, TChild extends SortableChildItemType>({
@@ -35,8 +33,6 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
   childState,
   onEdit,
   onDelete,
-  onToggleEdit,
-  onUpdateTempValue,
 }: SortableChildItemProps<TParent, TChild>) {
   const {
     attributes,
@@ -54,89 +50,23 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
     cursor: isDragging ? 'grabbing' : 'grab',
   };
 
-  const isSaving = childState.isSaving[childItem.id] || false;
   const isDeleting = childState.isDeleting[childItem.id] || false;
-  const tempValues = childState.tempValues[childItem.id] || {};
-  
-  // フィールドエラー状態管理
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // 単一フィールドのバリデーション
-  const validateField = useCallback((fieldKey: string, value: string): string | null => {
+  // フィールド単位の保存ハンドラー
+  const handleFieldSave = async (fieldKey: string, newValue: string) => {
+    // バリデーション実行
     const field = config.childConfig.editableFields.find(f => f.key === fieldKey);
-    if (!field) return null;
-
-    // 必須チェック
-    if (!value.trim()) {
-      return `${field.label}は必須です`;
-    }
-
-    // 文字数チェック
-    if (field.maxLength && value.length > field.maxLength) {
-      return `${field.label}は${field.maxLength}文字以内で入力してください`;
-    }
-
-    // カスタムバリデーション
-    if (field.validation) {
-      return field.validation(value);
-    }
-
-    return null;
-  }, [config.childConfig.editableFields]);
-
-  // フィールド値変更時のハンドラー（バリデーション付き）
-  const handleFieldChange = useCallback((fieldKey: string, value: string) => {
-    // 値を更新
-    onUpdateTempValue(childItem.id, fieldKey, value);
-    
-    // リアルタイムバリデーション
-    const error = validateField(fieldKey, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [fieldKey]: error || ''
-    }));
-  }, [childItem.id, onUpdateTempValue, validateField]);
-
-  // 全フィールドバリデーション
-  const validateAndSave = async () => {
-    const updates: Partial<TChild> = {};
-    const newFieldErrors: Record<string, string> = {};
-    let hasError = false;
-
-    // 全フィールドをバリデーション
-    for (const field of config.childConfig.editableFields) {
-      const value = tempValues[field.key]?.trim() || '';
-      const error = validateField(field.key, value);
-      
+    if (field?.validation) {
+      const error = field.validation(newValue);
       if (error) {
-        newFieldErrors[field.key] = error;
-        hasError = true;
-      } else {
-        (updates as Record<string, string>)[field.key] = value;
+        toast.error(error);
+        throw new Error(error); // InlineEditが元の値に戻す
       }
     }
 
-    // エラー状態を更新
-    setFieldErrors(newFieldErrors);
-
-    if (!hasError) {
-      await onEdit(childItem.id, updates);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      validateAndSave();
-    } else if (e.key === 'Escape') {
-      // 元の値に戻す
-      config.childConfig.editableFields.forEach(field => {
-        onUpdateTempValue(childItem.id, field.key, (childItem as Record<string, unknown>)[field.key] as string || '');
-      });
-      // エラー状態もリセット
-      setFieldErrors({});
-      onToggleEdit(childItem.id);
-    }
+    // 1フィールドだけ更新
+    const updates = { [fieldKey]: newValue } as Partial<TChild>;
+    await onEdit(childItem.id, updates);
   };
 
   return (
@@ -159,10 +89,10 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
           <div className="flex items-center px-2 text-muted-foreground">
             <GripVertical className="h-4 w-4" />
           </div>
-          
+
           {/* アコーディオントリガー */}
           <div className="flex-1">
-            <AccordionTrigger 
+            <AccordionTrigger
               className="hover:no-underline w-full px-4 py-4 pr-24 [&[data-state=open]>svg]:rotate-180"
               style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
             >
@@ -174,27 +104,9 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
               </div>
             </AccordionTrigger>
           </div>
-          
-          {/* 操作ボタン */}
+
+          {/* 削除ボタンのみ */}
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2 z-10">
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                validateAndSave();
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              disabled={isSaving}
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs"
-            >
-              {isSaving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Save className="h-3 w-3" />
-              )}
-            </Button>
             {config.childConfig.onDelete && (
               <Button
                 onClick={(e) => {
@@ -217,8 +129,8 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
             )}
           </div>
         </div>
-        
-        <AccordionContent 
+
+        <AccordionContent
           className="px-4 pb-4 ml-10"
         >
           <div
@@ -228,47 +140,19 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
             <div className="space-y-4">
               {config.childConfig.editableFields.map((field) => (
                 <div key={field.key}>
-                  <Label htmlFor={`${childItem.id}-${field.key}`} className="text-xs font-medium text-card-foreground">
+                  <Label htmlFor={`${childItem.id}-${field.key}`} className="text-xs font-medium text-card-foreground mb-2 block">
                     {field.label}
                     {field.maxLength && ` (${field.maxLength}文字以内)`}
                   </Label>
-                  
-                  {field.type === 'textarea' ? (
-                    <Textarea
-                      id={`${childItem.id}-${field.key}`}
-                      value={tempValues[field.key] || ''}
-                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      maxLength={field.maxLength}
-                      rows={4}
-                      className={`mt-1 resize-none ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      onKeyDown={(e) => handleKeyDown(e)}
-                    />
-                  ) : (
-                    <Input
-                      id={`${childItem.id}-${field.key}`}
-                      value={tempValues[field.key] || ''}
-                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      maxLength={field.maxLength}
-                      className={`mt-1 ${fieldErrors[field.key] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      onKeyDown={(e) => handleKeyDown(e)}
-                    />
-                  )}
-                  
-                  {/* 文字数カウントとエラーメッセージ */}
-                  <div className="flex justify-between items-start mt-1">
-                    {field.maxLength && (
-                      <div className="text-xs text-muted-foreground">
-                        {(tempValues[field.key] || '').length}/{field.maxLength}文字
-                      </div>
-                    )}
-                  </div>
-                  {fieldErrors[field.key] && (
-                    <div className="text-xs text-red-600 mt-1">
-                      {fieldErrors[field.key]}
-                    </div>
-                  )}
+
+                  <InlineEdit
+                    value={(childItem as Record<string, unknown>)[field.key] as string || ''}
+                    onSave={(newValue) => handleFieldSave(field.key, newValue)}
+                    placeholder={field.placeholder}
+                    multiline={field.type === 'textarea'}
+                    maxLength={field.maxLength}
+                    rows={field.type === 'textarea' ? 4 : undefined}
+                  />
                 </div>
               ))}
             </div>
