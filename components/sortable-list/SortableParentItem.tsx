@@ -152,8 +152,11 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
       <Accordion
         type="single"
         collapsible
-        value={isParentFieldsOpen ? parentFieldsAccordionKey : undefined}
-        onValueChange={handleParentFieldsAccordionChange}
+        value={isParentFieldsOpen ? parentFieldsAccordionKey : ''}
+        onValueChange={(value) => {
+          console.log('[SortableParentItem] Parent fields accordion onValueChange:', { parentItemId: parentItem.id, value, isParentFieldsOpen });
+          handleParentFieldsAccordionChange(value);
+        }}
         className="mb-4"
       >
         <AccordionItem value={parentFieldsAccordionKey} className="border-none">
@@ -194,7 +197,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
       <Accordion
         type="single"
         collapsible
-        value={childState.accordionOpen[parentItem.id] ? parentItem.id : undefined}
+        value={childState.accordionOpen[parentItem.id] ? parentItem.id : ''}
         onValueChange={(value) => onToggleChildListAccordion(parentItem.id, value)}
       >
         <AccordionItem value={parentItem.id} className="border-none">

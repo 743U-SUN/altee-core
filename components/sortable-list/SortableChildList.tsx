@@ -185,8 +185,9 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
             type="single"
             collapsible
             className="w-full space-y-0 border-b-1"
-            value={openAccordionId}
+            value={openAccordionId || ''}
             onValueChange={(value) => {
+              console.log('[SortableChildList] Accordion onValueChange:', { parentId, value, openAccordionId });
               handleChildAccordionChange(parentId, value, onUpdateChildState);
             }}
           >
