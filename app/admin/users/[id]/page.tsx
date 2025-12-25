@@ -49,7 +49,17 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-semibold">{user.name || "名前未設定"}</h3>
+                  {/* Primary display: characterName if exists, fallback to OAuth name */}
+                  <h3 className="text-lg font-semibold">
+                    {user.characterName || user.name || "名前未設定"}
+                  </h3>
+
+                  {/* Handle name - only show if set */}
+                  {user.handle && (
+                    <p className="text-sm text-muted-foreground">@{user.handle}</p>
+                  )}
+
+                  {/* ID - always show */}
                   <p className="text-sm text-muted-foreground">ID: {user.id}</p>
                 </div>
               </div>
