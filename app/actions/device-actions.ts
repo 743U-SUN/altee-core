@@ -107,15 +107,19 @@ export async function extractAsinFromUrl(url: string): Promise<AmazonUrlResult> 
 }
 
 // ASINの重複チェック
-export async function checkAsinExists(asin: string): Promise<boolean> {
+export async function checkAsinExists(asin: string): Promise<{ exists: boolean, device?: { id: string } }> {
   try {
     const existing = await prisma.device.findUnique({
-      where: { asin }
+      where: { asin },
+      select: { id: true }
     })
-    return existing !== null
+    if (existing) {
+      return { exists: true, device: existing }
+    }
+    return { exists: false }
   } catch (error) {
     console.error('ASIN重複チェックエラー:', error)
-    return false
+    return { exists: false }
   }
 }
 
