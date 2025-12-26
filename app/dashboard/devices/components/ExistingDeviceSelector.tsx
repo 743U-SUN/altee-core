@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, Search } from "lucide-react"
 import { toast } from "sonner"
-import { createUserDevice, searchDevices, getDevicesByCategory } from "@/app/actions/device-actions"
+import { createUserDevice, searchDevices, getDevicesByCategory, checkUserDeviceExists } from "@/app/actions/device-actions"
 import { UserDeviceWithDetails } from "@/types/device"
 import { Device, DeviceCategory, DeviceAttribute, CategoryAttribute } from '@prisma/client'
 import { DeviceImage } from "@/components/devices/device-image"
@@ -97,6 +97,13 @@ export function ExistingDeviceSelector({
 
     setIsSubmitting(true)
     try {
+      // ユーザーデバイスの重複チェック
+      const alreadyRegistered = await checkUserDeviceExists(userId, selectedDevice.id)
+      if (alreadyRegistered) {
+        toast.error('このデバイスは既に登録されています')
+        return
+      }
+
       const result = await createUserDevice(userId, {
         deviceId: selectedDevice.id,
         ...data,
