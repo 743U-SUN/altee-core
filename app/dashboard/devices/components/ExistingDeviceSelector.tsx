@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -38,12 +38,12 @@ interface ExistingDeviceSelectorProps {
   onDeviceAdded: (userDevice: UserDeviceWithDetails) => void
 }
 
-export function ExistingDeviceSelector({ 
-  userId, 
-  categories, 
-  brands, 
-  onDeviceAdded 
-}: ExistingDeviceSelectorProps) {
+const ExistingDeviceSelectorComponent = ({
+  userId,
+  categories,
+  brands,
+  onDeviceAdded
+}: ExistingDeviceSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchDeviceResult[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all')
@@ -86,10 +86,10 @@ export function ExistingDeviceSelector({
 
   // カテゴリ・ブランド変更時に自動検索
   useEffect(() => {
-    if (selectedCategoryId !== '' || selectedBrandId !== '' || searchQuery.trim() !== '') {
-      handleSearch()
-    }
-  }, [selectedCategoryId, selectedBrandId, searchQuery, handleSearch])
+    // 初期状態（all）での検索を実行
+    handleSearch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryId, selectedBrandId, searchQuery])
 
   // 既存デバイスからの登録
   const handleSubmit = async (data: z.infer<typeof userDeviceSchema>) => {
@@ -248,3 +248,16 @@ export function ExistingDeviceSelector({
     </div>
   )
 }
+
+// Propsの比較関数 - categories と brands の配列が変わらない限り再レンダリングをスキップ
+const arePropsEqual = (prevProps: ExistingDeviceSelectorProps, nextProps: ExistingDeviceSelectorProps) => {
+  return (
+    prevProps.userId === nextProps.userId &&
+    prevProps.categories.length === nextProps.categories.length &&
+    prevProps.brands.length === nextProps.brands.length &&
+    prevProps.onDeviceAdded === nextProps.onDeviceAdded
+  )
+}
+
+// メモ化されたコンポーネントをエクスポート
+export const ExistingDeviceSelector = memo(ExistingDeviceSelectorComponent, arePropsEqual)

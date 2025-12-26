@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import React, { useState } from 'react'
+import React, { useState, memo } from 'react'
 import { cn } from '@/lib/utils'
 
 interface DeviceImageProps {
@@ -15,7 +15,7 @@ interface DeviceImageProps {
   priority?: boolean
 }
 
-export function DeviceImage({
+const DeviceImageComponent = ({
   imageStorageKey,
   customImageUrl,
   amazonImageUrl,
@@ -24,7 +24,7 @@ export function DeviceImage({
   height = 300,
   className,
   priority = false
-}: DeviceImageProps) {
+}: DeviceImageProps) => {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -32,18 +32,14 @@ export function DeviceImage({
   const getImageSrc = () => {
     if (hasError) return '/images/device-placeholder.svg'
     if (imageStorageKey) {
-      console.log('[DeviceImage] Using R2:', imageStorageKey)
       return `/api/files/${imageStorageKey}`
     }
     if (customImageUrl) {
-      console.log('[DeviceImage] Using customImageUrl:', customImageUrl)
       return customImageUrl
     }
     if (amazonImageUrl) {
-      console.log('[DeviceImage] Using amazonImageUrl:', amazonImageUrl)
       return amazonImageUrl
     }
-    console.log('[DeviceImage] Using placeholder')
     return '/images/device-placeholder.svg'
   }
 
@@ -86,3 +82,20 @@ export function DeviceImage({
     </div>
   )
 }
+
+// propsの比較関数 - 画像URLが同じなら再レンダリングをスキップ
+const arePropsEqual = (prevProps: DeviceImageProps, nextProps: DeviceImageProps) => {
+  return (
+    prevProps.imageStorageKey === nextProps.imageStorageKey &&
+    prevProps.customImageUrl === nextProps.customImageUrl &&
+    prevProps.amazonImageUrl === nextProps.amazonImageUrl &&
+    prevProps.alt === nextProps.alt &&
+    prevProps.width === nextProps.width &&
+    prevProps.height === nextProps.height &&
+    prevProps.className === nextProps.className &&
+    prevProps.priority === nextProps.priority
+  )
+}
+
+// メモ化されたコンポーネントをエクスポート
+export const DeviceImage = memo(DeviceImageComponent, arePropsEqual)

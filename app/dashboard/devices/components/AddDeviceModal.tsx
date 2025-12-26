@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -31,20 +31,23 @@ export function AddDeviceModal({ isOpen: controlledIsOpen, onClose: controlledOn
   // モーダルが開かれたときにカテゴリとブランドを取得
   useEffect(() => {
     if (isOpen && categories.length === 0) {
-      getDeviceCategories().then(setCategories)
-      getBrands().then(setBrands)
+      // 両方のデータを並行取得して、一度に状態を更新
+      Promise.all([getDeviceCategories(), getBrands()]).then(([cats, brds]) => {
+        setCategories(cats)
+        setBrands(brds)
+      })
     }
   }, [isOpen, categories.length])
 
-  const handleDeviceAdded = (userDevice: UserDeviceWithDetails) => {
+  const handleDeviceAdded = useCallback((userDevice: UserDeviceWithDetails) => {
     onDeviceAdded(userDevice)
     onClose()
-  }
+  }, [onDeviceAdded, onClose])
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setActiveTab('existing')
     onClose()
-  }
+  }, [onClose])
 
   const handleOpenChange = (open: boolean) => {
     if (controlledIsOpen === undefined) {
