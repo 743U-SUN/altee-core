@@ -748,6 +748,7 @@ export async function createUserDevice(userId: string, data: CreateUserDeviceDat
         device: {
           include: {
             category: true,
+            brand: true,
             attributes: {
               include: {
                 categoryAttribute: true
