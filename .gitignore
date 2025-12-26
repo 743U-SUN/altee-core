@@ -49,3 +49,6 @@ docs/
 
 # MCP configuration (personal)
 .mcp.json
+
+# Playwright MCP screenshots
+.playwright-mcp/
