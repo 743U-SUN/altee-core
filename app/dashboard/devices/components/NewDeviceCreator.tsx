@@ -99,8 +99,8 @@ export function NewDeviceCreator({
         return
       }
 
-      // デバイス作成
-      const deviceResult = await createDevice({
+      // デバイス作成データを準備
+      const deviceData = {
         asin: asinResult.asin!,
         name: ogData.title || 'デバイス名',
         description: ogData.description,
@@ -110,7 +110,15 @@ export function NewDeviceCreator({
         amazonImageUrl: ogData.image,
         ogTitle: ogData.title,
         ogDescription: ogData.description,
-      })
+      }
+
+      // デバッグ: 送信データをログ出力
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 NewDeviceCreator sending data:', deviceData)
+      }
+
+      // デバイス作成
+      const deviceResult = await createDevice(deviceData)
 
       if (!deviceResult.success || !deviceResult.device) {
         toast.error(deviceResult.error || 'デバイスの作成に失敗しました')

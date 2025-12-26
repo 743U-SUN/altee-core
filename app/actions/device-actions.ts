@@ -436,6 +436,11 @@ export interface CreateDeviceData {
 // デバイス作成
 export async function createDevice(data: CreateDeviceData) {
   try {
+    // デバッグ: 受信データをログ出力
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 createDevice called with data:', JSON.stringify(data, null, 2))
+    }
+
     // 画像URLがある場合はR2にダウンロード・アップロード
     // カスタムURL優先、なければAmazon画像URL
     let imageStorageKey: string | undefined = undefined
@@ -493,8 +498,22 @@ export async function createDevice(data: CreateDeviceData) {
     revalidatePath('/admin/devices')
     return { success: true, device }
   } catch (error) {
-    console.error('デバイス作成エラー:', error)
-    return { success: false, error: 'デバイスの作成に失敗しました' }
+    // 詳細なエラーログを出力
+    console.error('❌ デバイス作成エラー:', error)
+
+    // Prismaエラーの詳細を抽出
+    let errorMessage = 'デバイスの作成に失敗しました'
+    if (error instanceof Error) {
+      console.error('エラーメッセージ:', error.message)
+      console.error('エラースタック:', error.stack)
+
+      // 開発環境では詳細なエラーメッセージを返す
+      if (process.env.NODE_ENV === 'development') {
+        errorMessage = `${errorMessage}: ${error.message}`
+      }
+    }
+
+    return { success: false, error: errorMessage }
   }
 }
 
