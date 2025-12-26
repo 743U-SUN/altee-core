@@ -56,10 +56,9 @@ const DeviceImageComponent = ({
         priority={priority}
         unoptimized={isExternalUrl} // 外部URLの場合はunoptimized
         className={cn(
-          "object-cover transition-opacity duration-300",
+          "object-cover transition-opacity duration-300 w-full h-full",
           isLoading ? "opacity-0" : "opacity-100"
         )}
-        style={{ width: 'auto', height: 'auto' }}
         onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
           console.error('[DeviceImage] Image load error:', src, e)
           setHasError(true)
