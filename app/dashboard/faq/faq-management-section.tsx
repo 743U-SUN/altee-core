@@ -204,16 +204,13 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
 
   const handleCategoryEdit = useCallback(async (itemId: string, updates: Partial<FaqCategory>) => {
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-
+      // InlineEditの編集時は全体ローディングを表示しない（InlineEdit自体のisSavingのみ表示）
       const result = await updateFaqCategory(itemId, {
         name: updates.name,
         description: updates.description,
         isVisible: updates.isVisible
       })
-      
+
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -225,16 +222,13 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
           cat.id === itemId ? { ...cat, ...updates } : cat
         )
       }, false)
-      
-      toast.success('カテゴリーを更新しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
+
+      toast.success('保存しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの更新に失敗しました')
-    } finally {
-      setIsLoading(false)
+      throw error // InlineEditがエラーハンドリングするためにthrow
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   const handleCategoryDelete = useCallback(async (itemId: string) => {
     try {
@@ -344,16 +338,13 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
 
   const handleQuestionEdit = useCallback(async (categoryId: string, itemId: string, updates: Partial<FaqQuestion>) => {
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-
+      // InlineEditの編集時は全体ローディングを表示しない（InlineEdit自体のisSavingのみ表示）
       const result = await updateFaqQuestion(itemId, {
         question: updates.question,
         answer: updates.answer,
         isVisible: updates.isVisible
       })
-      
+
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -371,16 +362,13 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
           return cat
         })
       }, false)
-      
-      toast.success('質問を更新しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
+
+      toast.success('保存しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の更新に失敗しました')
-    } finally {
-      setIsLoading(false)
+      throw error // InlineEditがエラーハンドリングするためにthrow
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   const handleQuestionDelete = useCallback(async (categoryId: string, itemId: string) => {
     try {
