@@ -54,15 +54,15 @@ export async function DeviceList() {
           />
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-1">
-              <h3 className="font-semibold truncate">{device.name}</h3>
-              <Badge variant="outline">{device.category.name}</Badge>
+            <div className="flex items-center space-x-2 mb-1 flex-wrap">
+              <h3 className="font-semibold line-clamp-1 max-w-md">{device.name}</h3>
+              <Badge variant="outline" className="flex-shrink-0">{device.category.name}</Badge>
             </div>
-            
+
             <p className="text-sm text-muted-foreground mb-2">
               ASIN: {device.asin}
             </p>
-            
+
             {device.description && (
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {device.description}
