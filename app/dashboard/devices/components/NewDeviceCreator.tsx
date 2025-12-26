@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { extractAsinFromUrl, fetchOgData, createDevice, createUserDevice } from "@/app/actions/device-actions"
+import { extractAsinFromUrl, fetchOgData, createDevice, createUserDevice, checkAsinExists } from "@/app/actions/device-actions"
 import { UserDeviceWithDetails } from "@/types/device"
 import { DeviceImage } from "@/components/devices/device-image"
 
@@ -99,35 +99,48 @@ export function NewDeviceCreator({
         return
       }
 
-      // デバイス作成データを準備
-      const deviceData = {
-        asin: asinResult.asin!,
-        name: ogData.title || 'デバイス名',
-        description: ogData.description,
-        categoryId: data.categoryId,
-        brandId: data.brandId === 'none' ? undefined : data.brandId,
-        amazonUrl: data.amazonUrl,
-        amazonImageUrl: ogData.image,
-        ogTitle: ogData.title,
-        ogDescription: ogData.description,
-      }
+      const asin = asinResult.asin!
 
-      // デバッグ: 送信データをログ出力
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 NewDeviceCreator sending data:', deviceData)
-      }
+      // ASIN重複チェック
+      const existingDeviceResult = await checkAsinExists(asin)
+      let deviceId: string
 
-      // デバイス作成
-      const deviceResult = await createDevice(deviceData)
+      if (existingDeviceResult.exists && existingDeviceResult.device) {
+        // 既存デバイスを使用
+        deviceId = existingDeviceResult.device.id
+        toast.info('既存のデバイスを使用します')
+      } else {
+        // 新規デバイス作成
+        const deviceData = {
+          asin,
+          name: ogData.title || 'デバイス名',
+          description: ogData.description,
+          categoryId: data.categoryId,
+          brandId: data.brandId === 'none' ? undefined : data.brandId,
+          amazonUrl: data.amazonUrl,
+          amazonImageUrl: ogData.image,
+          ogTitle: ogData.title,
+          ogDescription: ogData.description,
+        }
 
-      if (!deviceResult.success || !deviceResult.device) {
-        toast.error(deviceResult.error || 'デバイスの作成に失敗しました')
-        return
+        // デバッグ: 送信データをログ出力
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚀 NewDeviceCreator creating new device:', deviceData)
+        }
+
+        const deviceResult = await createDevice(deviceData)
+
+        if (!deviceResult.success || !deviceResult.device) {
+          toast.error(deviceResult.error || 'デバイスの作成に失敗しました')
+          return
+        }
+
+        deviceId = deviceResult.device.id
       }
 
       // ユーザーデバイス登録
       const userDeviceResult = await createUserDevice(userId, {
-        deviceId: deviceResult.device.id,
+        deviceId,
         isPublic: data.isPublic,
         review: data.review,
       })
