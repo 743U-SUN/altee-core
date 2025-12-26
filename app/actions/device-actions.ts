@@ -757,6 +757,24 @@ export interface CreateUserDeviceData {
   review?: string
 }
 
+// ユーザーが既にデバイスを登録しているかチェック
+export async function checkUserDeviceExists(userId: string, deviceId: string): Promise<boolean> {
+  try {
+    const existing = await prisma.userDevice.findUnique({
+      where: {
+        userId_deviceId: {
+          userId,
+          deviceId
+        }
+      }
+    })
+    return existing !== null
+  } catch (error) {
+    console.error('ユーザーデバイス重複チェックエラー:', error)
+    return false
+  }
+}
+
 // ユーザーデバイス作成
 export async function createUserDevice(userId: string, data: CreateUserDeviceData) {
   try {

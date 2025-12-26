@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { extractAsinFromUrl, fetchOgData, createDevice, createUserDevice, checkAsinExists } from "@/app/actions/device-actions"
+import { extractAsinFromUrl, fetchOgData, createDevice, createUserDevice, checkAsinExists, checkUserDeviceExists } from "@/app/actions/device-actions"
 import { UserDeviceWithDetails } from "@/types/device"
 import { DeviceImage } from "@/components/devices/device-image"
 
@@ -136,6 +136,13 @@ export function NewDeviceCreator({
         }
 
         deviceId = deviceResult.device.id
+      }
+
+      // ユーザーデバイスの重複チェック
+      const alreadyRegistered = await checkUserDeviceExists(userId, deviceId)
+      if (alreadyRegistered) {
+        toast.error('このデバイスは既に登録されています')
+        return
       }
 
       // ユーザーデバイス登録
