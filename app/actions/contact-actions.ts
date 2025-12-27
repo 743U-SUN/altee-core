@@ -19,7 +19,10 @@ const contactSchema = z.object({
     .optional()
     .nullable(),
   linkUrl: z.string()
-    .regex(CONTACT_CONSTRAINTS.URL_PATTERN, "URLはhttps://で始まる必要があります")
+    .refine(
+      (val) => !val || CONTACT_CONSTRAINTS.URL_PATTERN.test(val),
+      { message: "URLはhttps://で始まる必要があります" }
+    )
     .optional()
     .nullable(),
   buttonText: z.string()
@@ -75,11 +78,6 @@ export async function updateUserContact(data: z.infer<typeof contactSchema>) {
 
     // バリデーション
     const validatedData = contactSchema.parse(data)
-
-    // linkUrlがある場合、buttonTextも必要
-    if (validatedData.linkUrl && !validatedData.buttonText) {
-      return { success: false, error: "リンクを設定する場合、ボタンテキストも設定してください" }
-    }
 
     // 画像IDが指定されている場合、自分がアップロードした画像かチェック
     if (validatedData.imageId) {
