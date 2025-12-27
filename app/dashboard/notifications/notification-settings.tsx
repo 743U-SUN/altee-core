@@ -166,6 +166,31 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
     }
   }
 
+  // まとめて保存ハンドラ（明示的な保存ボタン用）
+  const handleSaveAll = async () => {
+    setIsSubmitting(true)
+    try {
+      const result = await updateUserNotification({
+        isEnabled,
+        title: title || undefined,
+        content: content || undefined,
+        linkUrl: linkUrl || undefined,
+        buttonText: buttonText || undefined,
+        imageId: uploadedFiles.length > 0 ? uploadedFiles[0].id : undefined,
+      })
+
+      if (result.success) {
+        toast.success("設定を保存しました")
+      } else {
+        toast.error(result.error || "保存に失敗しました")
+      }
+    } catch {
+      toast.error("設定の保存に失敗しました")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleDelete = async () => {
     if (!confirm("お知らせ設定を削除しますか？この操作は取り消せません。")) {
       return
@@ -292,8 +317,16 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
         </>
       )}
 
-      {initialData && (
-        <div className="flex gap-4">
+      <div className="flex gap-4">
+        <Button
+          type="button"
+          onClick={handleSaveAll}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "保存中..." : "設定を保存"}
+        </Button>
+
+        {initialData && (
           <Button
             type="button"
             variant="destructive"
@@ -302,8 +335,8 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
           >
             設定を削除
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
