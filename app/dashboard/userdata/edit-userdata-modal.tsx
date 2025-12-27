@@ -17,7 +17,7 @@ import { IconSelector } from "./components/IconSelector"
 
 interface EditUserDataModalProps {
   data: UserData
-  onDataUpdated: () => void
+  onDataUpdated: (updatedData: UserData) => void
 }
 
 // フォームスキーマ（iconはフォーム外で管理）
@@ -70,8 +70,8 @@ export function EditUserDataModal({ data, onDataUpdated }: EditUserDataModalProp
         value: formData.value,
       })
 
-      if (result.success) {
-        onDataUpdated()
+      if (result.success && result.data) {
+        onDataUpdated(result.data)
         toast.success("データを更新しました")
         setIsOpen(false)
       } else {

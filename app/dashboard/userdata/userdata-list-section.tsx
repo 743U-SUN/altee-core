@@ -80,7 +80,6 @@ export function UserDataListSection({ initialUserData }: UserDataListSectionProp
         <DragDropUserDataList
           userData={userData}
           onDataChange={handleDataChange}
-          onEditData={() => {}}
         />
       )}
     </div>

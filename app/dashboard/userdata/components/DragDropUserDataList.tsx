@@ -36,10 +36,9 @@ import { deleteUserData, reorderUserData, updateUserData } from "@/app/actions/u
 interface DragDropUserDataListProps {
   userData: UserData[]
   onDataChange: (data: UserData[]) => void
-  onEditData: (data: UserData) => void
 }
 
-export function DragDropUserDataList({ userData, onDataChange, onEditData }: DragDropUserDataListProps) {
+export function DragDropUserDataList({ userData, onDataChange }: DragDropUserDataListProps) {
   const [activeItem, setActiveItem] = useState<UserData | null>(null)
 
   // DnD センサー設定（モバイル対応）
@@ -127,9 +126,10 @@ export function DragDropUserDataList({ userData, onDataChange, onEditData }: Dra
             <SortableUserDataItem
               key={data.id}
               data={data}
-              onEdit={() => onEditData(data)}
               onVisibilityToggle={() => handleVisibilityToggle(data)}
               onDelete={() => handleDeleteData(data)}
+              userData={userData}
+              onDataChange={onDataChange}
             />
           ))}
         </div>
@@ -148,16 +148,18 @@ export function DragDropUserDataList({ userData, onDataChange, onEditData }: Dra
 }
 
 // ソート可能なデータアイテム
-function SortableUserDataItem({ 
-  data, 
-  onEdit, 
-  onVisibilityToggle, 
-  onDelete
+function SortableUserDataItem({
+  data,
+  onVisibilityToggle,
+  onDelete,
+  userData,
+  onDataChange
 }: {
   data: UserData
-  onEdit: () => void
   onVisibilityToggle: () => void
   onDelete: () => void
+  userData: UserData[]
+  onDataChange: (data: UserData[]) => void
 }) {
   const {
     attributes,
@@ -179,9 +181,10 @@ function SortableUserDataItem({
         data={data}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
-        onEdit={onEdit}
         onVisibilityToggle={onVisibilityToggle}
         onDelete={onDelete}
+        userData={userData}
+        onDataChange={onDataChange}
       />
     </div>
   )
@@ -192,16 +195,18 @@ function UserDataItemCard({
   data,
   isDragging = false,
   dragHandleProps,
-  onEdit,
   onVisibilityToggle,
-  onDelete
+  onDelete,
+  userData,
+  onDataChange
 }: {
   data: UserData
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
-  onEdit?: () => void
   onVisibilityToggle?: () => void
   onDelete?: () => void
+  userData?: UserData[]
+  onDataChange?: (data: UserData[]) => void
 }) {
 
   return (
@@ -222,7 +227,7 @@ function UserDataItemCard({
           <div className="text-xs text-muted-foreground truncate">{data.value}</div>
         </div>
 
-        {!isDragging && onEdit && onVisibilityToggle && onDelete && (
+        {!isDragging && onVisibilityToggle && onDelete && (
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -235,12 +240,17 @@ function UserDataItemCard({
                 <EyeOff className="h-4 w-4" />
               )}
             </Button>
-            <EditUserDataModal
-              data={data}
-              onDataUpdated={() => {
-                onEdit?.()
-              }}
-            />
+            {userData && onDataChange && (
+              <EditUserDataModal
+                data={data}
+                onDataUpdated={(updatedData) => {
+                  const updatedDataList = userData.map(d =>
+                    d.id === updatedData.id ? updatedData : d
+                  )
+                  onDataChange(updatedDataList)
+                }}
+              />
+            )}
             <Button
               variant="ghost"
               size="sm"
