@@ -38,6 +38,34 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
       : []
   )
 
+  // isEnabled切り替え時の自動保存
+  const handleIsEnabledChange = async (newIsEnabled: boolean) => {
+    setIsEnabled(newIsEnabled)
+
+    try {
+      const result = await updateUserNotification({
+        isEnabled: newIsEnabled,
+        title: title || undefined,
+        content: content || undefined,
+        linkUrl: linkUrl || undefined,
+        buttonText: buttonText || undefined,
+        imageId: uploadedFiles.length > 0 ? uploadedFiles[0].id : undefined,
+      })
+
+      if (result.success) {
+        toast.success(newIsEnabled ? "お知らせを表示に設定しました" : "お知らせを非表示に設定しました")
+      } else {
+        toast.error(result.error || "更新に失敗しました")
+        // エラー時は元に戻す
+        setIsEnabled(!newIsEnabled)
+      }
+    } catch {
+      toast.error("設定の保存に失敗しました")
+      // エラー時は元に戻す
+      setIsEnabled(!newIsEnabled)
+    }
+  }
+
   // タイトル保存ハンドラ
   const handleTitleSave = async (newTitle: string) => {
     // バリデーション
@@ -230,7 +258,7 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
         </div>
         <Switch
           checked={isEnabled}
-          onCheckedChange={setIsEnabled}
+          onCheckedChange={handleIsEnabledChange}
         />
       </div>
 
