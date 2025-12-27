@@ -76,11 +76,6 @@ export async function updateUserNotification(data: z.infer<typeof notificationSc
     // バリデーション
     const validatedData = notificationSchema.parse(data)
 
-    // linkUrlがある場合、buttonTextも必要
-    if (validatedData.linkUrl && !validatedData.buttonText) {
-      return { success: false, error: "リンクを設定する場合、ボタンテキストも設定してください" }
-    }
-
     // 画像IDが指定されている場合、自分がアップロードした画像かチェック
     if (validatedData.imageId) {
       const image = await prisma.mediaFile.findFirst({
