@@ -38,6 +38,30 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
       : []
   )
 
+  // 画像アップロード/削除時の自動保存
+  const handleImageUpload = async (files: UploadedFile[]) => {
+    setUploadedFiles(files)
+
+    try {
+      const result = await updateUserNotification({
+        isEnabled,
+        title: title || undefined,
+        content: content || undefined,
+        linkUrl: linkUrl || undefined,
+        buttonText: buttonText || undefined,
+        imageId: files.length > 0 ? files[0].id : undefined,
+      })
+
+      if (result.success) {
+        toast.success(files.length > 0 ? "画像を保存しました" : "画像を削除しました")
+      } else {
+        toast.error(result.error || "更新に失敗しました")
+      }
+    } catch {
+      toast.error("画像の保存に失敗しました")
+    }
+  }
+
   // isEnabled切り替え時の自動保存
   const handleIsEnabledChange = async (newIsEnabled: boolean) => {
     setIsEnabled(newIsEnabled)
@@ -332,10 +356,7 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
               maxFiles={1}
               folder="user-notifications"
               value={uploadedFiles}
-              onUpload={setUploadedFiles}
-              onDelete={(fileId) => {
-                setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
-              }}
+              onUpload={handleImageUpload}
               showPreview={true}
             />
             <p className="text-sm text-muted-foreground">
