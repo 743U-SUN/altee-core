@@ -1,48 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { toast } from "sonner"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { InlineEdit } from "@/components/ui/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
 import { updateUserNotification, deleteUserNotification } from "@/app/actions/notification-actions"
 import { NOTIFICATION_CONSTRAINTS } from "@/types/notifications"
 import type { UserNotification } from "@/types/notifications"
 import type { UploadedFile } from "@/types/image-upload"
-
-// バリデーションスキーマ
-const notificationFormSchema = z.object({
-  isEnabled: z.boolean(),
-  title: z.string()
-    .max(NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH, `タイトルは${NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH}文字以内で入力してください`)
-    .optional(),
-  content: z.string()
-    .max(NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH, `内容は${NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH}文字以内で入力してください`)
-    .optional(),
-  linkUrl: z.string()
-    .regex(NOTIFICATION_CONSTRAINTS.URL_PATTERN, "URLはhttps://で始まる必要があります")
-    .or(z.literal(""))
-    .optional(),
-  buttonText: z.string()
-    .max(20, "ボタンテキストは20文字以内で入力してください")
-    .optional(),
-})
-
-type NotificationFormData = z.infer<typeof notificationFormSchema>
 
 interface NotificationSettingsProps {
   initialData: UserNotification | null
@@ -50,6 +18,11 @@ interface NotificationSettingsProps {
 
 export function NotificationSettings({ initialData }: NotificationSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEnabled, setIsEnabled] = useState(initialData?.isEnabled ?? false)
+  const [title, setTitle] = useState(initialData?.title ?? "")
+  const [content, setContent] = useState(initialData?.content ?? "")
+  const [linkUrl, setLinkUrl] = useState(initialData?.linkUrl ?? "")
+  const [buttonText, setButtonText] = useState(initialData?.buttonText ?? "")
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(
     initialData?.image
       ? [{
@@ -65,44 +38,131 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
       : []
   )
 
-  const form = useForm<NotificationFormData>({
-    resolver: zodResolver(notificationFormSchema),
-    defaultValues: {
-      isEnabled: initialData?.isEnabled ?? false,
-      title: initialData?.title ?? "",
-      content: initialData?.content ?? "",
-      linkUrl: initialData?.linkUrl ?? "",
-      buttonText: initialData?.buttonText ?? "",
-    },
-  })
+  // タイトル保存ハンドラ
+  const handleTitleSave = async (newTitle: string) => {
+    // バリデーション
+    if (newTitle.length > NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH) {
+      toast.error(`タイトルは${NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH}文字以内で入力してください`)
+      throw new Error("Validation error")
+    }
 
-  const watchLinkUrl = form.watch("linkUrl")
-  const watchIsEnabled = form.watch("isEnabled")
-
-  const onSubmit = async (data: NotificationFormData) => {
-    setIsSubmitting(true)
     try {
-      // linkUrlが空文字の場合はundefinedに変換
-      const processedData = {
-        ...data,
-        linkUrl: data.linkUrl === "" ? undefined : data.linkUrl,
-        title: data.title === "" ? undefined : data.title,
-        content: data.content === "" ? undefined : data.content,
-        buttonText: data.buttonText === "" ? undefined : data.buttonText,
+      const result = await updateUserNotification({
+        isEnabled,
+        title: newTitle || undefined,
+        content: content || undefined,
+        linkUrl: linkUrl || undefined,
+        buttonText: buttonText || undefined,
         imageId: uploadedFiles.length > 0 ? uploadedFiles[0].id : undefined,
-      }
+      })
 
-      const result = await updateUserNotification(processedData)
-      
       if (result.success) {
-        toast.success("お知らせ設定を更新しました")
+        setTitle(newTitle)
+        toast.success("タイトルを保存しました")
       } else {
         toast.error(result.error || "更新に失敗しました")
+        throw new Error(result.error)
       }
-    } catch {
-      toast.error("お知らせ設定の保存に失敗しました")
-    } finally {
-      setIsSubmitting(false)
+    } catch (error) {
+      console.error("タイトル保存エラー:", error)
+      toast.error("タイトルの保存に失敗しました")
+      throw error
+    }
+  }
+
+  // 内容保存ハンドラ
+  const handleContentSave = async (newContent: string) => {
+    // バリデーション
+    if (newContent.length > NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH) {
+      toast.error(`内容は${NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH}文字以内で入力してください`)
+      throw new Error("Validation error")
+    }
+
+    try {
+      const result = await updateUserNotification({
+        isEnabled,
+        title: title || undefined,
+        content: newContent || undefined,
+        linkUrl: linkUrl || undefined,
+        buttonText: buttonText || undefined,
+        imageId: uploadedFiles.length > 0 ? uploadedFiles[0].id : undefined,
+      })
+
+      if (result.success) {
+        setContent(newContent)
+        toast.success("内容を保存しました")
+      } else {
+        toast.error(result.error || "更新に失敗しました")
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error("内容保存エラー:", error)
+      toast.error("内容の保存に失敗しました")
+      throw error
+    }
+  }
+
+  // リンクURL保存ハンドラ
+  const handleLinkUrlSave = async (newLinkUrl: string) => {
+    // バリデーション
+    if (newLinkUrl && !NOTIFICATION_CONSTRAINTS.URL_PATTERN.test(newLinkUrl)) {
+      toast.error("URLはhttps://で始まる必要があります")
+      throw new Error("Validation error")
+    }
+
+    try {
+      const result = await updateUserNotification({
+        isEnabled,
+        title: title || undefined,
+        content: content || undefined,
+        linkUrl: newLinkUrl || undefined,
+        buttonText: buttonText || undefined,
+        imageId: uploadedFiles.length > 0 ? uploadedFiles[0].id : undefined,
+      })
+
+      if (result.success) {
+        setLinkUrl(newLinkUrl)
+        toast.success("リンクURLを保存しました")
+      } else {
+        toast.error(result.error || "更新に失敗しました")
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error("リンクURL保存エラー:", error)
+      toast.error("リンクURLの保存に失敗しました")
+      throw error
+    }
+  }
+
+  // ボタンテキスト保存ハンドラ
+  const handleButtonTextSave = async (newButtonText: string) => {
+    // バリデーション
+    if (newButtonText.length > 20) {
+      toast.error("ボタンテキストは20文字以内で入力してください")
+      throw new Error("Validation error")
+    }
+
+    try {
+      const result = await updateUserNotification({
+        isEnabled,
+        title: title || undefined,
+        content: content || undefined,
+        linkUrl: linkUrl || undefined,
+        buttonText: newButtonText || undefined,
+        imageId: uploadedFiles.length > 0 ? uploadedFiles[0].id : undefined,
+      })
+
+      if (result.success) {
+        setButtonText(newButtonText)
+        toast.success("ボタンテキストを保存しました")
+      } else {
+        toast.error(result.error || "更新に失敗しました")
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error("ボタンテキスト保存エラー:", error)
+      toast.error("ボタンテキストの保存に失敗しました")
+      throw error
     }
   }
 
@@ -114,16 +174,14 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
     setIsSubmitting(true)
     try {
       const result = await deleteUserNotification()
-      
+
       if (result.success) {
         toast.success("お知らせ設定を削除しました")
-        form.reset({
-          isEnabled: false,
-          title: "",
-          content: "",
-          linkUrl: "",
-          buttonText: "",
-        })
+        setIsEnabled(false)
+        setTitle("")
+        setContent("")
+        setLinkUrl("")
+        setButtonText("")
         setUploadedFiles([])
       } else {
         toast.error(result.error || "削除に失敗しました")
@@ -136,162 +194,116 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* 表示設定 */}
-        <FormField
-          control={form.control}
-          name="isEnabled"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">お知らせを表示する</FormLabel>
-                <FormDescription>
-                  プロフィールページにお知らせアイコンを表示します
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        {watchIsEnabled && (
-          <>
-            {/* タイトル */}
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>タイトル（任意）</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="お知らせのタイトルを入力"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    最大{NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH}文字
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 内容 */}
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>内容（任意）</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="お知らせの内容を入力"
-                      className="min-h-[100px]"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    最大{NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH}文字
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* リンクURL */}
-            <FormField
-              control={form.control}
-              name="linkUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>リンクURL（任意）</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://example.com"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    ボタンをクリックした際に開くリンクを設定できます
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* ボタンテキスト */}
-            {watchLinkUrl && (
-              <FormField
-                control={form.control}
-                name="buttonText"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ボタンテキスト</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="詳細を見る"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      ボタンに表示するテキストを設定してください
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* 画像アップロード */}
-            <div className="space-y-2">
-              <FormLabel>画像（任意）</FormLabel>
-              <ImageUploader
-                mode="immediate"
-                previewSize="medium"
-                maxFiles={1}
-                folder="user-notifications"
-                value={uploadedFiles}
-                onUpload={setUploadedFiles}
-                onDelete={(fileId) => {
-                  setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
-                }}
-                showPreview={true}
-              />
-              <FormDescription>
-                最大1000px（幅・高さ）の画像をアップロードできます
-              </FormDescription>
-            </div>
-          </>
-        )}
-
-        <div className="flex gap-4">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "保存中..." : "設定を保存"}
-          </Button>
-          
-          {initialData && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-            >
-              設定を削除
-            </Button>
-          )}
+    <div className="space-y-6">
+      {/* 表示設定 */}
+      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+        <div className="space-y-0.5">
+          <Label className="text-base">お知らせを表示する</Label>
+          <p className="text-sm text-muted-foreground">
+            プロフィールページにお知らせアイコンを表示します
+          </p>
         </div>
-      </form>
-    </Form>
+        <Switch
+          checked={isEnabled}
+          onCheckedChange={setIsEnabled}
+        />
+      </div>
+
+      {isEnabled && (
+        <>
+          {/* タイトル */}
+          <div className="space-y-2">
+            <Label>タイトル（任意）</Label>
+            <InlineEdit
+              value={title}
+              onSave={handleTitleSave}
+              placeholder="お知らせのタイトルを入力"
+              maxLength={NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH}
+            />
+            <p className="text-sm text-muted-foreground">
+              最大{NOTIFICATION_CONSTRAINTS.TITLE_MAX_LENGTH}文字
+            </p>
+          </div>
+
+          {/* 内容 */}
+          <div className="space-y-2">
+            <Label>内容（任意）</Label>
+            <InlineEdit
+              value={content}
+              onSave={handleContentSave}
+              placeholder="お知らせの内容を入力"
+              multiline={true}
+              maxLength={NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH}
+              rows={4}
+            />
+            <p className="text-sm text-muted-foreground">
+              最大{NOTIFICATION_CONSTRAINTS.CONTENT_MAX_LENGTH}文字
+            </p>
+          </div>
+
+          {/* リンクURL */}
+          <div className="space-y-2">
+            <Label>リンクURL（任意）</Label>
+            <InlineEdit
+              value={linkUrl}
+              onSave={handleLinkUrlSave}
+              placeholder="https://example.com"
+            />
+            <p className="text-sm text-muted-foreground">
+              ボタンをクリックした際に開くリンクを設定できます
+            </p>
+          </div>
+
+          {/* ボタンテキスト */}
+          {linkUrl && (
+            <div className="space-y-2">
+              <Label>ボタンテキスト</Label>
+              <InlineEdit
+                value={buttonText}
+                onSave={handleButtonTextSave}
+                placeholder="詳細を見る"
+                maxLength={20}
+              />
+              <p className="text-sm text-muted-foreground">
+                ボタンに表示するテキストを設定してください
+              </p>
+            </div>
+          )}
+
+          {/* 画像アップロード */}
+          <div className="space-y-2">
+            <Label>画像（任意）</Label>
+            <ImageUploader
+              mode="immediate"
+              previewSize="medium"
+              maxFiles={1}
+              folder="user-notifications"
+              value={uploadedFiles}
+              onUpload={setUploadedFiles}
+              onDelete={(fileId) => {
+                setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
+              }}
+              showPreview={true}
+            />
+            <p className="text-sm text-muted-foreground">
+              最大1000px（幅・高さ）の画像をアップロードできます
+            </p>
+          </div>
+        </>
+      )}
+
+      {initialData && (
+        <div className="flex gap-4">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isSubmitting}
+          >
+            設定を削除
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
