@@ -224,12 +224,8 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
 
   const handleCategoryDelete = useCallback(async (itemId: string) => {
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-
       const result = await deleteFaqCategory(itemId)
-      
+
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -239,16 +235,12 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
         if (!current) return current
         return current.filter(cat => cat.id !== itemId)
       }, false)
-      
+
       toast.success('カテゴリーを削除しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの削除に失敗しました')
-    } finally {
-      setIsLoading(false)
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   // 質問のイベントハンドラー
   const handleQuestionReorder = useCallback(async (categoryId: string, reorderedQuestions: FaqQuestion[]) => {
@@ -356,12 +348,8 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
 
   const handleQuestionDelete = useCallback(async (categoryId: string, itemId: string) => {
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-
       const result = await deleteFaqQuestion(itemId)
-      
+
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -377,16 +365,12 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
           return cat
         })
       }, false)
-      
+
       toast.success('質問を削除しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の削除に失敗しました')
-    } finally {
-      setIsLoading(false)
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   // ネストしたリストの設定（依存関係を最適化）
   const nestedConfig: NestedSortableListConfig<FaqCategory, FaqQuestion> = useMemo(() => ({
