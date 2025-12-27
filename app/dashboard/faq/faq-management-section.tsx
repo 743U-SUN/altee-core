@@ -173,15 +173,11 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
 
   const handleCategoryAdd = useCallback(async () => {
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-
       const result = await createFaqCategory({
         name: `新しいカテゴリー`,
         description: '新しいカテゴリーの説明'
       })
-      
+
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -191,16 +187,12 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
         if (!current) return current
         return [...current, result.data as FaqCategory]
       }, false)
-      
+
       toast.success('カテゴリーを作成しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの作成に失敗しました')
-    } finally {
-      setIsLoading(false)
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   const handleCategoryEdit = useCallback(async (itemId: string, updates: Partial<FaqCategory>) => {
     try {
@@ -298,15 +290,11 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
 
   const handleQuestionAdd = useCallback(async (categoryId: string) => {
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-
       const result = await createFaqQuestion(categoryId, {
         question: '新しい質問',
         answer: '新しい回答'
       })
-      
+
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -325,16 +313,12 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
           return cat
         })
       }, false)
-      
+
       toast.success('質問を作成しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の作成に失敗しました')
-    } finally {
-      setIsLoading(false)
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   const handleQuestionEdit = useCallback(async (categoryId: string, itemId: string, updates: Partial<FaqQuestion>) => {
     try {
