@@ -145,31 +145,23 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
   // カテゴリーのイベントハンドラー
   const handleCategoryReorder = useCallback(async (reorderedCategories: FaqCategory[]) => {
     const categoryIds = reorderedCategories.map((cat: FaqCategory) => cat.id)
-    
+
     try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
-      
       // 楽観的更新 (ドラッグ&ドロップの応答性のため)
       await mutate(reorderedCategories, false)
-      
+
       const result = await reorderFaqCategories({ categoryIds })
       if (!result.success) {
         throw new Error(result.error)
         // エラー時は自動でSWRが元データに戻すのでロールバック不要
       }
-      
+
       toast.success('カテゴリーの順序を更新しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
     } catch (error) {
       // SWRが自動でリフェッチするためロールバック不要
       toast.error(error instanceof Error ? error.message : 'カテゴリーの並び替えに失敗しました')
-    } finally {
-      setIsLoading(false)
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   const handleCategoryAdd = useCallback(async () => {
     try {
@@ -245,12 +237,8 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
   // 質問のイベントハンドラー
   const handleQuestionReorder = useCallback(async (categoryId: string, reorderedQuestions: FaqQuestion[]) => {
     const questionIds = reorderedQuestions.map(q => q.id)
-    
-    try {
-      setIsLoading(true)
-      // 操作前にスクロール位置を保存
-      saveScrollPosition()
 
+    try {
       // 楽観的更新 (ドラッグ&ドロップの応答性のため)
       await mutate((current) => {
         if (!current) return current
@@ -263,22 +251,18 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
       }, false)
 
       const result = await reorderFaqQuestions(categoryId, { questionIds })
-      
+
       if (!result.success) {
         throw new Error(result.error)
         // エラー時は自動でSWRが元データに戻すのでロールバック不要
       }
-      
+
       toast.success('質問の順序を更新しました')
-      // 操作完了後にスクロール位置を復元
-      restoreScrollPosition()
     } catch (error) {
       // SWRが自動でリフェッチするためロールバック不要
       toast.error(error instanceof Error ? error.message : '質問の並び替えに失敗しました')
-    } finally {
-      setIsLoading(false)
     }
-  }, [mutate, saveScrollPosition, restoreScrollPosition])
+  }, [mutate])
 
   const handleQuestionAdd = useCallback(async (categoryId: string) => {
     try {
