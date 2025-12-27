@@ -38,10 +38,9 @@ interface DragDropLinkListProps {
   userLinks: UserLink[]
   linkTypes: LinkType[]
   onLinksChange: (links: UserLink[]) => void
-  onEditLink: (link: UserLink) => void
 }
 
-export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLink }: DragDropLinkListProps) {
+export function DragDropLinkList({ userLinks, linkTypes, onLinksChange }: DragDropLinkListProps) {
   const [activeItem, setActiveItem] = useState<UserLink | null>(null)
 
   // DnD センサー設定（モバイル対応）
@@ -130,9 +129,10 @@ export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLi
               key={link.id}
               link={link}
               linkTypes={linkTypes}
-              onEdit={() => onEditLink(link)}
               onVisibilityToggle={() => handleVisibilityToggle(link)}
               onDelete={() => handleDeleteLink(link)}
+              onLinksChange={onLinksChange}
+              userLinks={userLinks}
             />
           ))}
         </div>
@@ -154,15 +154,17 @@ export function DragDropLinkList({ userLinks, linkTypes, onLinksChange, onEditLi
 function SortableLinkItem({
   link,
   linkTypes,
-  onEdit,
   onVisibilityToggle,
   onDelete,
+  onLinksChange,
+  userLinks,
 }: {
   link: UserLink
   linkTypes: LinkType[]
-  onEdit: () => void
   onVisibilityToggle: () => void
   onDelete: () => void
+  onLinksChange: (links: UserLink[]) => void
+  userLinks: UserLink[]
 }) {
   const {
     attributes,
@@ -185,9 +187,10 @@ function SortableLinkItem({
         linkTypes={linkTypes}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
-        onEdit={onEdit}
         onVisibilityToggle={onVisibilityToggle}
         onDelete={onDelete}
+        onLinksChange={onLinksChange}
+        userLinks={userLinks}
       />
     </div>
   )
@@ -199,17 +202,19 @@ function LinkItemCard({
   linkTypes,
   isDragging = false,
   dragHandleProps,
-  onEdit,
   onVisibilityToggle,
-  onDelete
+  onDelete,
+  onLinksChange,
+  userLinks,
 }: {
   link: UserLink
   linkTypes?: LinkType[]
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
-  onEdit?: () => void
   onVisibilityToggle?: () => void
   onDelete?: () => void
+  onLinksChange?: (links: UserLink[]) => void
+  userLinks?: UserLink[]
 }) {
   const iconSrc = getLinkIconSrc(link)
   const displayName = getLinkDisplayName(link)
@@ -242,7 +247,7 @@ function LinkItemCard({
           <div className="text-xs text-muted-foreground truncate">{link.url}</div>
         </div>
 
-        {!isDragging && onEdit && onVisibilityToggle && onDelete && (
+        {!isDragging && onVisibilityToggle && onDelete && (
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -262,12 +267,15 @@ function LinkItemCard({
             >
               <ExternalLink className="h-4 w-4" />
             </Button>
-            {linkTypes && (
+            {linkTypes && onLinksChange && userLinks && (
               <EditLinkModal
                 link={link}
                 linkTypes={linkTypes}
-                onLinkUpdated={() => {
-                  onEdit?.()
+                onLinkUpdated={(updatedLink) => {
+                  const updatedLinks = userLinks.map(l =>
+                    l.id === updatedLink.id ? updatedLink : l
+                  )
+                  onLinksChange(updatedLinks)
                 }}
               />
             )}

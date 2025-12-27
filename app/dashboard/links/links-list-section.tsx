@@ -84,7 +84,6 @@ export function LinksListSection({ initialUserLinks, initialLinkTypes }: LinksLi
           userLinks={userLinks}
           linkTypes={linkTypes}
           onLinksChange={handleLinksChange}
-          onEditLink={() => {}}
         />
       )}
 

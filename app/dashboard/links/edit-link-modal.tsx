@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { updateUserLink } from "@/app/actions/link-actions"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
 import type { UploadedFile } from "@/types/image-upload"
+import type { UserLink, LinkType } from "@/types/link-type"
 import { urlPatternValidator, customLabelValidator } from "@/lib/validations/link-validations"
 
 // プリセットアイコン選択の遅延読み込み
@@ -25,46 +26,6 @@ const PresetIconSelector = dynamic(() => import("./components/PresetIconSelector
   loading: () => <div className="h-24 bg-muted animate-pulse rounded-md" />,
   ssr: false
 })
-
-// 型定義
-interface LinkType {
-  id: string
-  name: string
-  displayName: string
-  isCustom: boolean
-  urlPattern?: string | null
-}
-
-interface UserLink {
-  id: string
-  url: string
-  customLabel?: string | null
-  isVisible: boolean
-  sortOrder: number
-  linkType: {
-    id: string
-    name: string
-    displayName: string
-    isCustom: boolean
-    icons?: {
-      id: string
-      iconKey: string
-      isDefault: boolean
-      sortOrder: number
-    }[]
-  }
-  customIcon?: {
-    id: string
-    storageKey: string
-    fileName: string
-  } | null
-  selectedLinkTypeIcon?: {
-    id: string
-    iconKey: string
-    isDefault: boolean
-    sortOrder: number
-  } | null
-}
 
 interface EditLinkModalProps {
   link: UserLink
