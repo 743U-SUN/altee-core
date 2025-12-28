@@ -1,11 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -14,83 +12,52 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Search, Filter, X } from "lucide-react"
+import { useMediaFilters } from "./hooks/useMediaFilters"
+import { ActiveFilters } from "./shared/ActiveFilters"
 
 interface MediaFiltersProps {
   totalCount: number
 }
 
-export function MediaFilters({ totalCount }: MediaFiltersProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  
-  const [search, setSearch] = useState(searchParams.get('search') || '')
-  const [containerName, setContainerName] = useState(searchParams.get('container') || '')
-  const [uploadType, setUploadType] = useState(searchParams.get('type') || '')
-  const [tags, setTags] = useState(searchParams.get('tags') || '')
-  const [month, setMonth] = useState(searchParams.get('month') || '')
+// 月の選択肢を生成（過去24ヶ月）
+function generateMonthOptions() {
+  const options = []
+  const now = new Date()
 
-  // 月の選択肢を生成（過去24ヶ月）
-  const generateMonthOptions = () => {
-    const options = []
-    const now = new Date()
-    
-    for (let i = 0; i < 24; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const yearMonth = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`
-      const displayText = `${date.getFullYear()}年${date.getMonth() + 1}月`
-      options.push({ value: yearMonth, label: displayText })
-    }
-    
-    return options
+  for (let i = 0; i < 24; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const yearMonth = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`
+    const displayText = `${date.getFullYear()}年${date.getMonth() + 1}月`
+    options.push({ value: yearMonth, label: displayText })
   }
+
+  return options
+}
+
+export function MediaFilters({ totalCount }: MediaFiltersProps) {
+  const {
+    search,
+    setSearch,
+    containerName,
+    setContainerName,
+    uploadType,
+    setUploadType,
+    tags,
+    setTags,
+    month,
+    setMonth,
+    applyFilters,
+    clearFilters,
+    activeFiltersCount
+  } = useMediaFilters()
 
   const monthOptions = generateMonthOptions()
 
-  const applyFilters = (overrides: Partial<{
-    search: string
-    containerName: string
-    uploadType: string
-    tags: string
-    month: string
-  }> = {}) => {
-    const params = new URLSearchParams()
-    
-    const finalSearch = overrides.search !== undefined ? overrides.search : search
-    const finalContainer = overrides.containerName !== undefined ? overrides.containerName : containerName
-    const finalUploadType = overrides.uploadType !== undefined ? overrides.uploadType : uploadType
-    const finalTags = overrides.tags !== undefined ? overrides.tags : tags
-    const finalMonth = overrides.month !== undefined ? overrides.month : month
-    
-    if (finalSearch?.trim()) params.set('search', finalSearch.trim())
-    if (finalContainer) params.set('container', finalContainer)
-    if (finalUploadType) params.set('type', finalUploadType)
-    if (finalTags?.trim()) params.set('tags', finalTags.trim())
-    if (finalMonth) params.set('month', finalMonth)
-    
-    // ページをリセット
-    params.delete('page')
-    
-    router.push(`?${params.toString()}`)
-  }
-
-  const clearFilters = () => {
-    setSearch('')
-    setContainerName('')
-    setUploadType('')
-    setTags('')
-    setMonth('')
-    router.push('/admin/media')
-  }
-
-  // キーボードショートカット（Enter キーで検索）
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       applyFilters()
     }
   }
-
-  // アクティブなフィルターの数を計算
-  const activeFiltersCount = [search, containerName, uploadType, tags, month].filter(Boolean).length
 
   return (
     <Card>
@@ -232,46 +199,14 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
         </div>
 
         {/* アクティブフィルターの表示 */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {search && (
-              <Badge variant="secondary">
-                検索: {search}
-              </Badge>
-            )}
-            {containerName && (
-              <Badge variant="secondary">
-                フォルダ: {containerName}
-              </Badge>
-            )}
-            {uploadType && (
-              <Badge variant="secondary">
-                タイプ: {
-                  uploadType === 'THUMBNAIL' ? '記事サムネイル' :
-                  uploadType === 'CONTENT' ? '記事内画像' :
-                  uploadType === 'SYSTEM' ? 'システム' :
-                  uploadType === 'ICON' ? '管理者アイコン' :
-                  uploadType === 'BACKGROUND' ? '背景画像' :
-                  uploadType === 'PROFILE' ? 'プロフィール画像' :
-                  uploadType === 'LINK_ICON' ? 'リンクアイコン' :
-                  uploadType === 'NOTIFICATION' ? '通知画像' :
-                  uploadType === 'CONTACT' ? '連絡方法画像' :
-                  uploadType
-                }
-              </Badge>
-            )}
-            {tags && (
-              <Badge variant="secondary">
-                タグ: {tags}
-              </Badge>
-            )}
-            {month && (
-              <Badge variant="secondary">
-                月: {monthOptions.find(opt => opt.value === month)?.label}
-              </Badge>
-            )}
-          </div>
-        )}
+        <ActiveFilters
+          search={search}
+          containerName={containerName}
+          uploadType={uploadType}
+          tags={tags}
+          month={month}
+          monthOptions={monthOptions}
+        />
       </CardContent>
     </Card>
   )

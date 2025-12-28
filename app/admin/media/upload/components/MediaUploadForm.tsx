@@ -15,6 +15,7 @@ import type { UploadedFile } from '@/types/image-upload'
 import { uploadMediaFileAction } from '@/app/actions/media-upload-actions'
 import { MediaType } from '@prisma/client'
 import { toast } from 'sonner'
+import { processImageFile } from './hooks/useImageProcessing'
 
 const uploadSchema = z.object({
   uploadType: z.enum(['THUMBNAIL', 'CONTENT', 'SYSTEM', 'ICON', 'BACKGROUND']),
@@ -41,11 +42,9 @@ export function MediaUploadForm() {
     },
   })
 
-  // ファイルアップロード後の処理
   const handleFileUpload = (files: UploadedFile[]) => {
     setUploadedFiles(files)
   }
-
 
   const onSubmit = async (data: UploadFormData) => {
     if (uploadedFiles.length === 0) {
@@ -56,55 +55,28 @@ export function MediaUploadForm() {
     setIsSubmitting(true)
 
     try {
-      // 最新のアップロードファイル
       const latestFile = uploadedFiles[uploadedFiles.length - 1]
-      
+
       if (!latestFile) {
         throw new Error('アップロード済みファイルが見つかりません')
       }
-      
-      // タグの処理（カンマ区切り文字列を配列に変換）
-      const tags = data.tags 
-        ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-        : []
 
-      // batchモードでは元のFileオブジェクトが含まれている
       if (!latestFile.file) {
         throw new Error('ファイルデータが見つかりません。ファイルを再選択してください。')
       }
 
-      let fileToUpload = latestFile.file
+      // 画像処理を実行
+      const fileToUpload = await processImageFile(latestFile.file)
 
-      // 画像ファイルの場合は最適化処理を実行
-      if (latestFile.file.type.startsWith('image/') && 
-          latestFile.file.type !== 'image/svg+xml' && 
-          latestFile.file.type !== 'image/gif') {
-        try {
-          const { processImage } = await import('@/lib/image-uploader/image-processor')
-          const processResult = await processImage(latestFile.file, {
-            maxWidth: 1920,
-            maxHeight: 1080,
-            quality: 0.8,
-            format: 'webp'
-          })
-          
-          if (processResult.success && processResult.processedFile) {
-            // WebPファイルとして新しいFileオブジェクトを作成
-            const webpFileName = latestFile.file.name.replace(/\.[^.]+$/, '.webp')
-            fileToUpload = new File([processResult.processedFile], webpFileName, {
-              type: 'image/webp'
-            })
-          }
-        } catch (error) {
-          console.warn('Image processing failed, using original file:', error)
-          // 処理に失敗した場合は元のファイルを使用
-        }
-      }
+      // タグの処理（カンマ区切り文字列を配列に変換）
+      const tags = data.tags
+        ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : []
 
-      // メタデータ付きでアップロード（新しいServer Actionを呼び出し）
+      // メタデータ付きでアップロード
       const formData = new FormData()
       formData.append('file', fileToUpload)
-      
+
       const result = await uploadMediaFileAction(formData, {
         uploadType: data.uploadType as MediaType,
         description: data.description || undefined,
@@ -118,8 +90,6 @@ export function MediaUploadForm() {
 
       if (result.success) {
         toast.success('ファイルのアップロードとメタデータの保存が完了しました。')
-        
-        // フォームをリセット
         form.reset()
         setUploadedFiles([])
       } else {
