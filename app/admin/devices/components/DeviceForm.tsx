@@ -9,21 +9,22 @@ import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DeviceImage } from '@/components/devices/device-image'
 import {
   extractAsinFromUrl,
   fetchOgData,
-  getDeviceCategories,
   createDevice,
   checkAsinExists,
   type CreateDeviceData
 } from '@/app/actions/device-actions'
-import type { DeviceCategoryWithAttributes, AmazonOgData } from '@/types/device'
-import type { CategoryAttribute } from '@prisma/client'
+import type { AmazonOgData } from '@/types/device'
+import { useDeviceCategories } from './hooks/useDeviceCategories'
+import { useCustomImageValidation } from './hooks/useCustomImageValidation'
+import { useDeviceAttributes } from './hooks/useDeviceAttributes'
+import { CustomImageSection } from './shared/CustomImageSection'
+import { OgDataCard } from './shared/OgDataCard'
+import { DeviceBasicFields } from './shared/DeviceBasicFields'
+import { DeviceAttributeFields } from './shared/DeviceAttributeFields'
 
 const deviceSchema = z.object({
   amazonUrl: z.string().min(1, 'Amazon URLを入力してください'),
@@ -42,14 +43,13 @@ interface DeviceFormProps {
 
 export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
   const router = useRouter()
-  const [categories, setCategories] = useState<DeviceCategoryWithAttributes[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<DeviceCategoryWithAttributes | null>(null)
   const [ogData, setOgData] = useState<AmazonOgData | null>(null)
   const [asin, setAsin] = useState<string>('')
   const [isLoadingOg, setIsLoadingOg] = useState(false)
-  const [attributes, setAttributes] = useState<{ [key: string]: string }>({})
-  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
-  const [isLoadingCustomImage, setIsLoadingCustomImage] = useState(false)
+
+  const { categories, selectedCategory, updateSelectedCategory } = useDeviceCategories(initialData?.categoryId)
+  const { customImagePreview, isLoadingCustomImage, validateCustomImage, setCustomImagePreview } = useCustomImageValidation()
+  const { attributes, handleAttributeChange, resetAttributes } = useDeviceAttributes()
 
   const {
     register,
@@ -72,26 +72,23 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
   const watchedAmazonUrl = watch('amazonUrl')
   const watchedCustomImageUrl = watch('customImageUrl')
 
-  // カテゴリデータ取得
-  useEffect(() => {
-    const loadCategories = async () => {
-      const categoryData = await getDeviceCategories()
-      setCategories(categoryData)
-    }
-    loadCategories()
-  }, [])
-
-  // 選択されたカテゴリの属性を設定
+  // カテゴリ変更時の処理
   useEffect(() => {
     if (watchedCategoryId) {
-      const category = categories.find(cat => cat.id === watchedCategoryId)
-      setSelectedCategory(category || null)
-      // 属性値をリセット
-      if (category && !initialData) {
-        setAttributes({})
+      updateSelectedCategory(watchedCategoryId)
+      // 属性値をリセット（初期データがない場合のみ）
+      if (!initialData) {
+        resetAttributes()
       }
     }
-  }, [watchedCategoryId, categories, initialData])
+  }, [watchedCategoryId, initialData, updateSelectedCategory, resetAttributes])
+
+  // カスタム画像プレビューの初期化
+  useEffect(() => {
+    if (initialData?.customImageUrl) {
+      setCustomImagePreview(initialData.customImageUrl)
+    }
+  }, [initialData?.customImageUrl, setCustomImagePreview])
 
   // Amazon URL解析とOG情報取得
   const handleUrlAnalysis = async () => {
@@ -113,8 +110,8 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
 
       // ASIN重複チェック
       if (!deviceId) { // 新規作成時のみチェック
-        const exists = await checkAsinExists(asinResult.asin!)
-        if (exists) {
+        const existsResult = await checkAsinExists(asinResult.asin!)
+        if (existsResult.exists) {
           toast.error('このASINのデバイスは既に登録されています')
           setIsLoadingOg(false)
           return
@@ -143,45 +140,6 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
     }
   }
 
-  // カスタム画像URLの確認
-  const handleCustomImageCheck = async () => {
-    const url = watchedCustomImageUrl?.trim()
-    if (!url) {
-      setCustomImagePreview(null)
-      return
-    }
-
-    setIsLoadingCustomImage(true)
-
-    try {
-      // 画像URLの検証（実際に画像を読み込んで確認）
-      const img = new Image()
-      img.onload = () => {
-        setCustomImagePreview(url)
-        toast.success('画像を確認しました')
-        setIsLoadingCustomImage(false)
-      }
-      img.onerror = () => {
-        toast.error('画像の読み込みに失敗しました。URLを確認してください')
-        setCustomImagePreview(null)
-        setIsLoadingCustomImage(false)
-      }
-      img.src = url
-    } catch {
-      toast.error('画像URL確認中にエラーが発生しました')
-      setCustomImagePreview(null)
-      setIsLoadingCustomImage(false)
-    }
-  }
-
-  // 属性値の更新
-  const handleAttributeChange = (attributeId: string, value: string) => {
-    setAttributes(prev => ({
-      ...prev,
-      [attributeId]: value
-    }))
-  }
-
   // フォーム送信
   const onSubmit = async (data: DeviceFormData) => {
     if (!asin) {
@@ -203,7 +161,7 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
     }
 
     const result = await createDevice(deviceData)
-    
+
     if (result.success) {
       toast.success('デバイスを登録しました')
       router.push('/admin/devices')
@@ -241,171 +199,34 @@ export function DeviceForm({ initialData, deviceId }: DeviceFormProps) {
         )}
       </div>
 
-      {/* カスタム画像URL */}
-      <div className="space-y-2">
-        <Label htmlFor="customImageUrl">カスタム画像URL（オプション）</Label>
-        <div className="flex space-x-2">
-          <Input
-            {...register('customImageUrl')}
-            placeholder="https://example.com/image.jpg"
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            onClick={handleCustomImageCheck}
-            disabled={isLoadingCustomImage || !watchedCustomImageUrl}
-            variant="outline"
-          >
-            {isLoadingCustomImage ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              '確認'
-            )}
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Amazon画像が存在しない場合や、別の画像を使用したい場合に指定してください。
-        </p>
-        {errors.customImageUrl && (
-          <p className="text-sm text-destructive">{errors.customImageUrl.message}</p>
-        )}
-      </div>
-
-      {/* カスタム画像プレビュー */}
-      {customImagePreview && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">カスタム画像プレビュー</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <DeviceImage
-              customImageUrl={customImagePreview}
-              alt="カスタム画像プレビュー"
-              width={200}
-              height={200}
-              className="flex-shrink-0"
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* カスタム画像セクション */}
+      <CustomImageSection
+        register={register}
+        errors={errors}
+        customImageUrl={watchedCustomImageUrl}
+        customImagePreview={customImagePreview}
+        isLoadingCustomImage={isLoadingCustomImage}
+        onValidate={() => validateCustomImage(watchedCustomImageUrl)}
+      />
 
       {/* OG情報プレビュー */}
-      {ogData && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">取得した商品情報</CardTitle>
-          </CardHeader>
-          <CardContent className="flex space-x-4">
-            {ogData.image && (
-              <DeviceImage
-                amazonImageUrl={ogData.image}
-                alt={ogData.title || 'デバイス画像'}
-                width={100}
-                height={100}
-                className="flex-shrink-0"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium">{ogData.title}</h4>
-              {ogData.description && (
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
-                  {ogData.description}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-2">
-                ASIN: {asin}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <OgDataCard ogData={ogData} asin={asin} showAsin={true} />
 
       {/* 基本情報 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">デバイス名</Label>
-          <Input {...register('name')} placeholder="マウス名など" />
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="categoryId">カテゴリ</Label>
-          <Select onValueChange={(value) => setValue('categoryId', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="カテゴリを選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.categoryId && (
-            <p className="text-sm text-destructive">{errors.categoryId.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">説明（任意）</Label>
-        <Textarea {...register('description')} placeholder="デバイスの詳細説明" />
-      </div>
+      <DeviceBasicFields
+        register={register}
+        errors={errors}
+        setValue={setValue}
+        categories={categories}
+        watchedCategoryId={watchedCategoryId}
+      />
 
       {/* 属性入力 */}
-      {selectedCategory?.attributes && selectedCategory.attributes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">{selectedCategory.name}の詳細属性</CardTitle>
-            <CardDescription>任意項目です。分かる範囲で入力してください。</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {selectedCategory.attributes.map((attr: CategoryAttribute) => (
-                <div key={attr.id} className="space-y-2">
-                  <Label>
-                    {attr.name}
-                    {attr.unit && <span className="text-muted-foreground"> ({attr.unit})</span>}
-                  </Label>
-                  
-                  {attr.type === 'SELECT' ? (
-                    <Select
-                      onValueChange={(value) => handleAttributeChange(attr.id, value)}
-                      value={attributes[attr.id] || ''}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="選択してください" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {attr.options && Array.isArray(attr.options) 
-                          ? (attr.options as string[])
-                              .filter((option: unknown): option is string => typeof option === 'string')
-                              .map((option: string) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))
-                          : null
-                        }
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      type={attr.type === 'NUMBER' ? 'number' : 'text'}
-                      placeholder={`${attr.name}を入力`}
-                      value={attributes[attr.id] || ''}
-                      onChange={(e) => handleAttributeChange(attr.id, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <DeviceAttributeFields
+        selectedCategory={selectedCategory}
+        attributes={attributes}
+        onAttributeChange={handleAttributeChange}
+      />
 
       {/* 送信ボタン */}
       <div className="flex justify-end">
