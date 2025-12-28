@@ -378,9 +378,9 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
     }
 
     // CSV形式に変換（メモリ効率を考慮）
-    const csvHeader = "ID,名前,メールアドレス,ロール,状態,登録日"
-    const csvRows = users.map(user => 
-      `"${user.id}","${user.name || ""}","${user.email}","${user.role}","${user.isActive ? "アクティブ" : "非アクティブ"}","${new Date(user.createdAt).toLocaleDateString("ja-JP")}"`
+    const csvHeader = "ID,名前,ロール,状態,登録日"
+    const csvRows = users.map(user =>
+      `"${user.id}","${user.name || ""}","${user.role}","${user.isActive ? "アクティブ" : "非アクティブ"}","${new Date(user.createdAt).toLocaleDateString("ja-JP")}"`
     )
     
     const csvContent = [csvHeader, ...csvRows].join("\n")

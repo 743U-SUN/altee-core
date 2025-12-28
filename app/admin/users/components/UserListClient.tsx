@@ -122,7 +122,6 @@ export function UserListClient({
               />
             </TableHead>
             <TableHead>ユーザー</TableHead>
-            <TableHead>メールアドレス</TableHead>
             <TableHead>ロール</TableHead>
             <TableHead>状態</TableHead>
             <TableHead>アカウント連携</TableHead>
@@ -152,7 +151,6 @@ export function UserListClient({
                   <div className="text-sm text-muted-foreground">ID: {user.id}</div>
                 </div>
               </TableCell>
-              <TableCell>{user.email}</TableCell>
               <TableCell>
                 <Badge variant={user.role === "ADMIN" ? "destructive" : user.role === "USER" ? "default" : "secondary"}>
                   {user.role}
