@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { UserActions } from "./components/UserActions"
+import { HandleEditor } from "./components/HandleEditor"
 import { ArrowLeft, Calendar, Shield, User, Mail, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -215,6 +216,9 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* ハンドル変更 */}
+          <HandleEditor user={user} />
 
           {/* 管理操作 */}
           <UserActions user={user} />

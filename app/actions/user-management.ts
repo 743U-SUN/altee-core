@@ -397,3 +397,89 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
     throw new Error("CSVエクスポートに失敗しました")
   }
 }
+
+/**
+ * Adminによるユーザーハンドル変更（特権操作）
+ */
+export async function updateUserHandle(
+  userId: string,
+  newHandle: string,
+  reason: string
+) {
+  await requireAdmin()
+
+  // 変更理由のバリデーション
+  if (!reason || reason.trim().length < 5) {
+    throw new Error("変更理由は5文字以上で入力してください")
+  }
+
+  try {
+    // 新しいハンドルのバリデーション
+    const { handleSchema } = await import("@/lib/validation/user-setup")
+    const { isReservedHandle } = await import("@/lib/reserved-handles")
+
+    const validation = handleSchema.safeParse(newHandle)
+    if (!validation.success) {
+      throw new Error(validation.error.errors[0]?.message || "ハンドルの形式が正しくありません")
+    }
+
+    const normalizedHandle = validation.data
+
+    // 予約語チェック
+    if (isReservedHandle(normalizedHandle)) {
+      throw new Error("このハンドルは予約語のため使用できません")
+    }
+
+    // 重複チェック
+    const existingUser = await prisma.user.findUnique({
+      where: { handle: normalizedHandle },
+      select: { id: true },
+    })
+
+    if (existingUser && existingUser.id !== userId) {
+      throw new Error("このハンドルは既に使用されています")
+    }
+
+    // 現在のユーザー情報を取得
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { handle: true, name: true, email: true },
+    })
+
+    if (!currentUser) {
+      throw new Error("ユーザーが見つかりません")
+    }
+
+    // ハンドル更新
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { handle: normalizedHandle },
+      select: {
+        id: true,
+        handle: true,
+        name: true,
+        email: true,
+      },
+    })
+
+    // 監査ログ出力（将来的にデータベースに記録可能）
+    console.log(
+      `Handle updated by admin: ${currentUser.email} - ` +
+      `Old: ${currentUser.handle || "null"} -> New: ${normalizedHandle} - ` +
+      `Reason: ${reason.trim()}`
+    )
+
+    return {
+      success: true,
+      oldHandle: currentUser.handle,
+      newHandle: normalizedHandle,
+      user: updatedUser,
+    }
+  } catch (error) {
+    console.error("updateUserHandle error:", error)
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error("ハンドルの更新に失敗しました")
+  }
+}
