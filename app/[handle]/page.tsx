@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
-import { getUserByHandle, getCurrentLiveStream, getTopRecommendedVideo } from "@/app/actions/platform-actions"
+import { getUserByHandle } from "@/lib/handle-utils"
+import { getCurrentLiveStream, getTopRecommendedVideo } from "@/app/actions/platform-actions"
 import { YouTubeEmbed } from "@next/third-parties/google"
 import { TwitchEmbed } from "@/components/TwitchEmbed"
 import { Badge } from "@/components/ui/badge"
@@ -134,10 +135,14 @@ export default async function HandlePage({
       )}
 
       <div className="bg-card rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-4">@{handle}</h1>
-        <p className="text-muted-foreground">
-          This is the profile page for user: {handle}
-        </p>
+        <h1 className="text-2xl font-bold mb-4">
+          {user.characterName || `@${handle}`}
+        </h1>
+        {user.profile?.bio && (
+          <p className="text-muted-foreground whitespace-pre-wrap">
+            {user.profile.bio}
+          </p>
+        )}
       </div>
 
       <div>

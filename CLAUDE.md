@@ -185,6 +185,62 @@ demo/        # Manual test pages accessible from frontend
 - Place UI-based test pages in demo/ directory
 - Enable manual browser-based verification of all Server Actions and client functions
 
+#### Development and Testing Workflow
+**CRITICAL**: Follow these steps for all feature implementations:
+
+1. **Pre-Implementation**:
+   - Read and understand the current implementation
+   - Check existing database schema and relations
+   - Identify all files that will be modified
+   - Create a git commit of the current state as a baseline
+
+2. **Implementation**:
+   - Make changes incrementally
+   - Test each change before moving to the next
+   - Follow TypeScript strict mode requirements
+   - Use existing patterns and conventions from the codebase
+
+3. **Version Control**:
+   - Create commits at logical checkpoints to enable rollback if needed
+   - Commit message format: `feat/fix/refactor: Brief description`
+   - Example: `feat: Add dynamic character name display to user profile`
+
+4. **Error Verification** (Run before browser testing):
+   - TypeScript: `npx tsc --noEmit` → Must show 0 errors
+   - ESLint: `npx eslint <modified-files>` → Must show 0 errors
+   - Build check: Verify `npm run dev` starts without errors
+   - Fix all errors before proceeding to browser testing
+
+5. **Browser Testing with MCP Playwright**:
+   - **ALWAYS** use MCP Playwright to verify implementations visually
+   - Navigation: `mcp__playwright__browser_navigate` to open target pages
+   - Structure check: `mcp__playwright__browser_snapshot` to verify DOM structure
+   - Visual verification: `mcp__playwright__browser_take_screenshot` with `fullPage: true`
+   - Console errors: Check `browser_console_messages` for runtime errors
+   - Test interactions: Click buttons, fill forms, verify state changes
+   - Test edge cases: Empty states, long text, missing data
+
+6. **Data Verification**:
+   - Verify data is fetched correctly from database
+   - Check that changes in dashboard reflect on public pages
+   - Test with different user accounts if applicable
+   - Verify proper handling of null/undefined values
+
+7. **Implementation Reporting**:
+   - Only report completion after ALL checks pass:
+     - ✅ Git commits created with clear messages
+     - ✅ TypeScript errors: 0
+     - ✅ ESLint errors: 0
+     - ✅ Browser testing via MCP Playwright complete
+     - ✅ Console errors: 0 (check via MCP Playwright)
+     - ✅ Visual verification with screenshots
+     - ✅ Data flow verified (dashboard → public page)
+   - Report must include:
+     - Summary of what was implemented
+     - Modified files list with line numbers
+     - Screenshot(s) showing working implementation
+     - Confirmation of zero errors
+
 ### Image Management
 - File storage: ConoHa Object Storage (S3-compatible, MinIO in development)
 - Unified system for image optimization, security, and upload processing
