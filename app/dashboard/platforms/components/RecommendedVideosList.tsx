@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { GripVertical, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { deleteRecommendedVideo, reorderRecommendedVideos } from "@/app/actions/platform-actions"
+import { deleteRecommendedVideo, reorderRecommendedVideos } from "@/app/actions/youtube-actions"
 import {
   DndContext,
   DragEndEvent,

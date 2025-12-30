@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Plus, Loader2, Youtube } from "lucide-react"
-import { updateYoutubeChannel, addRecommendedVideo, extractChannelIdFromUrl, getMyRssFeedVideos } from "@/app/actions/platform-actions"
+import {
+  updateYoutubeChannel,
+  addRecommendedVideo,
+  extractChannelIdFromUrl,
+  getMyRssFeedVideos
+} from "@/app/actions/youtube-actions"
 import { toast } from "sonner"
 import { RecommendedVideosList } from "./RecommendedVideosList"
 import Link from "next/link"
@@ -32,9 +37,14 @@ interface YouTubeTabContentProps {
       isVisible: boolean
     }>
   } | null
+  initialRssFeedVideos: Array<{
+    videoId: string
+    title: string
+    thumbnail?: string
+  }>
 }
 
-export function YouTubeTabContent({ initialData }: YouTubeTabContentProps) {
+export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTubeTabContentProps) {
   const [channelInput, setChannelInput] = useState(initialData?.youtubeChannelId || "")
   const [rssFeedLimit, setRssFeedLimit] = useState(initialData?.youtubeRssFeedLimit?.toString() || "6")
   const [videoUrl, setVideoUrl] = useState("")
@@ -48,23 +58,8 @@ export function YouTubeTabContent({ initialData }: YouTubeTabContentProps) {
     videoId: string
     title: string
     thumbnail?: string
-  }> | null>(null)
+  }>>(initialRssFeedVideos)
   const [isLoadingRss, setIsLoadingRss] = useState(false)
-
-  // 初回ロード時にRSS Feedを取得
-  useEffect(() => {
-    const fetchInitialRssFeed = async () => {
-      if (initialData?.youtubeChannelId && initialData.youtubeRssFeedLimit > 0) {
-        setIsLoadingRss(true)
-        const rssResult = await getMyRssFeedVideos()
-        if (rssResult.success && rssResult.data) {
-          setRssFeedVideos(rssResult.data)
-        }
-        setIsLoadingRss(false)
-      }
-    }
-    fetchInitialRssFeed()
-  }, [initialData?.youtubeChannelId, initialData?.youtubeRssFeedLimit])
 
   const handleSaveChannel = async () => {
     setIsSavingChannel(true)

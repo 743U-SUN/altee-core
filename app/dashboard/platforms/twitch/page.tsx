@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getUserTwitchSettings } from "@/app/actions/platform-actions"
+import { getUserTwitchSettings } from "@/app/actions/twitch-actions"
 import { TwitchTabContent } from "../components/TwitchTabContent"
 
 export default async function TwitchPlatformPage() {

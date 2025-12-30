@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { fetchYoutubeRssFeed } from "@/app/actions/platform-actions"
+import { fetchYoutubeRssFeed } from "@/services/youtube/youtube-api"
 
 interface VideosPageProps {
   params: Promise<{

@@ -9,11 +9,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react"
 import {
   updateTwitchChannel,
-  updateLivePriority,
-  createTwitchEventSub,
-  deleteTwitchEventSub,
-  getTwitchEventSubStatus
-} from "@/app/actions/platform-actions"
+  updateLivePriority
+} from "@/app/actions/twitch-actions"
+import {
+  createTwitchEventSubSubscription,
+  deleteTwitchEventSubSubscription,
+  getTwitchEventSubSubscriptionStatus
+} from "@/app/actions/twitch-actions"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -58,7 +60,7 @@ export function TwitchTabContent({ initialData }: TwitchTabContentProps) {
       if (!twitchUserId) return
 
       setIsLoadingSubStatus(true)
-      const result = await getTwitchEventSubStatus()
+      const result = await getTwitchEventSubSubscriptionStatus()
       if (result.success) {
         setIsSubscribed(result.isSubscribed)
       }
@@ -101,7 +103,7 @@ export function TwitchTabContent({ initialData }: TwitchTabContentProps) {
 
     setIsCreatingWebhook(true)
     try {
-      const result = await createTwitchEventSub(twitchUserId)
+      const result = await createTwitchEventSubSubscription(twitchUserId)
 
       if (result.success) {
         toast.success("Webhook登録に成功しました")
@@ -119,7 +121,7 @@ export function TwitchTabContent({ initialData }: TwitchTabContentProps) {
   const handleDeleteWebhook = async () => {
     setIsDeletingWebhook(true)
     try {
-      const result = await deleteTwitchEventSub()
+      const result = await deleteTwitchEventSubSubscription()
 
       if (result.success) {
         toast.success("Webhook登録を解除しました")

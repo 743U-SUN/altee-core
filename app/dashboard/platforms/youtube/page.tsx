@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getUserYoutubeSettings } from "@/app/actions/platform-actions"
+import { getUserYoutubeSettings, getMyRssFeedVideos } from "@/app/actions/youtube-actions"
 import { YouTubeTabContent } from "../components/YouTubeTabContent"
 
 export default async function YouTubePlatformPage() {
@@ -10,12 +10,17 @@ export default async function YouTubePlatformPage() {
     redirect("/auth/signin")
   }
 
-  const youtubeResult = await getUserYoutubeSettings()
+  // YouTube設定とRSS Feedを並列で取得
+  const [youtubeResult, rssFeedResult] = await Promise.all([
+    getUserYoutubeSettings(),
+    getMyRssFeedVideos()
+  ])
 
   return (
     <div className="space-y-6">
       <YouTubeTabContent
         initialData={youtubeResult.success && youtubeResult.data ? youtubeResult.data : null}
+        initialRssFeedVideos={rssFeedResult.success && rssFeedResult.data ? rssFeedResult.data : []}
       />
     </div>
   )
