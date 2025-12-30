@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useCallback, useRef } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { NestedSortableList } from '@/components/sortable-list'
@@ -45,10 +45,8 @@ interface FaqManagementSectionProps {
 }
 
 export function FaqManagementSection({ initialFaqCategories }: FaqManagementSectionProps) {
-  const [isLoading, setIsLoading] = useState(false)
-
   // スクロール位置保存・復元のためのRef
-  const scrollPositionRef = useRef<number>(0)
+  // const scrollPositionRef = useRef<number>(0)
 
   // SWRでデータ管理
   const { data: faqCategories = initialFaqCategories as FaqCategory[], mutate } = useSWR(
@@ -66,18 +64,16 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
     }
   )
 
-  // スクロール位置保存・復元ヘルパー関数
-  const saveScrollPosition = useCallback(() => {
-    // ページ全体のスクロール位置を保存
-    scrollPositionRef.current = window.scrollY
-  }, [])
+  // スクロール位置保存・復元ヘルパー関数（将来の実装用）
+  // const saveScrollPosition = useCallback(() => {
+  //   scrollPositionRef.current = window.scrollY
+  // }, [])
 
-  const restoreScrollPosition = useCallback(() => {
-    // 次のレンダリング後にスクロール位置を復元
-    setTimeout(() => {
-      window.scrollTo(0, scrollPositionRef.current)
-    }, 0)
-  }, [])
+  // const restoreScrollPosition = useCallback(() => {
+  //   setTimeout(() => {
+  //     window.scrollTo(0, scrollPositionRef.current)
+  //   }, 0)
+  // }, [])
 
   // カテゴリー用の編集可能フィールド
   const categoryFields: EditableField[] = useMemo(() => [
@@ -406,7 +402,6 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
   return (
     <NestedSortableList<FaqCategory, FaqQuestion>
       config={nestedConfig}
-      loading={isLoading}
     />
   )
 }

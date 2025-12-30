@@ -145,6 +145,12 @@ export default async function HandleLayout({
   // 動的なnavItemsを生成
   const navItems = [
     {
+      title: "Videos",
+      url: `/${targetUser.handle}/videos`,
+      icon: "Video" as const,
+      isActive: false,
+    },
+    {
       title: "Devices",
       url: `/${targetUser.handle}/devices`,
       icon: "MonitorSmartphone" as const,

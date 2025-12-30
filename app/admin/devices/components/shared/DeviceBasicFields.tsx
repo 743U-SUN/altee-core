@@ -6,8 +6,10 @@ import type { UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-f
 import type { DeviceCategoryWithAttributes } from '@/types/device'
 
 interface DeviceBasicFieldsProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register: UseFormRegister<any>
   errors: FieldErrors
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setValue: UseFormSetValue<any>
   categories: DeviceCategoryWithAttributes[]
   watchedCategoryId?: string

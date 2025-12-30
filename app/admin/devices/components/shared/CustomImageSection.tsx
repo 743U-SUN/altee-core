@@ -7,6 +7,7 @@ import { DeviceImage } from '@/components/devices/device-image'
 import type { UseFormRegister, FieldErrors } from 'react-hook-form'
 
 interface CustomImageSectionProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register: UseFormRegister<any>
   errors: FieldErrors
   customImageUrl?: string

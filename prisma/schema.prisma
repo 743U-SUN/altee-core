@@ -33,12 +33,24 @@ model User {
   contact                UserContact?  // 連絡方法（1対1）
   userDevices            UserDevice[] // ユーザー所有デバイス
 
+  // プラットフォーム管理（YouTube/Twitch等）
+  youtubeChannelId       String? // YouTube Channel ID (UC...)
+  youtubeRssFeedLimit    Int     @default(6) // RSS Feed表示数 (1-15)
+  twitchUsername         String? // Twitch ユーザー名
+  twitchUserId           String? // Twitch User ID（EventSub用）
+  livePriority           String  @default("youtube") // "youtube" | "twitch"
+
+  youtubeRecommendedVideos YouTubeRecommendedVideo[]
+  twitchLiveStatus         TwitchLiveStatus?
+
   // Performance optimization indexes
   @@index([createdAt])
   @@index([isActive])
   @@index([role])
   @@index([email, name])
   @@index([handle])
+  @@index([youtubeChannelId])
+  @@index([twitchUserId])
   @@map("users")
 }
 
@@ -547,4 +559,63 @@ enum AttributeType {
   NUMBER   // 数値入力
   TEXT     // 自由入力
   BOOLEAN  // Yes/No
+}
+
+// ===== Platform Management System =====
+
+// YouTubeおすすめ動画テーブル
+model YouTubeRecommendedVideo {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  videoId     String   // YouTube Video ID (11文字)
+  title       String?  // キャッシュ用（オプション）
+  thumbnail   String?  // キャッシュ用（オプション）
+
+  sortOrder   Int      // 表示順序
+  isVisible   Boolean  @default(true) // 表示/非表示トグル（全体）
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, videoId])
+  @@index([userId, sortOrder])
+  @@map("youtube_recommended_videos")
+}
+
+// Twitchライブ配信ステータステーブル
+model TwitchLiveStatus {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isLive            Boolean   @default(false) // 現在ライブ配信中か
+  streamId          String?   // Twitch Stream ID
+  streamTitle       String?   // 配信タイトル
+  streamThumbnail   String?   // サムネイル
+  viewerCount       Int?      // 視聴者数
+
+  startedAt         DateTime? // 配信開始時刻
+  lastCheckedAt     DateTime  @default(now()) // 最終確認時刻
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([isLive])
+  @@map("twitch_live_status")
+}
+
+// Twitch EventSub Subscriptionテーブル
+model TwitchEventSubSubscription {
+  id                String   @id @default(cuid())
+  userId            String
+  subscriptionId    String   @unique // Twitch Subscription ID
+  type              String   // "stream.online", "stream.offline"
+  status            String   // "enabled", "webhook_callback_verification_pending"
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@map("twitch_eventsub_subscriptions")
 }

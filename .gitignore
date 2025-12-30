@@ -52,3 +52,9 @@ docs/
 
 # Playwright MCP screenshots
 .playwright-mcp/
+# Authentication and tests
+auth.json
+test-results/
+
+# Tool specific
+.claude/

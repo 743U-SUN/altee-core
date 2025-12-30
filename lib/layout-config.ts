@@ -1,4 +1,4 @@
-import { Home, Users, MonitorSmartphone, Link, Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon } from "lucide-react"
+import { Home, Users, MonitorSmartphone, Link, Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon, Tv, Video } from "lucide-react"
 import type { UserNotification } from "@/types/notifications"
 import type { UserContact } from "@/types/contacts"
 
@@ -22,6 +22,8 @@ export const iconMap = {
   HelpCircle,
   CogIcon,
   MonitorSmartphone,
+  Tv,
+  Video,
 } as const
 
 export type IconName = keyof typeof iconMap
@@ -226,6 +228,12 @@ const dashboardNavItems: NavItem[] = [
     title: "SNSリンク",
     url: "/dashboard/links",
     icon: Share2,
+    isActive: false,
+  },
+  {
+    title: "プラットフォーム",
+    url: "/dashboard/platforms",
+    icon: Tv,
     isActive: false,
   },
   {
