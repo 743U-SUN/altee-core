@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { getUserByHandle } from "@/lib/handle-utils"
 import { getCurrentLiveStream, getTopRecommendedVideo } from "@/app/actions/platform-actions"
-import { YouTubeEmbed } from "@next/third-parties/google"
+import { YouTubeFacade } from "@/components/YouTubeFacade"
 import { TwitchEmbed } from "@/components/TwitchEmbed"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -97,10 +97,9 @@ export default async function HandlePage({
             )}
 
             {displayContent.platform === "youtube" ? (
-              <YouTubeEmbed
-                videoid={displayContent.videoId}
+              <YouTubeFacade
+                videoId={displayContent.videoId}
                 height={400}
-                params="controls=1&autoplay=0"
               />
             ) : displayContent.platform === "twitch" ? (
               <TwitchEmbed
