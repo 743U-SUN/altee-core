@@ -219,9 +219,9 @@ export async function createItemAction(input: ItemInput) {
     })
 
     revalidatePath('/admin/items')
-    return { success: true, data: product }
+    return { success: true, data: item }
   } catch (error) {
-    console.error('Failed to create product:', error)
+    console.error('Failed to create item:', error)
     if (error instanceof Error) {
       return {
         success: false,
@@ -345,9 +345,9 @@ export async function updateItemAction(id: string, input: ItemInput) {
     })
 
     revalidatePath('/admin/items')
-    return { success: true, data: product }
+    return { success: true, data: item }
   } catch (error) {
-    console.error('Failed to update product:', error)
+    console.error('Failed to update item:', error)
     if (error instanceof Error) {
       return {
         success: false,
@@ -377,7 +377,7 @@ export async function deleteItemAction(id: string) {
       },
     })
 
-    if (!product) {
+    if (!item) {
       return {
         success: false,
         error: 'アイテムが見つかりませんでした',
@@ -385,16 +385,16 @@ export async function deleteItemAction(id: string) {
     }
 
     // ユーザーアイテムの関連をチェック
-    if (product._count.userItems > 0) {
+    if (item._count.userItems > 0) {
       return {
         success: false,
-        error: `このアイテムは${product._count.userItems}人のユーザーが登録しています。削除する前にユーザーアイテムを削除してください。`,
+        error: `このアイテムは${item._count.userItems}人のユーザーが登録しています。削除する前にユーザーアイテムを削除してください。`,
       }
     }
 
     // R2に保存された画像を削除
-    if (product.imageStorageKey) {
-      await deleteItemImageFromR2(product.imageStorageKey)
+    if (item.imageStorageKey) {
+      await deleteItemImageFromR2(item.imageStorageKey)
     }
 
     // アイテム削除
@@ -405,7 +405,7 @@ export async function deleteItemAction(id: string) {
     revalidatePath('/admin/items')
     return { success: true }
   } catch (error) {
-    console.error('Failed to delete product:', error)
+    console.error('Failed to delete item:', error)
     return {
       success: false,
       error: 'アイテムの削除に失敗しました',
@@ -602,38 +602,38 @@ export async function downloadAndUploadItemImage(imageUrl: string, asin: string,
 /**
  * アイテム画像を更新（Amazonから再取得してR2に保存）
  */
-export async function refreshItemImage(productId: string): Promise<{
+export async function refreshItemImage(itemId: string): Promise<{
   success: boolean
   message?: string
   error?: string
 }> {
   try {
     const item = await prisma.item.findUnique({
-      where: { id: productId }
+      where: { id: itemId }
     })
 
-    if (!product) {
+    if (!item) {
       return { success: false, error: 'アイテムが見つかりません' }
     }
 
     // カスタムURLまたはAmazon URL
-    const imageUrl = product.customImageUrl || product.amazonImageUrl
+    const imageUrl = item.customImageUrl || item.amazonImageUrl
     if (!imageUrl) {
       return { success: false, error: '画像URLが登録されていません' }
     }
 
     // ASINが必要
-    if (!product.asin) {
+    if (!item.asin) {
       return { success: false, error: 'ASINが登録されていません' }
     }
 
     // 古い画像を削除（存在する場合）
-    if (product.imageStorageKey) {
-      await deleteItemImageFromR2(product.imageStorageKey)
+    if (item.imageStorageKey) {
+      await deleteItemImageFromR2(item.imageStorageKey)
     }
 
     // 新しい画像をダウンロード・アップロード
-    const uploadResult = await downloadAndUploadItemImage(imageUrl, product.asin)
+    const uploadResult = await downloadAndUploadItemImage(imageUrl, item.asin)
 
     if (!uploadResult.success) {
       return { success: false, error: uploadResult.error }
@@ -641,12 +641,12 @@ export async function refreshItemImage(productId: string): Promise<{
 
     // アイテム情報を更新
     await prisma.item.update({
-      where: { id: productId },
+      where: { id: itemId },
       data: { imageStorageKey: uploadResult.storageKey }
     })
 
     revalidatePath('/admin/items')
-    revalidatePath(`/admin/items/${productId}`)
+    revalidatePath(`/admin/items/${itemId}`)
 
     return { success: true, message: '画像を更新しました' }
   } catch (error) {
