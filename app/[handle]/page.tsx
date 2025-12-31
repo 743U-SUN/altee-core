@@ -99,7 +99,6 @@ export default async function HandlePage({
             {displayContent.platform === "youtube" ? (
               <YouTubeFacade
                 videoId={displayContent.videoId}
-                height={400}
               />
             ) : displayContent.platform === "twitch" ? (
               <TwitchEmbed

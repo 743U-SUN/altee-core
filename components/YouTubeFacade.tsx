@@ -6,17 +6,16 @@ import { Play } from "lucide-react"
 
 interface YouTubeFacadeProps {
   videoId: string
-  height?: number
   title?: string
 }
 
 /**
  * YouTube Facade Pattern Component
  * サムネイル画像を表示し、クリック時にYouTube iframeを読み込む
+ * アスペクト比は16:9で固定
  */
 export function YouTubeFacade({
   videoId,
-  height = 400,
   title = "YouTube video"
 }: YouTubeFacadeProps) {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -33,7 +32,7 @@ export function YouTubeFacade({
     return (
       <div
         className="relative w-full bg-black rounded-lg overflow-hidden"
-        style={{ height: `${height}px` }}
+        style={{ aspectRatio: '16 / 9' }}
       >
         <iframe
           src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
@@ -51,7 +50,7 @@ export function YouTubeFacade({
     <button
       onClick={handleClick}
       className="relative w-full bg-black rounded-lg overflow-hidden cursor-pointer group"
-      style={{ height: `${height}px` }}
+      style={{ aspectRatio: '16 / 9' }}
       aria-label="動画を再生"
     >
       {/* サムネイル画像 */}
