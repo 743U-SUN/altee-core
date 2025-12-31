@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-// ProductType enum values
-export const PRODUCT_TYPES = [
+// ItemType enum values
+export const ITEM_TYPES = [
   'PC_PART',
   'PERIPHERAL',
   'FOOD',
@@ -10,9 +10,9 @@ export const PRODUCT_TYPES = [
   'GENERAL',
 ] as const
 
-// ===== ProductCategory Validation =====
+// ===== ItemCategory Validation =====
 
-export const productCategorySlugSchema = z
+export const itemCategorySlugSchema = z
   .string()
   .min(1, 'スラッグは必須です')
   .max(100, 'スラッグは100文字以内にしてください')
@@ -21,38 +21,38 @@ export const productCategorySlugSchema = z
     'スラッグは小文字英数字、ハイフン、アンダースコアのみ使用できます'
   )
 
-export const productCategorySchema = z.object({
+export const itemCategorySchema = z.object({
   name: z
     .string()
     .min(1, 'カテゴリ名は必須です')
     .max(100, 'カテゴリ名は100文字以内にしてください'),
-  slug: productCategorySlugSchema,
+  slug: itemCategorySlugSchema,
   sortOrder: z.number().int().nonnegative(),
-  productType: z.enum(PRODUCT_TYPES),
+  itemType: z.enum(ITEM_TYPES),
   requiresCompatibilityCheck: z.boolean(),
   description: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
   parentId: z.string().optional().nullable(),
 })
 
-export type ProductCategoryInput = z.infer<typeof productCategorySchema>
+export type ItemCategoryInput = z.infer<typeof itemCategorySchema>
 
 // カテゴリ更新用（IDを含む）
-export const productCategoryUpdateSchema = productCategorySchema.extend({
+export const itemCategoryUpdateSchema = itemCategorySchema.extend({
   id: z.string(),
 })
 
-export type ProductCategoryUpdateInput = z.infer<
-  typeof productCategoryUpdateSchema
+export type ItemCategoryUpdateInput = z.infer<
+  typeof itemCategoryUpdateSchema
 >
 
-// ===== Product Validation =====
+// ===== Item Validation =====
 
-export const productSchema = z.object({
+export const itemSchema = z.object({
   name: z
     .string()
-    .min(1, '商品名は必須です')
-    .max(200, '商品名は200文字以内にしてください'),
+    .min(1, 'アイテム名は必須です')
+    .max(200, 'アイテム名は200文字以内にしてください'),
   description: z.string().optional().nullable(),
   categoryId: z.string().min(1, 'カテゴリは必須です'),
   brandId: z.string().optional().nullable(),
@@ -86,19 +86,19 @@ export const productSchema = z.object({
     .transform((val) => (val === '' ? undefined : val)),
 })
 
-export type ProductInput = z.infer<typeof productSchema>
+export type ItemInput = z.infer<typeof itemSchema>
 
-// 商品更新用（IDを含む）
-export const productUpdateSchema = productSchema.extend({
+// アイテム更新用（IDを含む）
+export const itemUpdateSchema = itemSchema.extend({
   id: z.string(),
 })
 
-export type ProductUpdateInput = z.infer<typeof productUpdateSchema>
+export type ItemUpdateInput = z.infer<typeof itemUpdateSchema>
 
 // ===== CSV Import Validation =====
 
-export const productCSVRowSchema = z.object({
-  name: z.string().min(1, '商品名は必須です'),
+export const itemCSVRowSchema = z.object({
+  name: z.string().min(1, 'アイテム名は必須です'),
   description: z.string().optional().default(''),
   categorySlug: z.string().min(1, 'カテゴリslugは必須です'),
   brandName: z.string().optional().default(''),
@@ -110,7 +110,7 @@ export const productCSVRowSchema = z.object({
     .or(z.literal('')),
 })
 
-export type ProductCSVRow = z.infer<typeof productCSVRowSchema>
+export type ItemCSVRow = z.infer<typeof itemCSVRowSchema>
 
 // CSVインポート結果
 export interface CSVImportResult {
@@ -119,24 +119,24 @@ export interface CSVImportResult {
   errors: Array<{
     row: number
     error: string
-    data: Partial<ProductCSVRow>
+    data: Partial<ItemCSVRow>
   }>
 }
 
-// ===== UserProduct (ユーザー所有商品) =====
+// ===== UserItem (ユーザー所有アイテム) =====
 
-export const userProductSchema = z.object({
-  productId: z.string().min(1, '商品IDは必須です'),
+export const userItemSchema = z.object({
+  itemId: z.string().min(1, 'アイテムIDは必須です'),
   review: z.string().optional().nullable(),
   isPublic: z.boolean().default(true),
   sortOrder: z.number().int().nonnegative().optional(),
 })
 
-export type UserProductInput = z.infer<typeof userProductSchema>
+export type UserItemInput = z.infer<typeof userItemSchema>
 
-// UserProduct更新用（IDを含む）
-export const userProductUpdateSchema = userProductSchema.extend({
+// UserItem更新用（IDを含む）
+export const userItemUpdateSchema = userItemSchema.extend({
   id: z.string(),
 })
 
-export type UserProductUpdate = z.infer<typeof userProductUpdateSchema>
+export type UserItemUpdate = z.infer<typeof userItemUpdateSchema>

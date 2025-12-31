@@ -32,7 +32,7 @@ model User {
   notification           UserNotification? // お知らせ（1対1）
   contact                UserContact?  // 連絡方法（1対1）
   userDevices            UserDevice[] // ユーザー所有デバイス（既存システム）
-  userProducts           UserProduct[] // ユーザー所有商品（新システム）
+  userItems              UserItem[] // ユーザー所有アイテム
 
   // プラットフォーム管理（YouTube/Twitch等）
   youtubeChannelId       String? // YouTube Channel ID (UC...)
@@ -430,7 +430,7 @@ model Brand {
 
   // リレーション
   devices     Device[]
-  products    Product[] @relation("ProductBrand")
+  items       Item[] @relation("ItemBrand")
 
   @@index([sortOrder])
   @@index([name])
@@ -611,10 +611,10 @@ model TwitchEventSubSubscription {
   @@map("twitch_eventsub_subscriptions")
 }
 
-// ===== Unified Product Management System (Phase 1) =====
+// ===== Unified Item Management System =====
 
-// 商品タイプ（大分類）
-enum ProductType {
+// アイテムタイプ（大分類）
+enum ItemType {
   PC_PART      // PCパーツ
   PERIPHERAL   // 周辺機器（デバイス）
   FOOD         // 食品
@@ -623,13 +623,13 @@ enum ProductType {
   GENERAL      // その他
 }
 
-// 商品カテゴリ（階層構造）
-model ProductCategory {
+// アイテムカテゴリ（階層構造）
+model ItemCategory {
   id                         String       @id @default(cuid())
   name                       String       // "CPU", "飲料", "マウス"
   slug                       String       @unique
   parentId                   String?      // 親カテゴリID（階層構造用）
-  productType                ProductType  @default(GENERAL) // 商品タイプ
+  itemType                   ItemType     @default(GENERAL) // アイテムタイプ
   requiresCompatibilityCheck Boolean      @default(false)   // 互換性チェック必要か（PC_PARTならtrue）
   icon                       String?      // Lucideアイコン名
   description                String?
@@ -638,27 +638,27 @@ model ProductCategory {
   updatedAt                  DateTime     @updatedAt
 
   // リレーション
-  parent       ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children     ProductCategory[] @relation("CategoryHierarchy")
-  products     Product[]
+  parent       ItemCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     ItemCategory[] @relation("CategoryHierarchy")
+  items        Item[]
 
-  @@index([productType])
+  @@index([itemType])
   @@index([sortOrder])
-  @@map("product_categories")
+  @@map("item_categories")
 }
 
 // ブランド（既存のBrandモデルを共用）
-// 既存のBrandモデルは維持し、Product.brandIdで参照
+// 既存のBrandモデルは維持し、Item.brandIdで参照
 
-// 商品マスタ
-model Product {
+// アイテムマスタ
+model Item {
   id             String        @id @default(cuid())
-  name           String        // 商品名
-  description    String?       // 商品説明
+  name           String        // アイテム名
+  description    String?       // アイテム説明
   categoryId     String        // カテゴリID
   brandId        String?       // ブランドID（オプショナル）
 
-  // 画像管理（既存Deviceと同様）
+  // 画像管理
   amazonUrl          String?   // Amazon URL
   amazonImageUrl     String?   // Amazon OG画像URL
   customImageUrl     String?   // カスタム画像URL（手動指定）
@@ -668,28 +668,28 @@ model Product {
   ogTitle        String?       // OG情報から取得したタイトル
   ogDescription  String?       // OG情報から取得した説明
 
-  // Amazon固有情報（将来的にASIN等を追加可能）
+  // Amazon固有情報
   asin           String?       @unique // Amazon商品識別番号
 
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   // リレーション
-  category       ProductCategory @relation(fields: [categoryId], references: [id])
-  brand          Brand?          @relation("ProductBrand", fields: [brandId], references: [id])
-  userProducts   UserProduct[]
+  category       ItemCategory @relation(fields: [categoryId], references: [id])
+  brand          Brand?       @relation("ItemBrand", fields: [brandId], references: [id])
+  userItems      UserItem[]
 
   @@index([categoryId])
   @@index([brandId])
   @@index([createdAt])
-  @@map("products")
+  @@map("items")
 }
 
-// ユーザー所有商品（既存UserDeviceと同様）
-model UserProduct {
+// ユーザー所有アイテム
+model UserItem {
   id             String    @id @default(cuid())
   userId         String
-  productId      String
+  itemId         String
   isPublic       Boolean   @default(true)  // 公開/非公開設定
   review         String?   // ユーザーレビュー
   sortOrder      Int       @default(0)     // 表示順序
@@ -697,12 +697,12 @@ model UserProduct {
   updatedAt      DateTime  @updatedAt
 
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  item           Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, productId])
+  @@unique([userId, itemId])
   @@index([userId])
-  @@index([productId])
+  @@index([itemId])
   @@index([isPublic])
   @@index([sortOrder])
-  @@map("user_products")
+  @@map("user_items")
 }
