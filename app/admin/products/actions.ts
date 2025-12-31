@@ -137,8 +137,14 @@ export async function getProductByIdAction(id: string) {
 
 export async function createProductAction(input: ProductInput) {
   try {
+    // "null" 文字列を null に変換
+    const normalizedInput = {
+      ...input,
+      brandId: input.brandId === 'null' ? null : input.brandId,
+    }
+
     // バリデーション
-    const validated = productSchema.parse(input)
+    const validated = productSchema.parse(normalizedInput)
 
     // カテゴリの存在確認
     const category = await prisma.productCategory.findUnique({
@@ -218,8 +224,14 @@ export async function createProductAction(input: ProductInput) {
 
 export async function updateProductAction(id: string, input: ProductInput) {
   try {
+    // "null" 文字列を null に変換
+    const normalizedInput = {
+      ...input,
+      brandId: input.brandId === 'null' ? null : input.brandId,
+    }
+
     // バリデーション
-    const validated = productSchema.parse(input)
+    const validated = productSchema.parse(normalizedInput)
 
     // 商品の存在確認
     const existingProduct = await prisma.product.findUnique({

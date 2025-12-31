@@ -122,3 +122,21 @@ export interface CSVImportResult {
     data: Partial<ProductCSVRow>
   }>
 }
+
+// ===== UserProduct (ユーザー所有商品) =====
+
+export const userProductSchema = z.object({
+  productId: z.string().min(1, '商品IDは必須です'),
+  review: z.string().optional().nullable(),
+  isPublic: z.boolean().default(true),
+  sortOrder: z.number().int().nonnegative().default(0),
+})
+
+export type UserProductInput = z.infer<typeof userProductSchema>
+
+// UserProduct更新用（IDを含む）
+export const userProductUpdateSchema = userProductSchema.extend({
+  id: z.string(),
+})
+
+export type UserProductUpdate = z.infer<typeof userProductUpdateSchema>
