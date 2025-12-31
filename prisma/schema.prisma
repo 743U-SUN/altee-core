@@ -31,7 +31,8 @@ model User {
   userData               UserData[]   // ユーザーデータ
   notification           UserNotification? // お知らせ（1対1）
   contact                UserContact?  // 連絡方法（1対1）
-  userDevices            UserDevice[] // ユーザー所有デバイス
+  userDevices            UserDevice[] // ユーザー所有デバイス（既存システム）
+  userProducts           UserProduct[] // ユーザー所有商品（新システム）
 
   // プラットフォーム管理（YouTube/Twitch等）
   youtubeChannelId       String? // YouTube Channel ID (UC...)
@@ -227,17 +228,6 @@ model ArticleTag {
   @@index([articleId])
   @@index([tagId])
   @@map("article_tags")
-}
-
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  price       Int
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("products")
 }
 
 enum UserRole {
@@ -437,10 +427,11 @@ model Brand {
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+
   // リレーション
   devices     Device[]
-  
+  products    Product[] @relation("ProductBrand")
+
   @@index([sortOrder])
   @@index([name])
   @@map("brands")
@@ -618,4 +609,110 @@ model TwitchEventSubSubscription {
   @@index([userId])
   @@index([subscriptionId])
   @@map("twitch_eventsub_subscriptions")
+}
+
+// ===== Unified Product Management System (Phase 1) =====
+
+// 商品タイプ（大分類）
+enum ProductType {
+  PC_PART      // PCパーツ
+  PERIPHERAL   // 周辺機器（デバイス）
+  FOOD         // 食品
+  BOOK         // 本
+  MICROPHONE   // マイク
+  GENERAL      // その他
+}
+
+// カテゴリタイプ（カテゴリの性質を定義）
+enum CategoryType {
+  PC_PART      // 互換性チェック対象（CPU、GPU等）
+  PERIPHERAL   // 周辺機器（マウス、キーボード等）
+  FOOD         // 食品
+  GENERAL      // その他
+}
+
+// 商品カテゴリ（階層構造）
+model ProductCategory {
+  id           String       @id @default(cuid())
+  name         String       // "CPU", "飲料", "マウス"
+  slug         String       @unique
+  parentId     String?      // 親カテゴリID（階層構造用）
+  productType  ProductType  @default(GENERAL) // 商品タイプ
+  categoryType CategoryType @default(GENERAL) // カテゴリタイプ
+  icon         String?      // Lucideアイコン名
+  description  String?
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // リレーション
+  parent       ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     ProductCategory[] @relation("CategoryHierarchy")
+  products     Product[]
+
+  @@index([productType])
+  @@index([categoryType])
+  @@index([sortOrder])
+  @@map("product_categories")
+}
+
+// ブランド（既存のBrandモデルを共用）
+// 既存のBrandモデルは維持し、Product.brandIdで参照
+
+// 商品マスタ
+model Product {
+  id             String        @id @default(cuid())
+  name           String        // 商品名
+  description    String?       // 商品説明
+  categoryId     String        // カテゴリID
+  brandId        String?       // ブランドID（オプショナル）
+  productType    ProductType   @default(GENERAL) // 商品タイプ
+
+  // 画像管理（既存Deviceと同様）
+  amazonUrl          String?   // Amazon URL
+  amazonImageUrl     String?   // Amazon OG画像URL
+  customImageUrl     String?   // カスタム画像URL（手動指定）
+  imageStorageKey    String?   // R2保存画像キー
+
+  // OG情報
+  ogTitle        String?       // OG情報から取得したタイトル
+  ogDescription  String?       // OG情報から取得した説明
+
+  // Amazon固有情報（将来的にASIN等を追加可能）
+  asin           String?       @unique // Amazon商品識別番号
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // リレーション
+  category       ProductCategory @relation(fields: [categoryId], references: [id])
+  brand          Brand?          @relation("ProductBrand", fields: [brandId], references: [id])
+  userProducts   UserProduct[]
+
+  @@index([productType])
+  @@index([categoryId])
+  @@index([brandId])
+  @@map("products")
+}
+
+// ユーザー所有商品（既存UserDeviceと同様）
+model UserProduct {
+  id             String    @id @default(cuid())
+  userId         String
+  productId      String
+  isPublic       Boolean   @default(true)  // 公開/非公開設定
+  review         String?   // ユーザーレビュー
+  sortOrder      Int       @default(0)     // 表示順序
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@index([isPublic])
+  @@index([sortOrder])
+  @@map("user_products")
 }
