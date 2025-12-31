@@ -2,22 +2,22 @@
 
 import { prisma } from '@/lib/prisma'
 import {
-  productCategorySchema,
-  type ProductCategoryInput,
-} from '@/lib/validation/product'
+  itemCategorySchema,
+  type ItemCategoryInput,
+} from '@/lib/validation/item'
 import { revalidatePath } from 'next/cache'
 
 // ===== カテゴリ一覧取得 =====
 
 export async function getCategoriesAction() {
   try {
-    const categories = await prisma.productCategory.findMany({
+    const categories = await prisma.itemCategory.findMany({
       include: {
         parent: true,
         children: true,
         _count: {
           select: {
-            products: true,
+            items: true,
             children: true,
           },
         },
@@ -39,14 +39,14 @@ export async function getCategoriesAction() {
 
 export async function getCategoryByIdAction(id: string) {
   try {
-    const category = await prisma.productCategory.findUnique({
+    const category = await prisma.itemCategory.findUnique({
       where: { id },
       include: {
         parent: true,
         children: true,
         _count: {
           select: {
-            products: true,
+            items: true,
             children: true,
           },
         },
@@ -72,13 +72,13 @@ export async function getCategoryByIdAction(id: string) {
 
 // ===== カテゴリ作成 =====
 
-export async function createCategoryAction(input: ProductCategoryInput) {
+export async function createCategoryAction(input: ItemCategoryInput) {
   try {
     // バリデーション
-    const validated = productCategorySchema.parse(input)
+    const validated = itemCategorySchema.parse(input)
 
     // slugの重複チェック
-    const existingCategory = await prisma.productCategory.findUnique({
+    const existingCategory = await prisma.itemCategory.findUnique({
       where: { slug: validated.slug },
     })
 
@@ -91,7 +91,7 @@ export async function createCategoryAction(input: ProductCategoryInput) {
 
     // 親カテゴリの存在確認
     if (validated.parentId) {
-      const parentCategory = await prisma.productCategory.findUnique({
+      const parentCategory = await prisma.itemCategory.findUnique({
         where: { id: validated.parentId },
       })
 
@@ -104,12 +104,12 @@ export async function createCategoryAction(input: ProductCategoryInput) {
     }
 
     // カテゴリ作成
-    const category = await prisma.productCategory.create({
+    const category = await prisma.itemCategory.create({
       data: {
         name: validated.name,
         slug: validated.slug,
         parentId: validated.parentId || null,
-        productType: validated.productType,
+        itemType: validated.itemType,
         requiresCompatibilityCheck: validated.requiresCompatibilityCheck,
         icon: validated.icon || null,
         description: validated.description || null,
@@ -117,7 +117,7 @@ export async function createCategoryAction(input: ProductCategoryInput) {
       },
     })
 
-    revalidatePath('/admin/categories')
+    revalidatePath('/admin/item-categories')
     return { success: true, data: category }
   } catch (error) {
     console.error('Failed to create category:', error)
@@ -138,14 +138,14 @@ export async function createCategoryAction(input: ProductCategoryInput) {
 
 export async function updateCategoryAction(
   id: string,
-  input: ProductCategoryInput
+  input: ItemCategoryInput
 ) {
   try {
     // バリデーション
-    const validated = productCategorySchema.parse(input)
+    const validated = itemCategorySchema.parse(input)
 
     // カテゴリの存在確認
-    const existingCategory = await prisma.productCategory.findUnique({
+    const existingCategory = await prisma.itemCategory.findUnique({
       where: { id },
     })
 
@@ -158,7 +158,7 @@ export async function updateCategoryAction(
 
     // slugの重複チェック（自分以外）
     if (validated.slug !== existingCategory.slug) {
-      const duplicateCategory = await prisma.productCategory.findUnique({
+      const duplicateCategory = await prisma.itemCategory.findUnique({
         where: { slug: validated.slug },
       })
 
@@ -181,7 +181,7 @@ export async function updateCategoryAction(
       }
 
       // 親カテゴリの存在確認
-      const parentCategory = await prisma.productCategory.findUnique({
+      const parentCategory = await prisma.itemCategory.findUnique({
         where: { id: validated.parentId },
       })
 
@@ -203,13 +203,13 @@ export async function updateCategoryAction(
     }
 
     // カテゴリ更新
-    const category = await prisma.productCategory.update({
+    const category = await prisma.itemCategory.update({
       where: { id },
       data: {
         name: validated.name,
         slug: validated.slug,
         parentId: validated.parentId || null,
-        productType: validated.productType,
+        itemType: validated.itemType,
         requiresCompatibilityCheck: validated.requiresCompatibilityCheck,
         icon: validated.icon || null,
         description: validated.description || null,
@@ -217,7 +217,7 @@ export async function updateCategoryAction(
       },
     })
 
-    revalidatePath('/admin/categories')
+    revalidatePath('/admin/item-categories')
     return { success: true, data: category }
   } catch (error) {
     console.error('Failed to update category:', error)
@@ -239,12 +239,12 @@ export async function updateCategoryAction(
 export async function deleteCategoryAction(id: string) {
   try {
     // カテゴリの存在確認
-    const category = await prisma.productCategory.findUnique({
+    const category = await prisma.itemCategory.findUnique({
       where: { id },
       include: {
         _count: {
           select: {
-            products: true,
+            items: true,
             children: true,
           },
         },
@@ -258,11 +258,11 @@ export async function deleteCategoryAction(id: string) {
       }
     }
 
-    // 商品が紐づいている場合は削除不可
-    if (category._count.products > 0) {
+    // アイテムが紐づいている場合は削除不可
+    if (category._count.items > 0) {
       return {
         success: false,
-        error: `このカテゴリには${category._count.products}件の商品が紐づいています。先に商品を削除または移動してください。`,
+        error: `このカテゴリには${category._count.items}件のアイテムが紐づいています。先にアイテムを削除または移動してください。`,
       }
     }
 
@@ -275,11 +275,11 @@ export async function deleteCategoryAction(id: string) {
     }
 
     // カテゴリ削除
-    await prisma.productCategory.delete({
+    await prisma.itemCategory.delete({
       where: { id },
     })
 
-    revalidatePath('/admin/categories')
+    revalidatePath('/admin/item-categories')
     return { success: true }
   } catch (error) {
     console.error('Failed to delete category:', error)
@@ -297,7 +297,7 @@ async function checkIsDescendant(
   categoryId: string,
   targetId: string
 ): Promise<boolean> {
-  const category = await prisma.productCategory.findUnique({
+  const category = await prisma.itemCategory.findUnique({
     where: { id: categoryId },
     include: {
       children: true,

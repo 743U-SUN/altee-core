@@ -2,37 +2,37 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { userProductSchema, type UserProductInput } from '@/lib/validation/product'
+import { userItemSchema, type UserItemInput } from '@/lib/validation/item'
 
-// ===== UserProduct CRUD =====
+// ===== UserItem CRUD =====
 
 /**
- * ユーザーが特定の商品を既に所有しているかチェック
+ * ユーザーが特定のアイテムを既に所有しているかチェック
  */
-export async function checkUserProductExists(
+export async function checkUserItemExists(
   userId: string,
-  productId: string
+  itemId: string
 ): Promise<boolean> {
-  const userProduct = await prisma.userProduct.findUnique({
+  const userItem = await prisma.userItem.findUnique({
     where: {
-      userId_productId: {
+      userId_itemId: {
         userId,
-        productId,
+        itemId,
       },
     },
   })
 
-  return !!userProduct
+  return !!userItem
 }
 
 /**
- * ユーザーの商品一覧を取得
+ * ユーザーのアイテム一覧を取得
  */
-export async function getUserProducts(userId: string) {
-  const userProducts = await prisma.userProduct.findMany({
+export async function getUserItems(userId: string) {
+  const userItems = await prisma.userItem.findMany({
     where: { userId },
     include: {
-      product: {
+      item: {
         include: {
           category: true,
           brand: true,
@@ -42,56 +42,56 @@ export async function getUserProducts(userId: string) {
     orderBy: { sortOrder: 'asc' },
   })
 
-  return userProducts
+  return userItems
 }
 
 /**
- * ユーザーに商品を追加
+ * ユーザーにアイテムを追加
  */
-export async function createUserProduct(userId: string, data: UserProductInput) {
+export async function createUserItem(userId: string, data: UserItemInput) {
   try {
     // バリデーション
-    const validated = userProductSchema.parse(data)
+    const validated = userItemSchema.parse(data)
 
-    // 商品の存在確認
-    const product = await prisma.product.findUnique({
-      where: { id: validated.productId },
+    // アイテムの存在確認
+    const item = await prisma.item.findUnique({
+      where: { id: validated.itemId },
     })
 
-    if (!product) {
+    if (!item) {
       return {
         success: false,
-        error: '指定された商品が見つかりませんでした',
+        error: '指定されたアイテムが見つかりませんでした',
       }
     }
 
     // 既に追加されていないかチェック
-    const exists = await checkUserProductExists(userId, validated.productId)
+    const exists = await checkUserItemExists(userId, validated.itemId)
     if (exists) {
       return {
         success: false,
-        error: 'この商品は既に追加されています',
+        error: 'このアイテムは既に追加されています',
       }
     }
 
     // 現在の最大sortOrderを取得
-    const maxSortOrder = await prisma.userProduct.findFirst({
+    const maxSortOrder = await prisma.userItem.findFirst({
       where: { userId },
       orderBy: { sortOrder: 'desc' },
       select: { sortOrder: true },
     })
 
-    // 新しい商品を追加
-    const userProduct = await prisma.userProduct.create({
+    // 新しいアイテムを追加
+    const userItem = await prisma.userItem.create({
       data: {
         userId,
-        productId: validated.productId,
+        itemId: validated.itemId,
         review: validated.review,
         isPublic: validated.isPublic,
         sortOrder: (maxSortOrder?.sortOrder ?? -1) + 1,
       },
       include: {
-        product: {
+        item: {
           include: {
             category: true,
             brand: true,
@@ -106,17 +106,17 @@ export async function createUserProduct(userId: string, data: UserProductInput) 
       select: { handle: true },
     })
 
-    revalidatePath('/dashboard/products')
+    revalidatePath('/dashboard/items')
     if (user?.handle) {
-      revalidatePath(`/@${user.handle}/products`)
+      revalidatePath(`/@${user.handle}/items`)
     }
 
     return {
       success: true,
-      data: userProduct,
+      data: userItem,
     }
   } catch (error) {
-    console.error('Failed to create user product:', error)
+    console.error('Failed to create user item:', error)
     if (error instanceof Error) {
       return {
         success: false,
@@ -125,41 +125,41 @@ export async function createUserProduct(userId: string, data: UserProductInput) 
     }
     return {
       success: false,
-      error: 'ユーザー商品の作成に失敗しました',
+      error: 'ユーザーアイテムの作成に失敗しました',
     }
   }
 }
 
 /**
- * ユーザー商品を更新
+ * ユーザーアイテムを更新
  */
-export async function updateUserProduct(
+export async function updateUserItem(
   userId: string,
-  userProductId: string,
-  data: Partial<UserProductInput>
+  userItemId: string,
+  data: Partial<UserItemInput>
 ) {
   try {
     // 所有権確認
-    const userProduct = await prisma.userProduct.findUnique({
-      where: { id: userProductId },
+    const userItem = await prisma.userItem.findUnique({
+      where: { id: userItemId },
     })
 
-    if (!userProduct || userProduct.userId !== userId) {
+    if (!userItem || userItem.userId !== userId) {
       return {
         success: false,
-        error: 'ユーザー商品が見つかりませんでした',
+        error: 'ユーザーアイテムが見つかりませんでした',
       }
     }
 
     // 更新
-    const updated = await prisma.userProduct.update({
-      where: { id: userProductId },
+    const updated = await prisma.userItem.update({
+      where: { id: userItemId },
       data: {
         review: data.review,
         isPublic: data.isPublic,
       },
       include: {
-        product: {
+        item: {
           include: {
             category: true,
             brand: true,
@@ -174,9 +174,9 @@ export async function updateUserProduct(
       select: { handle: true },
     })
 
-    revalidatePath('/dashboard/products')
+    revalidatePath('/dashboard/items')
     if (user?.handle) {
-      revalidatePath(`/@${user.handle}/products`)
+      revalidatePath(`/@${user.handle}/items`)
     }
 
     return {
@@ -184,34 +184,34 @@ export async function updateUserProduct(
       data: updated,
     }
   } catch (error) {
-    console.error('Failed to update user product:', error)
+    console.error('Failed to update user item:', error)
     return {
       success: false,
-      error: 'ユーザー商品の更新に失敗しました',
+      error: 'ユーザーアイテムの更新に失敗しました',
     }
   }
 }
 
 /**
- * ユーザー商品を削除
+ * ユーザーアイテムを削除
  */
-export async function deleteUserProduct(userId: string, userProductId: string) {
+export async function deleteUserItem(userId: string, userItemId: string) {
   try {
     // 所有権確認
-    const userProduct = await prisma.userProduct.findUnique({
-      where: { id: userProductId },
+    const userItem = await prisma.userItem.findUnique({
+      where: { id: userItemId },
     })
 
-    if (!userProduct || userProduct.userId !== userId) {
+    if (!userItem || userItem.userId !== userId) {
       return {
         success: false,
-        error: 'ユーザー商品が見つかりませんでした',
+        error: 'ユーザーアイテムが見つかりませんでした',
       }
     }
 
     // 削除
-    await prisma.userProduct.delete({
-      where: { id: userProductId },
+    await prisma.userItem.delete({
+      where: { id: userItemId },
     })
 
     // handleを取得してパスをrevalidate
@@ -220,33 +220,33 @@ export async function deleteUserProduct(userId: string, userProductId: string) {
       select: { handle: true },
     })
 
-    revalidatePath('/dashboard/products')
+    revalidatePath('/dashboard/items')
     if (user?.handle) {
-      revalidatePath(`/@${user.handle}/products`)
+      revalidatePath(`/@${user.handle}/items`)
     }
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to delete user product:', error)
+    console.error('Failed to delete user item:', error)
     return {
       success: false,
-      error: 'ユーザー商品の削除に失敗しました',
+      error: 'ユーザーアイテムの削除に失敗しました',
     }
   }
 }
 
 /**
- * ユーザー商品の並び順を更新
+ * ユーザーアイテムの並び順を更新
  */
-export async function reorderUserProducts(
+export async function reorderUserItems(
   userId: string,
-  productIds: string[]
+  itemIds: string[]
 ) {
   try {
     // トランザクションで一括更新
     await prisma.$transaction(
-      productIds.map((id, index) =>
-        prisma.userProduct.update({
+      itemIds.map((id, index) =>
+        prisma.userItem.update({
           where: {
             id,
             userId, // 所有権確認
@@ -264,25 +264,25 @@ export async function reorderUserProducts(
       select: { handle: true },
     })
 
-    revalidatePath('/dashboard/products')
+    revalidatePath('/dashboard/items')
     if (user?.handle) {
-      revalidatePath(`/@${user.handle}/products`)
+      revalidatePath(`/@${user.handle}/items`)
     }
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to reorder user products:', error)
+    console.error('Failed to reorder user items:', error)
     return {
       success: false,
-      error: 'ユーザー商品の並び替えに失敗しました',
+      error: 'ユーザーアイテムの並び替えに失敗しました',
     }
   }
 }
 
 /**
- * 公開ページ用：ハンドルからユーザーの公開商品を取得
+ * 公開ページ用：ハンドルからユーザーの公開アイテムを取得
  */
-export async function getUserPublicProductsByHandle(handle: string) {
+export async function getUserPublicItemsByHandle(handle: string) {
   try {
     // ユーザーを取得
     const user = await prisma.user.findUnique({
@@ -297,14 +297,14 @@ export async function getUserPublicProductsByHandle(handle: string) {
       }
     }
 
-    // 公開商品を取得
-    const userProducts = await prisma.userProduct.findMany({
+    // 公開アイテムを取得
+    const userItems = await prisma.userItem.findMany({
       where: {
         userId: user.id,
         isPublic: true,
       },
       include: {
-        product: {
+        item: {
           include: {
             category: true,
             brand: true,
@@ -316,21 +316,21 @@ export async function getUserPublicProductsByHandle(handle: string) {
 
     return {
       success: true,
-      data: userProducts,
+      data: userItems,
     }
   } catch (error) {
-    console.error('Failed to fetch public user products:', error)
+    console.error('Failed to fetch public user items:', error)
     return {
       success: false,
-      error: '公開商品の取得に失敗しました',
+      error: '公開アイテムの取得に失敗しました',
     }
   }
 }
 
 /**
- * 商品一覧を検索・フィルタして取得（モーダル用）
+ * アイテム一覧を検索・フィルタして取得（モーダル用）
  */
-export async function getProducts(params?: {
+export async function getItems(params?: {
   search?: string
   categoryId?: string
   brandId?: string
@@ -352,7 +352,7 @@ export async function getProducts(params?: {
       ...(params?.brandId && { brandId: params.brandId }),
     }
 
-    const products = await prisma.product.findMany({
+    const items = await prisma.item.findMany({
       where,
       include: {
         category: true,
@@ -364,13 +364,13 @@ export async function getProducts(params?: {
 
     return {
       success: true,
-      data: products,
+      data: items,
     }
   } catch (error) {
-    console.error('Failed to fetch products:', error)
+    console.error('Failed to fetch items:', error)
     return {
       success: false,
-      error: '商品の取得に失敗しました',
+      error: 'アイテムの取得に失敗しました',
     }
   }
 }

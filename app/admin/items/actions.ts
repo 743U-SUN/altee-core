@@ -2,19 +2,19 @@
 
 import { prisma } from '@/lib/prisma'
 import {
-  productSchema,
-  type ProductInput,
-  type ProductCSVRow,
+  itemSchema,
+  type ItemInput,
+  type ItemCSVRow,
   type CSVImportResult,
-} from '@/lib/validation/product'
+} from '@/lib/validation/item'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 
-// ===== カテゴリ一覧取得（商品フォーム用） =====
+// ===== カテゴリ一覧取得（アイテムフォーム用） =====
 
 export async function getCategoriesAction() {
   try {
-    const categories = await prisma.productCategory.findMany({
+    const categories = await prisma.itemCategory.findMany({
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     })
 
@@ -28,9 +28,9 @@ export async function getCategoriesAction() {
   }
 }
 
-// ===== 商品一覧取得 =====
+// ===== アイテム一覧取得 =====
 
-interface GetProductsFilters {
+interface GetItemsFilters {
   categoryId?: string
   brandId?: string
   search?: string
@@ -38,7 +38,7 @@ interface GetProductsFilters {
   perPage?: number
 }
 
-export async function getProductsAction(filters: GetProductsFilters = {}) {
+export async function getItemsAction(filters: GetItemsFilters = {}) {
   try {
     const { categoryId, brandId, search, page = 1, perPage = 20 } = filters
 
@@ -62,15 +62,15 @@ export async function getProductsAction(filters: GetProductsFilters = {}) {
       ],
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
+    const [items, total] = await Promise.all([
+      prisma.item.findMany({
         where,
         include: {
           category: true,
           brand: true,
           _count: {
             select: {
-              userProducts: true,
+              userItems: true,
             },
           },
         },
@@ -78,13 +78,13 @@ export async function getProductsAction(filters: GetProductsFilters = {}) {
         skip: (page - 1) * perPage,
         take: perPage,
       }),
-      prisma.product.count({ where }),
+      prisma.item.count({ where }),
     ])
 
     return {
       success: true,
       data: {
-        products,
+        items,
         total,
         page,
         perPage,
@@ -92,51 +92,51 @@ export async function getProductsAction(filters: GetProductsFilters = {}) {
       },
     }
   } catch (error) {
-    console.error('Failed to fetch products:', error)
+    console.error('Failed to fetch items:', error)
     return {
       success: false,
-      error: '商品の取得に失敗しました',
+      error: 'アイテムの取得に失敗しました',
     }
   }
 }
 
-// ===== 商品詳細取得 =====
+// ===== アイテム詳細取得 =====
 
-export async function getProductByIdAction(id: string) {
+export async function getItemByIdAction(id: string) {
   try {
-    const product = await prisma.product.findUnique({
+    const item = await prisma.item.findUnique({
       where: { id },
       include: {
         category: true,
         brand: true,
         _count: {
           select: {
-            userProducts: true,
+            userItems: true,
           },
         },
       },
     })
 
-    if (!product) {
+    if (!item) {
       return {
         success: false,
-        error: '商品が見つかりませんでした',
+        error: 'アイテムが見つかりませんでした',
       }
     }
 
-    return { success: true, data: product }
+    return { success: true, data: item }
   } catch (error) {
-    console.error('Failed to fetch product:', error)
+    console.error('Failed to fetch item:', error)
     return {
       success: false,
-      error: '商品の取得に失敗しました',
+      error: 'アイテムの取得に失敗しました',
     }
   }
 }
 
-// ===== 商品作成 =====
+// ===== アイテム作成 =====
 
-export async function createProductAction(input: ProductInput) {
+export async function createItemAction(input: ItemInput) {
   try {
     // "null" 文字列を null に変換
     const normalizedInput = {
@@ -145,10 +145,10 @@ export async function createProductAction(input: ProductInput) {
     }
 
     // バリデーション
-    const validated = productSchema.parse(normalizedInput)
+    const validated = itemSchema.parse(normalizedInput)
 
     // カテゴリの存在確認
-    const category = await prisma.productCategory.findUnique({
+    const category = await prisma.itemCategory.findUnique({
       where: { id: validated.categoryId },
     })
 
@@ -175,11 +175,11 @@ export async function createProductAction(input: ProductInput) {
 
     // ASINの重複チェック（指定されている場合）
     if (validated.asin) {
-      const existingProduct = await prisma.product.findUnique({
+      const existingItem = await prisma.item.findUnique({
         where: { asin: validated.asin },
       })
 
-      if (existingProduct) {
+      if (existingItem) {
         return {
           success: false,
           error: 'このASINは既に登録されています',
@@ -192,17 +192,17 @@ export async function createProductAction(input: ProductInput) {
     let imageStorageKey: string | undefined = validated.imageStorageKey || undefined
     const imageUrl = validated.customImageUrl || validated.amazonImageUrl
     if (imageUrl && validated.asin) {
-      const uploadResult = await downloadAndUploadProductImage(imageUrl, validated.asin)
+      const uploadResult = await downloadAndUploadItemImage(imageUrl, validated.asin)
       if (uploadResult.success) {
         imageStorageKey = uploadResult.storageKey
       } else {
         console.error('画像アップロード失敗:', uploadResult.error)
-        // 画像アップロード失敗しても商品作成は続行
+        // 画像アップロード失敗してもアイテム作成は続行
       }
     }
 
-    // 商品作成
-    const product = await prisma.product.create({
+    // アイテム作成
+    const item = await prisma.item.create({
       data: {
         name: validated.name,
         description: validated.description || null,
@@ -218,7 +218,7 @@ export async function createProductAction(input: ProductInput) {
       },
     })
 
-    revalidatePath('/admin/products')
+    revalidatePath('/admin/items')
     return { success: true, data: product }
   } catch (error) {
     console.error('Failed to create product:', error)
@@ -230,14 +230,14 @@ export async function createProductAction(input: ProductInput) {
     }
     return {
       success: false,
-      error: '商品の作成に失敗しました',
+      error: 'アイテムの作成に失敗しました',
     }
   }
 }
 
-// ===== 商品更新 =====
+// ===== アイテム更新 =====
 
-export async function updateProductAction(id: string, input: ProductInput) {
+export async function updateItemAction(id: string, input: ItemInput) {
   try {
     // "null" 文字列を null に変換
     const normalizedInput = {
@@ -246,22 +246,22 @@ export async function updateProductAction(id: string, input: ProductInput) {
     }
 
     // バリデーション
-    const validated = productSchema.parse(normalizedInput)
+    const validated = itemSchema.parse(normalizedInput)
 
-    // 商品の存在確認
-    const existingProduct = await prisma.product.findUnique({
+    // アイテムの存在確認
+    const existingItem = await prisma.item.findUnique({
       where: { id },
     })
 
-    if (!existingProduct) {
+    if (!existingItem) {
       return {
         success: false,
-        error: '商品が見つかりませんでした',
+        error: 'アイテムが見つかりませんでした',
       }
     }
 
     // カテゴリの存在確認
-    const category = await prisma.productCategory.findUnique({
+    const category = await prisma.itemCategory.findUnique({
       where: { id: validated.categoryId },
     })
 
@@ -287,12 +287,12 @@ export async function updateProductAction(id: string, input: ProductInput) {
     }
 
     // ASINの重複チェック（変更されている場合）
-    if (validated.asin && validated.asin !== existingProduct.asin) {
-      const duplicateProduct = await prisma.product.findUnique({
+    if (validated.asin && validated.asin !== existingItem.asin) {
+      const duplicateItem = await prisma.item.findUnique({
         where: { asin: validated.asin },
       })
 
-      if (duplicateProduct) {
+      if (duplicateItem) {
         return {
           success: false,
           error: 'このASINは既に登録されています',
@@ -301,20 +301,20 @@ export async function updateProductAction(id: string, input: ProductInput) {
     }
 
     // 画像URLが変更された場合の処理
-    let imageStorageKey: string | null | undefined = existingProduct.imageStorageKey
+    let imageStorageKey: string | null | undefined = existingItem.imageStorageKey
     const newImageUrl = validated.customImageUrl || validated.amazonImageUrl
-    const oldImageUrl = existingProduct.customImageUrl || existingProduct.amazonImageUrl
+    const oldImageUrl = existingItem.customImageUrl || existingItem.amazonImageUrl
 
     // 画像URLが変更された場合
     if (newImageUrl && newImageUrl !== oldImageUrl && validated.asin) {
       console.log('画像URLが変更されました。アップロード開始...')
       // 古い画像を削除
-      if (existingProduct.imageStorageKey) {
-        await deleteProductImageFromR2(existingProduct.imageStorageKey)
+      if (existingItem.imageStorageKey) {
+        await deleteItemImageFromR2(existingItem.imageStorageKey)
       }
 
       // 新しい画像をダウンロード・アップロード
-      const uploadResult = await downloadAndUploadProductImage(newImageUrl, validated.asin)
+      const uploadResult = await downloadAndUploadItemImage(newImageUrl, validated.asin)
       if (uploadResult.success) {
         imageStorageKey = uploadResult.storageKey || null
         console.log('画像アップロード成功:', imageStorageKey)
@@ -326,8 +326,8 @@ export async function updateProductAction(id: string, input: ProductInput) {
       console.log('画像URLは変更されていません。アップロードをスキップ')
     }
 
-    // 商品更新
-    const product = await prisma.product.update({
+    // アイテム更新
+    const item = await prisma.item.update({
       where: { id },
       data: {
         name: validated.name,
@@ -337,14 +337,14 @@ export async function updateProductAction(id: string, input: ProductInput) {
         amazonUrl: validated.amazonUrl || null,
         amazonImageUrl: validated.amazonImageUrl || null,
         customImageUrl: validated.customImageUrl || null,
-        imageStorageKey: imageStorageKey !== undefined ? imageStorageKey : existingProduct.imageStorageKey,
+        imageStorageKey: imageStorageKey !== undefined ? imageStorageKey : existingItem.imageStorageKey,
         ogTitle: validated.ogTitle || null,
         ogDescription: validated.ogDescription || null,
         asin: validated.asin || null,
       },
     })
 
-    revalidatePath('/admin/products')
+    revalidatePath('/admin/items')
     return { success: true, data: product }
   } catch (error) {
     console.error('Failed to update product:', error)
@@ -356,22 +356,22 @@ export async function updateProductAction(id: string, input: ProductInput) {
     }
     return {
       success: false,
-      error: '商品の更新に失敗しました',
+      error: 'アイテムの更新に失敗しました',
     }
   }
 }
 
-// ===== 商品削除 =====
+// ===== アイテム削除 =====
 
-export async function deleteProductAction(id: string) {
+export async function deleteItemAction(id: string) {
   try {
-    // 商品の存在確認
-    const product = await prisma.product.findUnique({
+    // アイテムの存在確認
+    const item = await prisma.item.findUnique({
       where: { id },
       include: {
         _count: {
           select: {
-            userProducts: true,
+            userItems: true,
           },
         },
       },
@@ -380,43 +380,43 @@ export async function deleteProductAction(id: string) {
     if (!product) {
       return {
         success: false,
-        error: '商品が見つかりませんでした',
+        error: 'アイテムが見つかりませんでした',
       }
     }
 
-    // ユーザー商品の関連をチェック
-    if (product._count.userProducts > 0) {
+    // ユーザーアイテムの関連をチェック
+    if (product._count.userItems > 0) {
       return {
         success: false,
-        error: `この商品は${product._count.userProducts}人のユーザーが登録しています。削除する前にユーザー商品を削除してください。`,
+        error: `このアイテムは${product._count.userItems}人のユーザーが登録しています。削除する前にユーザーアイテムを削除してください。`,
       }
     }
 
     // R2に保存された画像を削除
     if (product.imageStorageKey) {
-      await deleteProductImageFromR2(product.imageStorageKey)
+      await deleteItemImageFromR2(product.imageStorageKey)
     }
 
-    // 商品削除
-    await prisma.product.delete({
+    // アイテム削除
+    await prisma.item.delete({
       where: { id },
     })
 
-    revalidatePath('/admin/products')
+    revalidatePath('/admin/items')
     return { success: true }
   } catch (error) {
     console.error('Failed to delete product:', error)
     return {
       success: false,
-      error: '商品の削除に失敗しました',
+      error: 'アイテムの削除に失敗しました',
     }
   }
 }
 
 // ===== CSV一括登録 =====
 
-export async function importProductsFromCSVAction(
-  rows: ProductCSVRow[]
+export async function importItemsFromCSVAction(
+  rows: ItemCSVRow[]
 ): Promise<CSVImportResult> {
   const result: CSVImportResult = {
     success: 0,
@@ -430,7 +430,7 @@ export async function importProductsFromCSVAction(
 
     try {
       // カテゴリをslugから検索
-      const category = await prisma.productCategory.findUnique({
+      const category = await prisma.itemCategory.findUnique({
         where: { slug: row.categorySlug },
       })
 
@@ -464,8 +464,8 @@ export async function importProductsFromCSVAction(
         brandId = brand.id
       }
 
-      // 商品作成
-      await prisma.product.create({
+      // アイテム作成
+      await prisma.item.create({
         data: {
           name: row.name,
           description: row.description || null,
@@ -488,16 +488,16 @@ export async function importProductsFromCSVAction(
     }
   }
 
-  revalidatePath('/admin/products')
+  revalidatePath('/admin/items')
   return result
 }
 
 // ===== R2画像管理関数 =====
 
 /**
- * 商品画像をR2から削除（ヘルパー関数）
+ * アイテム画像をR2から削除（ヘルパー関数）
  */
-async function deleteProductImageFromR2(imageStorageKey: string): Promise<void> {
+async function deleteItemImageFromR2(imageStorageKey: string): Promise<void> {
   try {
     const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
     const { storageClient } = await import('@/lib/storage')
@@ -513,7 +513,7 @@ async function deleteProductImageFromR2(imageStorageKey: string): Promise<void> 
       where: { storageKey: `altee-images/${imageStorageKey}` }
     })
   } catch (error) {
-    console.error('商品画像削除エラー:', error)
+    console.error('アイテム画像削除エラー:', error)
     // 削除失敗しても続行（エラーを投げない）
   }
 }
@@ -521,7 +521,7 @@ async function deleteProductImageFromR2(imageStorageKey: string): Promise<void> 
 /**
  * Amazon画像またはカスタムURLから画像をダウンロードしてR2にアップロード
  */
-export async function downloadAndUploadProductImage(imageUrl: string, asin: string, uploaderId?: string): Promise<{
+export async function downloadAndUploadItemImage(imageUrl: string, asin: string, uploaderId?: string): Promise<{
   success: boolean
   storageKey?: string
   error?: string
@@ -553,9 +553,9 @@ export async function downloadAndUploadProductImage(imageUrl: string, asin: stri
     else if (contentType.includes('gif')) extension = 'gif'
     else if (contentType.includes('webp')) extension = 'webp'
 
-    // ファイル名: product-images/{asin}.{ext}
+    // ファイル名: item-images/{asin}.{ext}
     const fileName = `${asin}.${extension}`
-    const folder = 'product-images'
+    const folder = 'item-images'
     const storageKey = `${folder}/${fileName}`
     const fullStorageKey = `altee-images/${storageKey}`
 
@@ -594,26 +594,26 @@ export async function downloadAndUploadProductImage(imageUrl: string, asin: stri
 
     return { success: true, storageKey }
   } catch (error) {
-    console.error('商品画像ダウンロード・アップロードエラー:', error)
+    console.error('アイテム画像ダウンロード・アップロードエラー:', error)
     return { success: false, error: '画像の保存に失敗しました' }
   }
 }
 
 /**
- * 商品画像を更新（Amazonから再取得してR2に保存）
+ * アイテム画像を更新（Amazonから再取得してR2に保存）
  */
-export async function refreshProductImage(productId: string): Promise<{
+export async function refreshItemImage(productId: string): Promise<{
   success: boolean
   message?: string
   error?: string
 }> {
   try {
-    const product = await prisma.product.findUnique({
+    const item = await prisma.item.findUnique({
       where: { id: productId }
     })
 
     if (!product) {
-      return { success: false, error: '商品が見つかりません' }
+      return { success: false, error: 'アイテムが見つかりません' }
     }
 
     // カスタムURLまたはAmazon URL
@@ -629,28 +629,28 @@ export async function refreshProductImage(productId: string): Promise<{
 
     // 古い画像を削除（存在する場合）
     if (product.imageStorageKey) {
-      await deleteProductImageFromR2(product.imageStorageKey)
+      await deleteItemImageFromR2(product.imageStorageKey)
     }
 
     // 新しい画像をダウンロード・アップロード
-    const uploadResult = await downloadAndUploadProductImage(imageUrl, product.asin)
+    const uploadResult = await downloadAndUploadItemImage(imageUrl, product.asin)
 
     if (!uploadResult.success) {
       return { success: false, error: uploadResult.error }
     }
 
-    // 商品情報を更新
-    await prisma.product.update({
+    // アイテム情報を更新
+    await prisma.item.update({
       where: { id: productId },
       data: { imageStorageKey: uploadResult.storageKey }
     })
 
-    revalidatePath('/admin/products')
-    revalidatePath(`/admin/products/${productId}`)
+    revalidatePath('/admin/items')
+    revalidatePath(`/admin/items/${productId}`)
 
     return { success: true, message: '画像を更新しました' }
   } catch (error) {
-    console.error('商品画像更新エラー:', error)
+    console.error('アイテム画像更新エラー:', error)
     return { success: false, error: '画像の更新に失敗しました' }
   }
 }
