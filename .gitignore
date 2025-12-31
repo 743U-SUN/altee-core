@@ -44,8 +44,10 @@ backups/
 *.tsbuildinfo
 next-env.d.ts
 
-# docs
-docs/
+# docs (except PLANS and LOGS)
+docs/*
+!docs/PLANS/
+!docs/LOGS/
 
 # MCP configuration (personal)
 .mcp.json
