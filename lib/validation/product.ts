@@ -129,7 +129,7 @@ export const userProductSchema = z.object({
   productId: z.string().min(1, '商品IDは必須です'),
   review: z.string().optional().nullable(),
   isPublic: z.boolean().default(true),
-  sortOrder: z.number().int().nonnegative().default(0),
+  sortOrder: z.number().int().nonnegative().optional(),
 })
 
 export type UserProductInput = z.infer<typeof userProductSchema>
