@@ -9,6 +9,24 @@ import {
 } from '@/lib/validation/product'
 import { revalidatePath } from 'next/cache'
 
+// ===== カテゴリ一覧取得（商品フォーム用） =====
+
+export async function getCategoriesAction() {
+  try {
+    const categories = await prisma.productCategory.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+    })
+
+    return { success: true, data: categories }
+  } catch (error) {
+    console.error('Failed to fetch categories:', error)
+    return {
+      success: false,
+      error: 'カテゴリの取得に失敗しました',
+    }
+  }
+}
+
 // ===== 商品一覧取得 =====
 
 interface GetProductsFilters {
