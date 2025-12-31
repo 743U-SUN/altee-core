@@ -100,8 +100,16 @@ export async function createUserProduct(userId: string, data: UserProductInput) 
       },
     })
 
+    // handleを取得してパスをrevalidate
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { handle: true },
+    })
+
     revalidatePath('/dashboard/products')
-    revalidatePath(`/@${userId}/products`)
+    if (user?.handle) {
+      revalidatePath(`/@${user.handle}/products`)
+    }
 
     return {
       success: true,
@@ -160,8 +168,16 @@ export async function updateUserProduct(
       },
     })
 
+    // handleを取得してパスをrevalidate
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { handle: true },
+    })
+
     revalidatePath('/dashboard/products')
-    revalidatePath(`/@${userId}/products`)
+    if (user?.handle) {
+      revalidatePath(`/@${user.handle}/products`)
+    }
 
     return {
       success: true,
@@ -198,8 +214,16 @@ export async function deleteUserProduct(userId: string, userProductId: string) {
       where: { id: userProductId },
     })
 
+    // handleを取得してパスをrevalidate
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { handle: true },
+    })
+
     revalidatePath('/dashboard/products')
-    revalidatePath(`/@${userId}/products`)
+    if (user?.handle) {
+      revalidatePath(`/@${user.handle}/products`)
+    }
 
     return { success: true }
   } catch (error) {
@@ -234,8 +258,16 @@ export async function reorderUserProducts(
       )
     )
 
+    // handleを取得してパスをrevalidate
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { handle: true },
+    })
+
     revalidatePath('/dashboard/products')
-    revalidatePath(`/@${userId}/products`)
+    if (user?.handle) {
+      revalidatePath(`/@${user.handle}/products`)
+    }
 
     return { success: true }
   } catch (error) {
