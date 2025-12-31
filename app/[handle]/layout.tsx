@@ -146,13 +146,13 @@ export default async function HandleLayout({
   const navItems = [
     {
       title: "Videos",
-      url: `/${targetUser.handle}/videos`,
+      url: `/@${targetUser.handle}/videos`,
       icon: "Video" as const,
       isActive: false,
     },
     {
       title: "Devices",
-      url: `/${targetUser.handle}/devices`,
+      url: `/@${targetUser.handle}/devices`,
       icon: "MonitorSmartphone" as const,
       isActive: false,
     },
@@ -176,7 +176,7 @@ export default async function HandleLayout({
             brandImage: userAvatar, // ユーザーアバターを設定（なければundefined）
             title: brandTitle,
             subtitle: brandSubtitle,
-            url: `/${targetUser.handle}`,
+            url: `/@${targetUser.handle}`,
           },
           navItems: navItems, // 動的なnavItemsを追加
           hideUser: true, // サイドバーのnav-userを非表示
@@ -184,7 +184,7 @@ export default async function HandleLayout({
         header: {
           title: userTitle,
           titleImage: userAvatar,
-          titleUrl: `/${targetUser.handle}`,
+          titleUrl: `/@${targetUser.handle}`,
           hideUserMenu: true, // ヘッダーのnav-user-headerを非表示
           hideModeToggle: false, // モードトグルは表示
           notificationData: {

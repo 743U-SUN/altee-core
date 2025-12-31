@@ -55,7 +55,7 @@ export default async function VideosPage({ params }: VideosPageProps) {
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold">動画</h1>
             <Link
-              href={`/${handle}`}
+              href={`/@${handle}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               プロフィールに戻る
@@ -77,7 +77,7 @@ export default async function VideosPage({ params }: VideosPageProps) {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">{user.characterName || handle} の動画</h1>
           <Link
-            href={`/${handle}`}
+            href={`/@${handle}`}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             プロフィールに戻る

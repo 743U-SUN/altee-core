@@ -96,7 +96,10 @@ async function generateHandleSuggestion(baseHandle: string): Promise<string> {
  */
 export async function getUserByHandle(handle: string) {
   try {
-    const normalizedHandle = handle.toLowerCase();
+    // @プレフィックスを削除して正規化
+    const normalizedHandle = handle.startsWith('@')
+      ? handle.slice(1).toLowerCase()
+      : handle.toLowerCase();
 
     // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
     if (isReservedHandle(normalizedHandle)) {

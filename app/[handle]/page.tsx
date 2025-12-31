@@ -112,7 +112,7 @@ export default async function HandlePage({
           {/* 動画一覧へのリンク */}
           <div className="flex justify-end">
             <Button asChild variant="outline" size="sm">
-              <Link href={`/${handle}/videos`}>
+              <Link href={`/@${handle}/videos`}>
                 もっと見る →
               </Link>
             </Button>

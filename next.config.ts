@@ -2,6 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  async rewrites() {
+    return [
+      {
+        source: '/@:handle',
+        destination: '/:handle',
+      },
+      {
+        source: '/@:handle/:path*',
+        destination: '/:handle/:path*',
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {
