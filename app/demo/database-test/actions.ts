@@ -88,12 +88,29 @@ export async function createTestProduct() {
     console.log('🛍️ テスト商品作成開始...')
     
     const randomId = Math.random().toString(36).substring(2, 8)
-    
+
+    // デモ用カテゴリを取得または作成
+    let demoCategory = await prisma.productCategory.findFirst({
+      where: { slug: 'demo-category' }
+    })
+
+    if (!demoCategory) {
+      demoCategory = await prisma.productCategory.create({
+        data: {
+          name: 'デモカテゴリ',
+          slug: 'demo-category',
+          productType: 'GENERAL',
+          requiresCompatibilityCheck: false,
+          sortOrder: 999,
+        }
+      })
+    }
+
     const product = await prisma.product.create({
       data: {
         name: `テスト商品 ${randomId}`,
-        price: Math.floor(Math.random() * 10000) + 1000, // 1000-11000円
         description: `これはテスト用の商品です。ID: ${randomId}`,
+        categoryId: demoCategory.id,
       },
     })
     

@@ -135,7 +135,6 @@ export default async function DatabaseTestPage() {
                         <div key={product.id} className="p-3 border rounded-lg">
                           <div className="font-mono text-sm text-gray-600">ID: {product.id.slice(0, 8)}...</div>
                           <div><strong>Name:</strong> {product.name}</div>
-                          <div><strong>Price:</strong> ¥{product.price.toLocaleString()}</div>
                           <div><strong>Description:</strong> {product.description || '(null)'}</div>
                           <div className="text-xs text-gray-500">
                             作成: {product.createdAt.toLocaleString()}
