@@ -14,35 +14,35 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Trash2 } from 'lucide-react'
-import { deleteProductAction } from '../actions'
+import { deleteItemAction } from '../actions'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-interface DeleteProductButtonProps {
-  productId: string
-  productName: string
+interface DeleteItemButtonProps {
+  itemId: string
+  itemName: string
   hasUsers: boolean
 }
 
-export function DeleteProductButton({
-  productId,
-  productName,
+export function DeleteItemButton({
+  itemId,
+  itemName,
   hasUsers,
-}: DeleteProductButtonProps) {
+}: DeleteItemButtonProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const handleDelete = () => {
     startTransition(async () => {
-      const result = await deleteProductAction(productId)
+      const result = await deleteItemAction(itemId)
 
       if (result.success) {
-        toast.success('商品を削除しました')
+        toast.success('アイテムを削除しました')
         setOpen(false)
         router.refresh()
       } else {
-        toast.error(result.error || '商品の削除に失敗しました')
+        toast.error(result.error || 'アイテムの削除に失敗しました')
       }
     })
   }
@@ -66,9 +66,9 @@ export function DeleteProductButton({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>商品の削除</AlertDialogTitle>
+          <AlertDialogTitle>アイテムの削除</AlertDialogTitle>
           <AlertDialogDescription>
-            商品「{productName}」を削除してもよろしいですか？
+            アイテム「{itemName}」を削除してもよろしいですか？
             <br />
             この操作は取り消せません。
           </AlertDialogDescription>

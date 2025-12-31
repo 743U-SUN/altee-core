@@ -2,7 +2,7 @@ import { CSVImportForm } from './components/CSVImportForm'
 
 export const metadata = {
   title: 'CSV一括登録 | 管理画面',
-  description: 'CSVファイルから商品を一括登録',
+  description: 'CSVファイルからアイテムを一括登録',
 }
 
 export default function CSVImportPage() {
@@ -11,7 +11,7 @@ export default function CSVImportPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">CSV一括登録</h1>
         <p className="mt-2 text-muted-foreground">
-          CSVファイルから商品を一括登録します
+          CSVファイルからアイテムを一括登録します
         </p>
       </div>
 
@@ -26,10 +26,10 @@ export default function CSVImportPage() {
             </pre>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
               <li>
-                <strong>name</strong>: 商品名（必須）
+                <strong>name</strong>: アイテム名（必須）
               </li>
               <li>
-                <strong>description</strong>: 商品説明（オプション）
+                <strong>description</strong>: アイテム説明（オプション）
               </li>
               <li>
                 <strong>categorySlug</strong>: カテゴリのslug（必須、事前にカテゴリを作成しておく必要があります）

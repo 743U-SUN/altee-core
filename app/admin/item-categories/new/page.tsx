@@ -3,7 +3,7 @@ import { CategoryForm } from '../components/CategoryForm'
 
 export const metadata = {
   title: '新規カテゴリ作成 | 管理画面',
-  description: '新しい商品カテゴリを作成',
+  description: '新しいアイテムカテゴリを作成',
 }
 
 export default async function NewCategoryPage() {
@@ -15,7 +15,7 @@ export default async function NewCategoryPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">新規カテゴリ作成</h1>
         <p className="mt-2 text-muted-foreground">
-          新しい商品カテゴリを作成します
+          新しいアイテムカテゴリを作成します
         </p>
       </div>
 

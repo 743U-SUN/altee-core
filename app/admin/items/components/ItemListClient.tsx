@@ -1,6 +1,6 @@
 'use client'
 
-import { Product, ProductCategory, Brand } from '@prisma/client'
+import { Item, ItemCategory, Brand } from '@prisma/client'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -21,24 +21,24 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Edit, Search, ChevronLeft, ChevronRight } from 'lucide-react'
-import { DeleteProductButton } from './DeleteProductButton'
+import { DeleteItemButton } from './DeleteItemButton'
 import { useState } from 'react'
 import Image from 'next/image'
 
-type ProductWithRelations = Product & {
-  category: ProductCategory
+type ItemWithRelations = Item & {
+  category: ItemCategory
   brand: Brand | null
   _count: {
-    userProducts: number
+    userItems: number
   }
 }
 
-interface ProductListClientProps {
-  products: ProductWithRelations[]
+interface ItemListClientProps {
+  items: ItemWithRelations[]
   total: number
   page: number
   totalPages: number
-  categories: ProductCategory[]
+  categories: ItemCategory[]
   brands: Brand[]
   currentFilters: {
     search?: string
@@ -47,15 +47,15 @@ interface ProductListClientProps {
   }
 }
 
-export function ProductListClient({
-  products,
+export function ItemListClient({
+  items,
   total,
   page,
   totalPages,
   categories,
   brands,
   currentFilters,
-}: ProductListClientProps) {
+}: ItemListClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchValue, setSearchValue] = useState(currentFilters.search || '')
@@ -76,7 +76,7 @@ export function ProductListClient({
       params.delete('page')
     }
 
-    router.push(`/admin/products?${params.toString()}`)
+    router.push(`/admin/items?${params.toString()}`)
   }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -84,13 +84,13 @@ export function ProductListClient({
     updateFilters({ search: searchValue })
   }
 
-  if (products.length === 0 && !currentFilters.search && !currentFilters.categoryId && !currentFilters.brandId) {
+  if (items.length === 0 && !currentFilters.search && !currentFilters.categoryId && !currentFilters.brandId) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>商品がありません</CardTitle>
+          <CardTitle>アイテムがありません</CardTitle>
           <CardDescription>
-            新規商品を作成してください
+            新規アイテムを作成してください
           </CardDescription>
         </CardHeader>
       </Card>
@@ -108,7 +108,7 @@ export function ProductListClient({
           <div className="grid gap-4 md:grid-cols-3">
             <form onSubmit={handleSearchSubmit} className="flex gap-2">
               <Input
-                placeholder="商品名で検索..."
+                placeholder="アイテム名で検索..."
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
               />
@@ -158,33 +158,33 @@ export function ProductListClient({
         </CardContent>
       </Card>
 
-      {/* 商品一覧 */}
+      {/* アイテム一覧 */}
       <div className="rounded-lg border bg-muted/50 p-4">
         <p className="text-sm text-muted-foreground">
-          全{total}件の商品（{page}/{totalPages}ページ目）
+          全{total}件のアイテム（{page}/{totalPages}ページ目）
         </p>
       </div>
 
-      {products.length === 0 ? (
+      {items.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              条件に一致する商品が見つかりませんでした
+              条件に一致するアイテムが見つかりませんでした
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {products.map((product) => (
-            <Card key={product.id}>
+          {items.map((item) => (
+            <Card key={item.id}>
               <CardContent className="pt-6">
                 <div className="flex gap-4">
                   {/* 画像 */}
                   <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
-                    {product.customImageUrl || product.amazonImageUrl ? (
+                    {item.customImageUrl || item.amazonImageUrl ? (
                       <Image
-                        src={product.customImageUrl || product.amazonImageUrl || ''}
-                        alt={product.name}
+                        src={item.customImageUrl || item.amazonImageUrl || ''}
+                        alt={item.name}
                         fill
                         className="object-cover"
                       />
@@ -195,43 +195,43 @@ export function ProductListClient({
                     )}
                   </div>
 
-                  {/* 商品情報 */}
+                  {/* アイテム情報 */}
                   <div className="flex-1 space-y-2">
                     <div>
-                      <h3 className="font-semibold">{product.name}</h3>
-                      {product.description && (
+                      <h3 className="font-semibold">{item.name}</h3>
+                      {item.description && (
                         <p className="line-clamp-2 text-sm text-muted-foreground">
-                          {product.description}
+                          {item.description}
                         </p>
                       )}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">{product.category.name}</Badge>
-                      {product.brand && <Badge>{product.brand.name}</Badge>}
-                      {product.asin && (
-                        <Badge variant="secondary">ASIN: {product.asin}</Badge>
+                      <Badge variant="outline">{item.category.name}</Badge>
+                      {item.brand && <Badge>{item.brand.name}</Badge>}
+                      {item.asin && (
+                        <Badge variant="secondary">ASIN: {item.asin}</Badge>
                       )}
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                      登録ユーザー: {product._count.userProducts}人 | 作成:{' '}
-                      {new Date(product.createdAt).toLocaleDateString()}
+                      登録ユーザー: {item._count.userItems}人 | 作成:{' '}
+                      {new Date(item.createdAt).toLocaleDateString()}
                     </div>
                   </div>
 
                   {/* アクション */}
                   <div className="flex flex-col gap-2">
                     <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/products/${product.id}`}>
+                      <Link href={`/admin/items/${item.id}`}>
                         <Edit className="mr-2 h-4 w-4" />
                         編集
                       </Link>
                     </Button>
-                    <DeleteProductButton
-                      productId={product.id}
-                      productName={product.name}
-                      hasUsers={product._count.userProducts > 0}
+                    <DeleteItemButton
+                      itemId={item.id}
+                      itemName={item.name}
+                      hasUsers={item._count.userItems > 0}
                     />
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export function ProductListClient({
             onClick={() => {
               const params = new URLSearchParams(searchParams.toString())
               params.set('page', String(page - 1))
-              router.push(`/admin/products?${params.toString()}`)
+              router.push(`/admin/items?${params.toString()}`)
             }}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -269,7 +269,7 @@ export function ProductListClient({
             onClick={() => {
               const params = new URLSearchParams(searchParams.toString())
               params.set('page', String(page + 1))
-              router.push(`/admin/products?${params.toString()}`)
+              router.push(`/admin/items?${params.toString()}`)
             }}
           >
             次へ

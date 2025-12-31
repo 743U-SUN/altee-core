@@ -4,12 +4,12 @@ import { useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { Product, ProductCategory, Brand } from '@prisma/client'
+import { Item, ItemCategory, Brand } from '@prisma/client'
 import {
-  productSchema,
-  type ProductInput,
-} from '@/lib/validation/product'
-import { createProductAction, updateProductAction } from '../actions'
+  itemSchema,
+  type ItemInput,
+} from '@/lib/validation/item'
+import { createItemAction, updateItemAction } from '../actions'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -33,46 +33,46 @@ import { toast } from 'sonner'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
-interface ProductFormProps {
-  product?: Product
-  categories: ProductCategory[]
+interface ItemFormProps {
+  item?: Item
+  categories: ItemCategory[]
   brands: Brand[]
 }
 
-export function ProductForm({ product, categories, brands }: ProductFormProps) {
+export function ItemForm({ item, categories, brands }: ItemFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const form = useForm<ProductInput>({
-    resolver: zodResolver(productSchema),
+  const form = useForm<ItemInput>({
+    resolver: zodResolver(itemSchema),
     defaultValues: {
-      name: product?.name || '',
-      description: product?.description || '',
-      categoryId: product?.categoryId || '',
-      brandId: product?.brandId || '',
-      amazonUrl: product?.amazonUrl || '',
-      amazonImageUrl: product?.amazonImageUrl || '',
-      customImageUrl: product?.customImageUrl || '',
-      imageStorageKey: product?.imageStorageKey || '',
-      ogTitle: product?.ogTitle || '',
-      ogDescription: product?.ogDescription || '',
-      asin: product?.asin || '',
+      name: item?.name || '',
+      description: item?.description || '',
+      categoryId: item?.categoryId || '',
+      brandId: item?.brandId || '',
+      amazonUrl: item?.amazonUrl || '',
+      amazonImageUrl: item?.amazonImageUrl || '',
+      customImageUrl: item?.customImageUrl || '',
+      imageStorageKey: item?.imageStorageKey || '',
+      ogTitle: item?.ogTitle || '',
+      ogDescription: item?.ogDescription || '',
+      asin: item?.asin || '',
     },
   })
 
-  const onSubmit = (data: ProductInput) => {
+  const onSubmit = (data: ItemInput) => {
     startTransition(async () => {
-      const result = product
-        ? await updateProductAction(product.id, data)
-        : await createProductAction(data)
+      const result = item
+        ? await updateItemAction(item.id, data)
+        : await createItemAction(data)
 
       if (result.success) {
         toast.success(
-          product
-            ? '商品を更新しました'
-            : '商品を作成しました'
+          item
+            ? 'アイテムを更新しました'
+            : 'アイテムを作成しました'
         )
-        router.push('/admin/products')
+        router.push('/admin/items')
         router.refresh()
       } else {
         toast.error(result.error || '操作に失敗しました')
@@ -85,7 +85,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex items-center gap-4">
           <Button type="button" variant="outline" asChild>
-            <Link href="/admin/products">
+            <Link href="/admin/items">
               <ArrowLeft className="mr-2 h-4 w-4" />
               戻る
             </Link>
@@ -102,12 +102,12 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>商品名</FormLabel>
+                  <FormLabel>アイテム名</FormLabel>
                   <FormControl>
                     <Input placeholder="Intel Core i9-14900K" {...field} />
                   </FormControl>
                   <FormDescription>
-                    商品の名称（1-200文字）
+                    アイテムの名称（1-200文字）
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -137,7 +137,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>商品のカテゴリ（必須）</FormDescription>
+                  <FormDescription>アイテムのカテゴリ（必須）</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -167,7 +167,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>商品のブランド（オプション）</FormDescription>
+                  <FormDescription>アイテムのブランド（オプション）</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -183,7 +183,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                     <Input placeholder="B0CHBJXXXXX" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormDescription>
-                    Amazon商品識別番号（10桁、オプション）
+                    Amazonアイテム識別番号（10桁、オプション）
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -199,13 +199,13 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                 <FormLabel>説明</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="商品の詳細説明"
+                    placeholder="アイテムの詳細説明"
                     {...field}
                     value={field.value || ''}
                   />
                 </FormControl>
                 <FormDescription>
-                  商品の詳細説明（オプション）
+                  アイテムの詳細説明（オプション）
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -233,7 +233,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
                     />
                   </FormControl>
                   <FormDescription>
-                    Amazon商品ページのURL（オプション）
+                    AmazonアイテムページのURL（オプション）
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -365,7 +365,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
             <Save className="mr-2 h-4 w-4" />
             {isPending
               ? '保存中...'
-              : product
+              : item
                 ? '更新する'
                 : '作成する'}
           </Button>
@@ -375,7 +375,7 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
             asChild
             disabled={isPending}
           >
-            <Link href="/admin/products">キャンセル</Link>
+            <Link href="/admin/items">キャンセル</Link>
           </Button>
         </div>
       </form>

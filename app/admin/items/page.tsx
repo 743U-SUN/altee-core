@@ -2,12 +2,12 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PlusCircle, FileUp } from 'lucide-react'
-import { ProductList } from './components/ProductList'
+import { ItemList } from './components/ItemList'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const metadata = {
-  title: '商品管理 | 管理画面',
-  description: '商品の管理',
+  title: 'アイテム管理 | 管理画面',
+  description: 'アイテムの管理',
 }
 
 interface PageProps {
@@ -19,36 +19,36 @@ interface PageProps {
   }>
 }
 
-export default async function ProductsPage({ searchParams }: PageProps) {
+export default async function ItemsPage({ searchParams }: PageProps) {
   const params = await searchParams
 
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">商品管理</h1>
+          <h1 className="text-3xl font-bold">アイテム管理</h1>
           <p className="mt-2 text-muted-foreground">
-            商品の作成・編集・削除
+            アイテムの作成・編集・削除
           </p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href="/admin/products/import">
+            <Link href="/admin/items/import">
               <FileUp className="mr-2 h-4 w-4" />
               CSV一括登録
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/admin/products/new">
+            <Link href="/admin/items/new">
               <PlusCircle className="mr-2 h-4 w-4" />
-              新規商品
+              新規アイテム
             </Link>
           </Button>
         </div>
       </div>
 
-      <Suspense fallback={<ProductListSkeleton />}>
-        <ProductList
+      <Suspense fallback={<ItemListSkeleton />}>
+        <ItemList
           search={params.search}
           categoryId={params.categoryId}
           brandId={params.brandId}
@@ -59,7 +59,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   )
 }
 
-function ProductListSkeleton() {
+function ItemListSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-20 w-full" />

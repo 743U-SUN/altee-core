@@ -4,7 +4,7 @@ import { CategoryForm } from '../components/CategoryForm'
 
 export const metadata = {
   title: 'カテゴリ編集 | 管理画面',
-  description: '商品カテゴリを編集',
+  description: 'アイテムカテゴリを編集',
 }
 
 interface PageProps {

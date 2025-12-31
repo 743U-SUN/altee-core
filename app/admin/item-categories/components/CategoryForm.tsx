@@ -4,12 +4,12 @@ import { useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { ProductCategory } from '@prisma/client'
+import { ItemCategory } from '@prisma/client'
 import {
-  productCategorySchema,
-  type ProductCategoryInput,
-  PRODUCT_TYPES,
-} from '@/lib/validation/product'
+  itemCategorySchema,
+  type ItemCategoryInput,
+  ITEM_TYPES,
+} from '@/lib/validation/item'
 import { createCategoryAction, updateCategoryAction } from '../actions'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,21 +36,21 @@ import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
 interface CategoryFormProps {
-  category?: ProductCategory
-  categories: ProductCategory[]
+  category?: ItemCategory
+  categories: ItemCategory[]
 }
 
 export function CategoryForm({ category, categories }: CategoryFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const form = useForm<ProductCategoryInput>({
-    resolver: zodResolver(productCategorySchema),
+  const form = useForm<ItemCategoryInput>({
+    resolver: zodResolver(itemCategorySchema),
     defaultValues: {
       name: category?.name || '',
       slug: category?.slug || '',
       parentId: category?.parentId || null,
-      productType: category?.productType || 'GENERAL',
+      itemType: category?.itemType || 'GENERAL',
       requiresCompatibilityCheck:
         category?.requiresCompatibilityCheck || false,
       icon: category?.icon || '',
@@ -59,7 +59,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
     },
   })
 
-  const onSubmit = (data: ProductCategoryInput) => {
+  const onSubmit = (data: ItemCategoryInput) => {
     startTransition(async () => {
       const result = category
         ? await updateCategoryAction(category.id, data)
@@ -71,7 +71,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
             ? 'カテゴリを更新しました'
             : 'カテゴリを作成しました'
         )
-        router.push('/admin/categories')
+        router.push('/admin/item-categories')
         router.refresh()
       } else {
         toast.error(result.error || '操作に失敗しました')
@@ -90,7 +90,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex items-center gap-4">
           <Button type="button" variant="outline" asChild>
-            <Link href="/admin/categories">
+            <Link href="/admin/item-categories">
               <ArrowLeft className="mr-2 h-4 w-4" />
               戻る
             </Link>
@@ -134,28 +134,28 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
 
           <FormField
             control={form.control}
-            name="productType"
+            name="itemType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>商品タイプ</FormLabel>
+                <FormLabel>アイテムタイプ</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="商品タイプを選択" />
+                      <SelectValue placeholder="アイテムタイプを選択" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {PRODUCT_TYPES.map((type) => (
+                    {ITEM_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>このカテゴリの商品タイプ</FormDescription>
+                <FormDescription>このカテゴリのアイテムタイプ</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -273,7 +273,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
               <div className="space-y-1 leading-none">
                 <FormLabel>互換性チェックが必要</FormLabel>
                 <FormDescription>
-                  PCパーツなど、互換性チェックが必要な商品の場合にチェック
+                  PCパーツなど、互換性チェックが必要なアイテムの場合にチェック
                 </FormDescription>
               </div>
             </FormItem>
@@ -295,7 +295,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
             asChild
             disabled={isPending}
           >
-            <Link href="/admin/categories">キャンセル</Link>
+            <Link href="/admin/item-categories">キャンセル</Link>
           </Button>
         </div>
       </form>

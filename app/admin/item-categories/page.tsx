@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export const metadata = {
   title: 'カテゴリ管理 | 管理画面',
-  description: '商品カテゴリの管理',
+  description: 'アイテムカテゴリの管理',
 }
 
 export default function CategoriesPage() {
@@ -17,11 +17,11 @@ export default function CategoriesPage() {
         <div>
           <h1 className="text-3xl font-bold">カテゴリ管理</h1>
           <p className="mt-2 text-muted-foreground">
-            商品カテゴリの作成・編集・削除
+            アイテムカテゴリの作成・編集・削除
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/categories/new">
+          <Link href="/admin/item-categories/new">
             <PlusCircle className="mr-2 h-4 w-4" />
             新規カテゴリ
           </Link>

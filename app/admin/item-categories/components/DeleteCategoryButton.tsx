@@ -21,14 +21,14 @@ import { toast } from 'sonner'
 interface DeleteCategoryButtonProps {
   categoryId: string
   categoryName: string
-  hasProducts: boolean
+  hasItems: boolean
   hasChildren: boolean
 }
 
 export function DeleteCategoryButton({
   categoryId,
   categoryName,
-  hasProducts,
+  hasItems,
   hasChildren,
 }: DeleteCategoryButtonProps) {
   const [open, setOpen] = useState(false)
@@ -49,7 +49,7 @@ export function DeleteCategoryButton({
     })
   }
 
-  const canDelete = !hasProducts && !hasChildren
+  const canDelete = !hasItems && !hasChildren
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -60,7 +60,7 @@ export function DeleteCategoryButton({
           disabled={!canDelete}
           title={
             !canDelete
-              ? '商品または子カテゴリが存在するため削除できません'
+              ? 'アイテムまたは子カテゴリが存在するため削除できません'
               : undefined
           }
         >

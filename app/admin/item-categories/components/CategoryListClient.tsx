@@ -1,6 +1,6 @@
 'use client'
 
-import { ProductCategory } from '@prisma/client'
+import { ItemCategory } from '@prisma/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,11 +14,11 @@ import { Badge } from '@/components/ui/badge'
 import { Edit, FolderTree } from 'lucide-react'
 import { DeleteCategoryButton } from './DeleteCategoryButton'
 
-type CategoryWithRelations = ProductCategory & {
-  parent: ProductCategory | null
-  children: ProductCategory[]
+type CategoryWithRelations = ItemCategory & {
+  parent: ItemCategory | null
+  children: ItemCategory[]
   _count: {
-    products: number
+    items: number
     children: number
   }
 }
@@ -66,7 +66,7 @@ export function CategoryListClient({ categories }: CategoryListClientProps) {
                   )}
                   <h3 className="text-lg font-semibold">{category.name}</h3>
                   <Badge variant="outline">{category.slug}</Badge>
-                  <Badge>{category.productType}</Badge>
+                  <Badge>{category.itemType}</Badge>
                   {category.requiresCompatibilityCheck && (
                     <Badge variant="secondary">互換性チェック</Badge>
                   )}
@@ -84,7 +84,7 @@ export function CategoryListClient({ categories }: CategoryListClientProps) {
                       親: <strong>{category.parent.name}</strong>
                     </span>
                   )}
-                  <span>商品数: {category._count.products}</span>
+                  <span>アイテム数: {category._count.items}</span>
                   <span>子カテゴリ: {category._count.children}</span>
                   <span>並び順: {category.sortOrder}</span>
                   {category.icon && <span>アイコン: {category.icon}</span>}
@@ -93,7 +93,7 @@ export function CategoryListClient({ categories }: CategoryListClientProps) {
 
               <div className="flex gap-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/admin/categories/${category.id}`}>
+                  <Link href={`/admin/item-categories/${category.id}`}>
                     <Edit className="mr-2 h-4 w-4" />
                     編集
                   </Link>
@@ -101,7 +101,7 @@ export function CategoryListClient({ categories }: CategoryListClientProps) {
                 <DeleteCategoryButton
                   categoryId={category.id}
                   categoryName={category.name}
-                  hasProducts={category._count.products > 0}
+                  hasItems={category._count.items > 0}
                   hasChildren={category._count.children > 0}
                 />
               </div>

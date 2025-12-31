@@ -1,33 +1,33 @@
-import { getProductsAction, getCategoriesAction } from '../actions'
-import { ProductListClient } from './ProductListClient'
+import { getItemsAction, getCategoriesAction } from '../actions'
+import { ItemListClient } from './ItemListClient'
 import { prisma } from '@/lib/prisma'
 
-interface ProductListProps {
+interface ItemListProps {
   search?: string
   categoryId?: string
   brandId?: string
   page?: number
 }
 
-export async function ProductList({
+export async function ItemList({
   search,
   categoryId,
   brandId,
   page = 1,
-}: ProductListProps) {
-  const [productsResult, categoriesResult, brands] = await Promise.all([
-    getProductsAction({ search, categoryId, brandId, page }),
+}: ItemListProps) {
+  const [itemsResult, categoriesResult, brands] = await Promise.all([
+    getItemsAction({ search, categoryId, brandId, page }),
     getCategoriesAction(),
     prisma.brand.findMany({
       orderBy: { name: 'asc' },
     }),
   ])
 
-  if (!productsResult.success || !productsResult.data) {
+  if (!itemsResult.success || !itemsResult.data) {
     return (
       <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
         <p className="text-sm text-destructive">
-          {productsResult.error || '商品の取得に失敗しました'}
+          {itemsResult.error || 'アイテムの取得に失敗しました'}
         </p>
       </div>
     )
@@ -39,11 +39,11 @@ export async function ProductList({
       : []
 
   return (
-    <ProductListClient
-      products={productsResult.data.products}
-      total={productsResult.data.total}
-      page={productsResult.data.page}
-      totalPages={productsResult.data.totalPages}
+    <ItemListClient
+      items={itemsResult.data.items}
+      total={itemsResult.data.total}
+      page={itemsResult.data.page}
+      totalPages={itemsResult.data.totalPages}
       categories={categories}
       brands={brands}
       currentFilters={{

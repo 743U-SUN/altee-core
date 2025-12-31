@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Upload, FileText, CheckCircle2, XCircle } from 'lucide-react'
-import { importProductsFromCSVAction } from '../../actions'
-import type { ProductCSVRow, CSVImportResult } from '@/lib/validation/product'
+import { importItemsFromCSVAction } from '../../actions'
+import type { ItemCSVRow, CSVImportResult } from '@/lib/validation/item'
 import { useRouter } from 'next/navigation'
 
 export function CSVImportForm() {
@@ -28,7 +28,7 @@ export function CSVImportForm() {
     }
   }
 
-  const parseCSV = async (file: File): Promise<ProductCSVRow[]> => {
+  const parseCSV = async (file: File): Promise<ItemCSVRow[]> => {
     const text = await file.text()
     const lines = text.split('\n').filter(line => line.trim())
 
@@ -37,11 +37,11 @@ export function CSVImportForm() {
     }
 
     const headers = lines[0].split(',').map(h => h.trim())
-    const rows: ProductCSVRow[] = []
+    const rows: ItemCSVRow[] = []
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',').map(v => v.trim())
-      const row: Partial<ProductCSVRow> = {}
+      const row: Partial<ItemCSVRow> = {}
 
       headers.forEach((header, index) => {
         const value = values[index] || ''
@@ -54,7 +54,7 @@ export function CSVImportForm() {
       })
 
       if (row.name && row.categorySlug) {
-        rows.push(row as ProductCSVRow)
+        rows.push(row as ItemCSVRow)
       }
     }
 
@@ -78,15 +78,15 @@ export function CSVImportForm() {
           return
         }
 
-        const importResult = await importProductsFromCSVAction(rows)
+        const importResult = await importItemsFromCSVAction(rows)
         setResult(importResult)
 
         if (importResult.success > 0) {
-          toast.success(`${importResult.success}件の商品を登録しました`)
+          toast.success(`${importResult.success}件のアイテムを登録しました`)
 
           if (importResult.failed === 0) {
-            // 全て成功したら商品一覧へ
-            router.push('/admin/products')
+            // 全て成功したらアイテム一覧へ
+            router.push('/admin/items')
             router.refresh()
           }
         }
