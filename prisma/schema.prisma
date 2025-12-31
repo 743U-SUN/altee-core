@@ -623,27 +623,19 @@ enum ProductType {
   GENERAL      // その他
 }
 
-// カテゴリタイプ（カテゴリの性質を定義）
-enum CategoryType {
-  PC_PART      // 互換性チェック対象（CPU、GPU等）
-  PERIPHERAL   // 周辺機器（マウス、キーボード等）
-  FOOD         // 食品
-  GENERAL      // その他
-}
-
 // 商品カテゴリ（階層構造）
 model ProductCategory {
-  id           String       @id @default(cuid())
-  name         String       // "CPU", "飲料", "マウス"
-  slug         String       @unique
-  parentId     String?      // 親カテゴリID（階層構造用）
-  productType  ProductType  @default(GENERAL) // 商品タイプ
-  categoryType CategoryType @default(GENERAL) // カテゴリタイプ
-  icon         String?      // Lucideアイコン名
-  description  String?
-  sortOrder    Int          @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id                         String       @id @default(cuid())
+  name                       String       // "CPU", "飲料", "マウス"
+  slug                       String       @unique
+  parentId                   String?      // 親カテゴリID（階層構造用）
+  productType                ProductType  @default(GENERAL) // 商品タイプ
+  requiresCompatibilityCheck Boolean      @default(false)   // 互換性チェック必要か（PC_PARTならtrue）
+  icon                       String?      // Lucideアイコン名
+  description                String?
+  sortOrder                  Int          @default(0)
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
 
   // リレーション
   parent       ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
@@ -651,7 +643,6 @@ model ProductCategory {
   products     Product[]
 
   @@index([productType])
-  @@index([categoryType])
   @@index([sortOrder])
   @@map("product_categories")
 }
@@ -666,7 +657,6 @@ model Product {
   description    String?       // 商品説明
   categoryId     String        // カテゴリID
   brandId        String?       // ブランドID（オプショナル）
-  productType    ProductType   @default(GENERAL) // 商品タイプ
 
   // 画像管理（既存Deviceと同様）
   amazonUrl          String?   // Amazon URL
@@ -689,9 +679,9 @@ model Product {
   brand          Brand?          @relation("ProductBrand", fields: [brandId], references: [id])
   userProducts   UserProduct[]
 
-  @@index([productType])
   @@index([categoryId])
   @@index([brandId])
+  @@index([createdAt])
   @@map("products")
 }
 
