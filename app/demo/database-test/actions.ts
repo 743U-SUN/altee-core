@@ -82,52 +82,52 @@ export async function getAllUsers() {
   }
 }
 
-// テスト商品作成
-export async function createTestProduct() {
+// テストアイテム作成
+export async function createTestItem() {
   try {
-    console.log('🛍️ テスト商品作成開始...')
+    console.log('🛍️ テストアイテム作成開始...')
     
     const randomId = Math.random().toString(36).substring(2, 8)
 
     // デモ用カテゴリを取得または作成
-    let demoCategory = await prisma.productCategory.findFirst({
+    let demoCategory = await prisma.itemCategory.findFirst({
       where: { slug: 'demo-category' }
     })
 
     if (!demoCategory) {
-      demoCategory = await prisma.productCategory.create({
+      demoCategory = await prisma.itemCategory.create({
         data: {
           name: 'デモカテゴリ',
           slug: 'demo-category',
-          productType: 'GENERAL',
+          itemType: 'GENERAL',
           requiresCompatibilityCheck: false,
           sortOrder: 999,
         }
       })
     }
 
-    const product = await prisma.product.create({
+    const product = await prisma.item.create({
       data: {
-        name: `テスト商品 ${randomId}`,
-        description: `これはテスト用の商品です。ID: ${randomId}`,
+        name: `テストアイテム ${randomId}`,
+        description: `これはテスト用のアイテムです。ID: ${randomId}`,
         categoryId: demoCategory.id,
       },
     })
     
-    console.log('✅ 商品作成成功:', product)
-    console.log('🎉 テスト商品作成完了')
+    console.log('✅ アイテム作成成功:', item)
+    console.log('🎉 テストアイテム作成完了')
   } catch (error) {
-    console.error('❌ 商品作成失敗:', error)
+    console.error('❌ アイテム作成失敗:', error)
     throw error
   } finally {
     redirect('/demo/database-test')
   }
 }
 
-// 全商品取得
-export async function getAllProducts() {
+// 全アイテム取得
+export async function getAllItems() {
   try {
-    const products = await prisma.product.findMany({
+    const products = await prisma.item.findMany({
       orderBy: {
         createdAt: 'desc',
       },
@@ -135,7 +135,7 @@ export async function getAllProducts() {
     
     return products
   } catch (error) {
-    console.error('❌ 商品取得失敗:', error)
+    console.error('❌ アイテム取得失敗:', error)
     return []
   }
 }
@@ -178,36 +178,36 @@ export async function deleteAllTestUsers() {
   }
 }
 
-// テスト商品全削除
-export async function deleteAllTestProducts() {
+// テストアイテム全削除
+export async function deleteAllTestItems() {
   try {
-    console.log('🗑️ テスト商品削除開始...')
+    console.log('🗑️ テストアイテム削除開始...')
     
-    const testProducts = await prisma.product.findMany({
+    const testItems = await prisma.item.findMany({
       where: {
         name: {
-          startsWith: 'テスト商品',
+          startsWith: 'テストアイテム',
         },
       },
     })
     
-    console.log(`🔍 削除対象商品数: ${testProducts.length}`)
+    console.log(`🔍 削除対象アイテム数: ${testItems.length}`)
     
-    if (testProducts.length > 0) {
-      const deleteResult = await prisma.product.deleteMany({
+    if (testItems.length > 0) {
+      const deleteResult = await prisma.item.deleteMany({
         where: {
           name: {
-            startsWith: 'テスト商品',
+            startsWith: 'テストアイテム',
           },
         },
       })
       
-      console.log('✅ テスト商品削除完了:', deleteResult)
+      console.log('✅ テストアイテム削除完了:', deleteResult)
     }
     
-    console.log('🎉 商品削除処理完了')
+    console.log('🎉 アイテム削除処理完了')
   } catch (error) {
-    console.error('❌ 商品削除処理失敗:', error)
+    console.error('❌ アイテム削除処理失敗:', error)
     throw error
   } finally {
     redirect('/demo/database-test')

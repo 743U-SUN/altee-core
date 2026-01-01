@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { testConnection, createTestUser, createTestProduct, getAllUsers, getAllProducts, deleteAllTestUsers, deleteAllTestProducts } from './actions'
+import { testConnection, createTestUser, createTestItem, getAllUsers, getAllItems, deleteAllTestUsers, deleteAllTestItems } from './actions'
 
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic'
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export default async function DatabaseTestPage() {
   // 初期データ取得
   const users = await getAllUsers()
-  const products = await getAllProducts()
+  const products = await getAllItems()
 
   return (
     <div className="container mx-auto p-8 max-w-4xl">
@@ -62,16 +62,16 @@ export default async function DatabaseTestPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm">商品操作</h4>
+                <h4 className="font-semibold text-sm">アイテム操作</h4>
                 <div className="flex gap-2">
-                  <form action={createTestProduct}>
+                  <form action={createTestItem}>
                     <Button type="submit" variant="default" size="sm">
-                      テスト商品作成
+                      テストアイテム作成
                     </Button>
                   </form>
-                  <form action={deleteAllTestProducts}>
+                  <form action={deleteAllTestItems}>
                     <Button type="submit" variant="destructive" size="sm">
-                      全テスト商品削除
+                      全テストアイテム削除
                     </Button>
                   </form>
                 </div>
@@ -118,20 +118,20 @@ export default async function DatabaseTestPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>3. 現在の商品データ</CardTitle>
+              <CardTitle>3. 現在のアイテムデータ</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">総商品数</Badge>
-                  <span className="font-mono">{products.length}</span>
+                  <Badge variant="secondary">総アイテム数</Badge>
+                  <span className="font-mono">{items.length}</span>
                 </div>
                 
-                {products.length > 0 ? (
+                {items.length > 0 ? (
                   <div className="mt-4">
-                    <h4 className="font-semibold mb-2">商品一覧:</h4>
+                    <h4 className="font-semibold mb-2">アイテム一覧:</h4>
                     <div className="grid gap-2 max-h-64 overflow-y-auto">
-                      {products.map((product) => (
+                      {items.map((item) => (
                         <div key={product.id} className="p-3 border rounded-lg">
                           <div className="font-mono text-sm text-gray-600">ID: {product.id.slice(0, 8)}...</div>
                           <div><strong>Name:</strong> {product.name}</div>
@@ -144,7 +144,7 @@ export default async function DatabaseTestPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-gray-500 mt-4">商品データがありません</p>
+                  <p className="text-gray-500 mt-4">アイテムデータがありません</p>
                 )}
               </div>
             </CardContent>
