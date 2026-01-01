@@ -191,7 +191,7 @@ const adminNavItems: NavItem[] = [
     isActive: false,
   },
   {
-    title: "Attirbutes",
+    title: "Attributes",
     url: "/admin/attributes",
     icon: Tag,
     isActive: false,

@@ -10,7 +10,7 @@ async function main() {
 
 
   // アイテムカテゴリの作成
-  console.log('Creating product categories...')
+  console.log('Creating item categories...')
 
   // PCパーツ
   const pcPartsCategory = await prisma.itemCategory.upsert({
