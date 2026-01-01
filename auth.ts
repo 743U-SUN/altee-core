@@ -53,7 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // OAuth画像URLを取得・更新
       if (!account || !profile || !user.id) return true
 
-      const oauthImageUrl = extractOAuthImageUrl(account.provider, profile as any)
+      const oauthImageUrl = extractOAuthImageUrl(account.provider, profile as Record<string, unknown>)
       if (oauthImageUrl) {
         const updated = await updateUserImage(user.id, oauthImageUrl)
         if (updated) {
