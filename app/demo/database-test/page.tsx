@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export default async function DatabaseTestPage() {
   // 初期データ取得
   const users = await getAllUsers()
-  const products = await getAllItems()
+  const items = await getAllItems()
 
   return (
     <div className="container mx-auto p-8 max-w-4xl">
@@ -92,7 +92,7 @@ export default async function DatabaseTestPage() {
                   <Badge variant="secondary">総ユーザー数</Badge>
                   <span className="font-mono">{users.length}</span>
                 </div>
-                
+
                 {users.length > 0 ? (
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2">ユーザー一覧:</h4>
@@ -126,18 +126,18 @@ export default async function DatabaseTestPage() {
                   <Badge variant="secondary">総アイテム数</Badge>
                   <span className="font-mono">{items.length}</span>
                 </div>
-                
+
                 {items.length > 0 ? (
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2">アイテム一覧:</h4>
                     <div className="grid gap-2 max-h-64 overflow-y-auto">
                       {items.map((item) => (
-                        <div key={product.id} className="p-3 border rounded-lg">
-                          <div className="font-mono text-sm text-gray-600">ID: {product.id.slice(0, 8)}...</div>
-                          <div><strong>Name:</strong> {product.name}</div>
-                          <div><strong>Description:</strong> {product.description || '(null)'}</div>
+                        <div key={item.id} className="p-3 border rounded-lg">
+                          <div className="font-mono text-sm text-gray-600">ID: {item.id.slice(0, 8)}...</div>
+                          <div><strong>Name:</strong> {item.name}</div>
+                          <div><strong>Description:</strong> {item.description || '(null)'}</div>
                           <div className="text-xs text-gray-500">
-                            作成: {product.createdAt.toLocaleString()}
+                            作成: {item.createdAt.toLocaleString()}
                           </div>
                         </div>
                       ))}
@@ -160,9 +160,9 @@ export default async function DatabaseTestPage() {
             <p className="text-sm text-gray-600 mb-4">
               データベースの内容をGUIで確認できます。新しく追加されたProductテーブルも確認できます。
             </p>
-            <a 
-              href="http://localhost:5555" 
-              target="_blank" 
+            <a
+              href="http://localhost:5555"
+              target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
             >
