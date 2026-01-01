@@ -14,6 +14,31 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      // Product → Item migration redirects
+      {
+        source: '/admin/products/:path*',
+        destination: '/admin/items/:path*',
+        permanent: true,
+      },
+      {
+        source: '/admin/categories/:path*',
+        destination: '/admin/item-categories/:path*',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/products/:path*',
+        destination: '/dashboard/items/:path*',
+        permanent: true,
+      },
+      {
+        source: '/@:handle/products/:path*',
+        destination: '/@:handle/items/:path*',
+        permanent: true,
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {
@@ -54,7 +79,7 @@ const nextConfig: NextConfig = {
       config.watchOptions = {
         poll: 5000,
         aggregateTimeout: 300,
-        ignored: [ '**/node_modules/**', '**/.git/**', '**/.next/**' ]
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**']
       }
     }
     return config

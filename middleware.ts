@@ -9,6 +9,7 @@ const SYSTEM_ROUTES = [
   'manifest.webmanifest',
   'api',
   'devices', // /devicesページ
+  'items',   // /itemsページ
 ] as const
 
 export function middleware(req: NextRequest) {
