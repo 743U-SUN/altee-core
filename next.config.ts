@@ -37,6 +37,17 @@ const nextConfig: NextConfig = {
         destination: '/@:handle/items/:path*',
         permanent: true,
       },
+      // Device → Item migration redirects (Phase 10)
+      {
+        source: '/devices/:path*',
+        destination: '/items/:path*',
+        permanent: true,
+      },
+      {
+        source: '/@:handle/devices/:path*',
+        destination: '/@:handle/items/:path*',
+        permanent: true,
+      },
     ]
   },
   images: {

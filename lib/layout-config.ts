@@ -155,7 +155,7 @@ const defaultNavItems: NavItem[] = [
     url: "/dashboard",
     icon: CogIcon,
     isActive: false,
-  }  
+  }
 ]
 
 const adminNavItems: NavItem[] = [
@@ -176,13 +176,8 @@ const adminNavItems: NavItem[] = [
     url: "/admin/links",
     icon: Link,
     isActive: false,
-  },  
-  {
-    title: "Devices",
-    url: "/admin/devices",
-    icon: MonitorSmartphone,
-    isActive: false,
-  },    
+  },
+  // Devices removed in Phase 10 (Device system deleted)
   {
     title: "Article",
     url: "/admin/articles",
@@ -223,7 +218,7 @@ const dashboardNavItems: NavItem[] = [
     url: "/dashboard/userdata",
     icon: Logs,
     isActive: false,
-  },  
+  },
   {
     title: "SNSリンク",
     url: "/dashboard/links",
@@ -236,12 +231,7 @@ const dashboardNavItems: NavItem[] = [
     icon: Tv,
     isActive: false,
   },
-  {
-    title: "デバイス管理",
-    url: "/dashboard/devices",
-    icon: MonitorSmartphone,
-    isActive: false,
-  },  
+  // デバイス管理 removed in Phase 10 (Device system deleted)
   {
     title: "FAQ管理",
     url: "/dashboard/faq",
@@ -253,7 +243,7 @@ const dashboardNavItems: NavItem[] = [
     url: "/dashboard/notifications",
     icon: Bell,
     isActive: false,
-  },  
+  },
   {
     title: "Home",
     url: "/",

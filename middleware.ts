@@ -8,7 +8,7 @@ const SYSTEM_ROUTES = [
   'favicon.ico',
   'manifest.webmanifest',
   'api',
-  'devices', // /devicesページ
+  // 'devices' removed in Phase 10 (Device system deleted)
   'items',   // /itemsページ
 ] as const
 
