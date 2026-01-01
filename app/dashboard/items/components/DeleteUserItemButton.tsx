@@ -7,26 +7,26 @@ import { Loader2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { deleteUserItem } from "@/app/actions/item-actions"
 
-interface DeleteUserProductButtonProps {
-  userProductId: string
+interface DeleteUserItemButtonProps {
+  userItemId: string
   userId: string
-  productName: string
+  itemName: string
   onDelete: () => void
 }
 
-export function DeleteUserProductButton({
-  userProductId,
+export function DeleteUserItemButton({
+  userItemId,
   userId,
-  productName,
+  itemName,
   onDelete
-}: DeleteUserProductButtonProps) {
+}: DeleteUserItemButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const result = await deleteUserItem(userId, userProductId)
+      const result = await deleteUserItem(userId, userItemId)
 
       if (result.success) {
         toast.success('アイテムを削除しました')
@@ -58,7 +58,7 @@ export function DeleteUserProductButton({
             <AlertDialogTitle>アイテムを削除しますか？</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <span className="block">
-                <span className="font-medium">「{productName}」</span>
+                <span className="font-medium">「{itemName}」</span>
                 をマイアイテムから削除します。
               </span>
               <span className="block text-sm">

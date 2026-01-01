@@ -18,39 +18,39 @@ import { UserItemWithDetails } from "@/types/item"
 import { Item, ItemCategory } from '@prisma/client'
 import { ProductImage } from "@/components/products/product-image"
 
-type SearchProductResult = Item & {
+type SearchItemResult = Item & {
   category: ItemCategory
   brand: { id: string; name: string } | null
 }
 
-const userProductSchema = z.object({
+const userItemSchema = z.object({
   isPublic: z.boolean().default(true),
   review: z.string().optional(),
 })
 
-interface ExistingProductSelectorProps {
+interface ExistingItemSelectorProps {
   userId: string
   categories: { id: string; name: string }[]
   brands: { id: string; name: string }[]
-  onProductAdded: (userItem: UserItemWithDetails) => void
+  onItemAdded: (userItem: UserItemWithDetails) => void
 }
 
-const ExistingProductSelectorComponent = ({
+const ExistingItemSelectorComponent = ({
   userId,
   categories,
   brands,
-  onProductAdded
-}: ExistingProductSelectorProps) => {
+  onItemAdded
+}: ExistingItemSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<SearchProductResult[]>([])
+  const [searchResults, setSearchResults] = useState<SearchItemResult[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all')
   const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
   const [isSearching, setIsSearching] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<SearchProductResult | null>(null)
+  const [selectedItem, setSelectedItem] = useState<SearchItemResult | null>(null)
 
   const form = useForm({
-    resolver: zodResolver(userProductSchema),
+    resolver: zodResolver(userItemSchema),
     defaultValues: {
       isPublic: true,
     }
@@ -67,7 +67,7 @@ const ExistingProductSelectorComponent = ({
       })
 
       if (result.success && result.data) {
-        setSearchResults(result.data as SearchProductResult[])
+        setSearchResults(result.data as SearchItemResult[])
       } else {
         setSearchResults([])
       }
@@ -85,29 +85,29 @@ const ExistingProductSelectorComponent = ({
   }, [selectedCategoryId, selectedBrandId, searchQuery])
 
   // 既存アイテムからの登録
-  const handleSubmit = async (data: z.infer<typeof userProductSchema>) => {
-    if (!selectedProduct) return
+  const handleSubmit = async (data: z.infer<typeof userItemSchema>) => {
+    if (!selectedItem) return
 
     setIsSubmitting(true)
     try {
       // ユーザーアイテムの重複チェック
-      const alreadyRegistered = await checkUserItemExists(userId, selectedProduct.id)
+      const alreadyRegistered = await checkUserItemExists(userId, selectedItem.id)
       if (alreadyRegistered) {
         toast.error('このアイテムは既に登録されています')
         return
       }
 
       const result = await createUserItem(userId, {
-        itemId: selectedProduct.id,
+        itemId: selectedItem.id,
         ...data,
       })
 
       if (result.success && result.data) {
         toast.success('アイテムを登録しました')
-        onProductAdded(result.data as UserItemWithDetails)
+        onItemAdded(result.data as UserItemWithDetails)
         // Reset form
         form.reset()
-        setSelectedProduct(null)
+        setSelectedItem(null)
         setSearchQuery('')
         setSearchResults([])
       } else {
@@ -172,37 +172,37 @@ const ExistingProductSelectorComponent = ({
 
       {searchResults.length > 0 && (
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          {searchResults.map((product) => (
+          {searchResults.map((item) => (
             <Card
-              key={product.id}
-              className={`cursor-pointer hover:shadow-md transition-shadow ${selectedProduct?.id === product.id ? 'ring-2 ring-primary' : ''
+              key={item.id}
+              className={`cursor-pointer hover:shadow-md transition-shadow ${selectedItem?.id === item.id ? 'ring-2 ring-primary' : ''
                 }`}
-              onClick={() => setSelectedProduct(product)}
+              onClick={() => setSelectedItem(item)}
             >
               <CardContent className="p-3">
                 <div className="flex items-center space-x-3">
                   <ProductImage
-                    imageStorageKey={product.imageStorageKey}
-                    customImageUrl={product.customImageUrl}
-                    amazonImageUrl={product.amazonImageUrl}
-                    alt={product.name}
+                    imageStorageKey={item.imageStorageKey}
+                    customImageUrl={item.customImageUrl}
+                    amazonImageUrl={item.amazonImageUrl}
+                    alt={item.name}
                     width={50}
                     height={50}
                     className="w-12 h-12"
                   />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm line-clamp-1">{product.name}</h4>
+                    <h4 className="font-medium text-sm line-clamp-1">{item.name}</h4>
                     <div className="flex items-center space-x-2 mt-1">
                       <Badge variant="outline" className="text-xs">
-                        {product.category.name}
+                        {item.category.name}
                       </Badge>
-                      {product.brand && (
+                      {item.brand && (
                         <Badge variant="secondary" className="text-xs">
-                          {product.brand.name}
+                          {item.brand.name}
                         </Badge>
                       )}
                       <span className="text-xs text-muted-foreground">
-                        ASIN: {product.asin}
+                        ASIN: {item.asin}
                       </span>
                     </div>
                   </div>
@@ -213,7 +213,7 @@ const ExistingProductSelectorComponent = ({
         </div>
       )}
 
-      {selectedProduct && (
+      {selectedItem && (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -242,13 +242,13 @@ const ExistingProductSelectorComponent = ({
 }
 
 // Propsの比較関数
-const arePropsEqual = (prevProps: ExistingProductSelectorProps, nextProps: ExistingProductSelectorProps) => {
+const arePropsEqual = (prevProps: ExistingItemSelectorProps, nextProps: ExistingItemSelectorProps) => {
   return (
     prevProps.userId === nextProps.userId &&
     prevProps.categories.length === nextProps.categories.length &&
     prevProps.brands.length === nextProps.brands.length &&
-    prevProps.onProductAdded === nextProps.onProductAdded
+    prevProps.onItemAdded === nextProps.onItemAdded
   )
 }
 
-export const ExistingProductSelector = memo(ExistingProductSelectorComponent, arePropsEqual)
+export const ExistingItemSelector = memo(ExistingItemSelectorComponent, arePropsEqual)

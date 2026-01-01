@@ -17,50 +17,50 @@ import { updateUserItem } from "@/app/actions/item-actions"
 import { UserItemWithDetails } from "@/types/item"
 import { ProductImage } from "@/components/products/product-image"
 
-const userProductSchema = z.object({
+const userItemSchema = z.object({
   isPublic: z.boolean(),
   review: z.string().optional(),
 })
 
-interface EditUserProductModalProps {
+interface EditUserItemModalProps {
   isOpen: boolean
   onClose: () => void
-  userProduct: UserItemWithDetails
+  userItem: UserItemWithDetails
   userId: string
-  onUpdate: (updatedUserProduct: UserItemWithDetails) => void
+  onUpdate: (updatedUserItem: UserItemWithDetails) => void
 }
 
-export function EditUserProductModal({
+export function EditUserItemModal({
   isOpen,
   onClose,
-  userProduct,
+  userItem,
   userId,
   onUpdate
-}: EditUserProductModalProps) {
+}: EditUserItemModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const form = useForm<z.infer<typeof userProductSchema>>({
-    resolver: zodResolver(userProductSchema),
+  const form = useForm<z.infer<typeof userItemSchema>>({
+    resolver: zodResolver(userItemSchema),
     defaultValues: {
-      isPublic: userProduct.isPublic,
-      review: userProduct.review || '',
+      isPublic: userItem.isPublic,
+      review: userItem.review || '',
     }
   })
 
-  const onSubmit = async (data: z.infer<typeof userProductSchema>) => {
+  const onSubmit = async (data: z.infer<typeof userItemSchema>) => {
     setIsSubmitting(true)
     try {
-      const result = await updateUserItem(userId, userProduct.id, data)
+      const result = await updateUserItem(userId, userItem.id, data)
 
       if (result.success) {
         toast.success('アイテム情報を更新しました')
         // 更新されたデータで親コンポーネントに通知
-        const updatedUserProduct = {
-          ...userProduct,
+        const updatedUserItem = {
+          ...userItem,
           isPublic: data.isPublic,
           review: data.review || null,
         }
-        onUpdate(updatedUserProduct)
+        onUpdate(updatedUserItem)
         onClose()
       } else {
         toast.error(result.error || 'アイテム情報の更新に失敗しました')
@@ -87,31 +87,31 @@ export function EditUserProductModal({
           <CardHeader className="pb-2">
             <div className="flex items-center space-x-2">
               <Badge variant="outline">
-                {userProduct.item.category.name}
+                {userItem.item.category.name}
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-start space-x-4">
               <ProductImage
-                imageStorageKey={userProduct.item.imageStorageKey}
-                customImageUrl={userProduct.item.customImageUrl}
-                amazonImageUrl={userProduct.item.amazonImageUrl}
-                alt={userProduct.item.name}
+                imageStorageKey={userItem.item.imageStorageKey}
+                customImageUrl={userItem.item.customImageUrl}
+                amazonImageUrl={userItem.item.amazonImageUrl}
+                alt={userItem.item.name}
                 width={80}
                 height={80}
                 className="w-20 h-20 flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-base leading-tight">
-                  {userProduct.item.name}
+                  {userItem.item.name}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  ASIN: {userProduct.item.asin}
+                  ASIN: {userItem.item.asin}
                 </p>
-                {userProduct.item.ogDescription && (
+                {userItem.item.ogDescription && (
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {userProduct.item.ogDescription}
+                    {userItem.item.ogDescription}
                   </p>
                 )}
               </div>
@@ -169,7 +169,7 @@ export function EditUserProductModal({
 
             {/* 登録日表示 */}
             <div className="text-sm text-muted-foreground border-t pt-4">
-              登録日: {new Date(userProduct.createdAt).toLocaleDateString('ja-JP', {
+              登録日: {new Date(userItem.createdAt).toLocaleDateString('ja-JP', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'

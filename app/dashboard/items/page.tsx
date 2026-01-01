@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getUserItems } from "@/app/actions/item-actions"
 import { UserItemWithDetails } from "@/types/item"
-import { UserProductListSection } from "./components/UserProductListSection"
+import { UserItemListSection } from "./components/UserItemListSection"
 import { prisma } from '@/lib/prisma'
 
 export default async function UserItemsPage() {
@@ -47,7 +47,7 @@ export default async function UserItemsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <UserProductListSection
+              <UserItemListSection
                 initialUserProducts={userItems as UserItemWithDetails[]}
                 userId={session.user.id}
                 categories={categories}

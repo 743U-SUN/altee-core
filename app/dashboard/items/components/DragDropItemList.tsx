@@ -27,21 +27,21 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { deleteUserItem, reorderUserItems, updateUserItem } from "@/app/actions/item-actions"
 
-// EditUserProductModalの遅延読み込み
-const EditUserProductModal = dynamic(() => import('./EditUserProductModal').then(mod => ({ default: mod.EditUserProductModal })), {
+// EditUserItemModalの遅延読み込み
+const EditUserItemModal = dynamic(() => import('./EditUserItemModal').then(mod => ({ default: mod.EditUserItemModal })), {
   loading: () => <div className="h-8 w-16 bg-muted animate-pulse rounded-md" />,
   ssr: false
 })
 
-interface DragDropProductListProps {
-  userProducts: UserItemWithDetails[]
+interface DragDropItemListProps {
+  userItems: UserItemWithDetails[]
   userId: string
-  onProductsChange: (products: UserItemWithDetails[]) => void
+  onItemsChange: (items: UserItemWithDetails[]) => void
 }
 
-export function DragDropProductList({ userProducts, userId, onProductsChange }: DragDropProductListProps) {
+export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropItemListProps) {
   const [activeItem, setActiveItem] = useState<UserItemWithDetails | null>(null)
-  const [editingProduct, setEditingProduct] = useState<UserItemWithDetails | null>(null)
+  const [editingItem, setEditingItem] = useState<UserItemWithDetails | null>(null)
 
   // DnD センサー設定（モバイル対応）
   const sensors = useSensors(
@@ -55,8 +55,8 @@ export function DragDropProductList({ userProducts, userId, onProductsChange }: 
   )
 
   const handleDragStart = (event: DragStartEvent) => {
-    const product = userProducts.find(p => p.id === event.active.id)
-    setActiveItem(product || null)
+    const item = userItems.find(p => p.id === event.active.id)
+    setActiveItem(item || null)
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -65,60 +65,60 @@ export function DragDropProductList({ userProducts, userId, onProductsChange }: 
 
     if (!over || active.id === over.id) return
 
-    const oldIndex = userProducts.findIndex((product) => product.id === active.id)
-    const newIndex = userProducts.findIndex((product) => product.id === over.id)
+    const oldIndex = userItems.findIndex((item) => item.id === active.id)
+    const newIndex = userItems.findIndex((item) => item.id === over.id)
 
     if (oldIndex === -1 || newIndex === -1) return
 
-    const newProducts = arrayMove(userProducts, oldIndex, newIndex)
-    onProductsChange(newProducts)
+    const newItems = arrayMove(userItems, oldIndex, newIndex)
+    onItemsChange(newItems)
 
     // サーバーで並び順を更新
-    const result = await reorderUserItems(userId, newProducts.map(product => product.id))
+    const result = await reorderUserItems(userId, newItems.map(item => item.id))
 
     if (!result.success) {
       toast.error("並び替えに失敗しました")
       // エラー時は元の順序に戻す
-      onProductsChange(userProducts)
+      onItemsChange(userItems)
     }
   }
 
-  const handleVisibilityToggle = async (product: UserItemWithDetails) => {
-    const result = await updateUserItem(userId, product.id, {
-      isPublic: !product.isPublic
+  const handleVisibilityToggle = async (item: UserItemWithDetails) => {
+    const result = await updateUserItem(userId, item.id, {
+      isPublic: !item.isPublic
     })
 
     if (result.success) {
-      const updatedProducts = userProducts.map(p =>
-        p.id === product.id ? { ...p, isPublic: !p.isPublic } : p
+      const updatedItems = userItems.map(p =>
+        p.id === item.id ? { ...p, isPublic: !p.isPublic } : p
       )
-      onProductsChange(updatedProducts)
-      toast.success(product.isPublic ? "アイテムを非公開にしました" : "アイテムを公開しました")
+      onItemsChange(updatedItems)
+      toast.success(item.isPublic ? "アイテムを非公開にしました" : "アイテムを公開しました")
     } else {
       toast.error("表示設定の変更に失敗しました")
     }
   }
 
-  const handleDeleteProduct = async (product: UserItemWithDetails) => {
-    if (!confirm(`${product.item.name}を削除しますか？`)) return
+  const handleDeleteItem = async (item: UserItemWithDetails) => {
+    if (!confirm(`${item.item.name}を削除しますか？`)) return
 
-    const result = await deleteUserItem(userId, product.id)
+    const result = await deleteUserItem(userId, item.id)
 
     if (result.success) {
-      const updatedProducts = userProducts.filter(p => p.id !== product.id)
-      onProductsChange(updatedProducts)
+      const updatedItems = userItems.filter(p => p.id !== item.id)
+      onItemsChange(updatedItems)
       toast.success("アイテムを削除しました")
     } else {
       toast.error("アイテムの削除に失敗しました")
     }
   }
 
-  const handleUpdate = (updatedProduct: UserItemWithDetails) => {
-    const updatedProducts = userProducts.map(p =>
-      p.id === updatedProduct.id ? updatedProduct : p
+  const handleUpdate = (updatedItem: UserItemWithDetails) => {
+    const updatedItems = userItems.map(p =>
+      p.id === updatedItem.id ? updatedItem : p
     )
-    onProductsChange(updatedProducts)
-    setEditingProduct(null)
+    onItemsChange(updatedItems)
+    setEditingItem(null)
   }
 
   return (
@@ -128,15 +128,15 @@ export function DragDropProductList({ userProducts, userId, onProductsChange }: 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={userProducts.map(product => product.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={userItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
-            {userProducts.map((product) => (
-              <SortableProductItem
-                key={product.id}
-                product={product}
-                onEdit={() => setEditingProduct(product)}
-                onVisibilityToggle={() => handleVisibilityToggle(product)}
-                onDelete={() => handleDeleteProduct(product)}
+            {userItems.map((item) => (
+              <SortableItemItem
+                key={item.id}
+                item={item}
+                onEdit={() => setEditingItem(item)}
+                onVisibilityToggle={() => handleVisibilityToggle(item)}
+                onDelete={() => handleDeleteItem(item)}
               />
             ))}
           </div>
@@ -144,19 +144,19 @@ export function DragDropProductList({ userProducts, userId, onProductsChange }: 
 
         <DragOverlay>
           {activeItem && (
-            <ProductItemCard
-              product={activeItem}
+            <ItemCard
+              item={activeItem}
               isDragging
             />
           )}
         </DragOverlay>
       </DndContext>
 
-      {editingProduct && (
-        <EditUserProductModal
+      {editingItem && (
+        <EditUserItemModal
           isOpen={true}
-          onClose={() => setEditingProduct(null)}
-          userProduct={editingProduct}
+          onClose={() => setEditingItem(null)}
+          userItem={editingItem}
           userId={userId}
           onUpdate={handleUpdate}
         />
@@ -166,13 +166,13 @@ export function DragDropProductList({ userProducts, userId, onProductsChange }: 
 }
 
 // ソート可能なアイテム
-function SortableProductItem({
-  product,
+function SortableItemItem({
+  item,
   onEdit,
   onVisibilityToggle,
   onDelete
 }: {
-  product: UserItemWithDetails
+  item: UserItemWithDetails
   onEdit: () => void
   onVisibilityToggle: () => void
   onDelete: () => void
@@ -184,7 +184,7 @@ function SortableProductItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: product.id })
+  } = useSortable({ id: item.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -193,8 +193,8 @@ function SortableProductItem({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <ProductItemCard
-        product={product}
+      <ItemCard
+        item={item}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
         onEdit={onEdit}
@@ -206,15 +206,15 @@ function SortableProductItem({
 }
 
 // アイテムカード
-function ProductItemCard({
-  product,
+function ItemCard({
+  item,
   isDragging = false,
   dragHandleProps,
   onEdit,
   onVisibilityToggle,
   onDelete
 }: {
-  product: UserItemWithDetails
+  item: UserItemWithDetails
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
   onEdit?: () => void
@@ -232,10 +232,10 @@ function ProductItemCard({
 
         <div className="flex-shrink-0">
           <ProductImage
-            imageStorageKey={product.item.imageStorageKey}
-            customImageUrl={product.item.customImageUrl}
-            amazonImageUrl={product.item.amazonImageUrl}
-            alt={product.item.name}
+            imageStorageKey={item.item.imageStorageKey}
+            customImageUrl={item.item.customImageUrl}
+            amazonImageUrl={item.item.amazonImageUrl}
+            alt={item.item.name}
             width={48}
             height={48}
             className="w-12 h-12 rounded"
@@ -244,18 +244,18 @@ function ProductItemCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="font-medium text-sm line-clamp-1 max-w-xs">{product.item.name}</div>
+            <div className="font-medium text-sm line-clamp-1 max-w-xs">{item.item.name}</div>
             <Badge variant="outline" className="text-xs flex-shrink-0">
-              {product.item.category.name}
+              {item.item.category.name}
             </Badge>
-            {product.item.brand && (
+            {item.item.brand && (
               <Badge variant="secondary" className="text-xs flex-shrink-0">
-                {product.item.brand.name}
+                {item.item.brand.name}
               </Badge>
             )}
           </div>
           <div className="text-xs text-muted-foreground line-clamp-1">
-            {product.review || "レビューなし"}
+            {item.review || "レビューなし"}
           </div>
         </div>
 
@@ -266,7 +266,7 @@ function ProductItemCard({
               size="sm"
               onClick={onVisibilityToggle}
             >
-              {product.isPublic ? (
+              {item.isPublic ? (
                 <Eye className="h-4 w-4" />
               ) : (
                 <EyeOff className="h-4 w-4" />
@@ -275,7 +275,7 @@ function ProductItemCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => product.item.amazonUrl && window.open(product.item.amazonUrl, '_blank')}
+              onClick={() => item.item.amazonUrl && window.open(item.item.amazonUrl, '_blank')}
             >
               <ExternalLink className="h-4 w-4" />
             </Button>

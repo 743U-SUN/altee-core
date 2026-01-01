@@ -5,13 +5,13 @@ import dynamic from 'next/dynamic'
 import { UserItemWithDetails } from "@/types/item"
 
 // モーダルコンポーネントの遅延読み込み
-const AddProductModal = dynamic(() => import('./AddProductModal').then(mod => ({ default: mod.AddProductModal })), {
+const AddItemModal = dynamic(() => import('./AddItemModal').then(mod => ({ default: mod.AddItemModal })), {
   loading: () => <div className="h-10 w-24 bg-muted animate-pulse rounded-md" />,
   ssr: false
 })
 
 // DnD機能の遅延読み込み
-const DragDropProductList = dynamic(() => import('./DragDropProductList').then(mod => ({ default: mod.DragDropProductList })), {
+const DragDropItemList = dynamic(() => import('./DragDropItemList').then(mod => ({ default: mod.DragDropItemList })), {
   loading: () => (
     <div className="space-y-3">
       {[...Array(3)].map((_, i) => (
@@ -36,33 +36,33 @@ const DragDropProductList = dynamic(() => import('./DragDropProductList').then(m
   ssr: false
 })
 
-interface UserProductListSectionProps {
+interface UserItemListSectionProps {
   initialUserProducts: UserItemWithDetails[]
   userId: string
   categories: { id: string; name: string }[]
   brands: { id: string; name: string }[]
 }
 
-export function UserProductListSection({
+export function UserItemListSection({
   initialUserProducts,
   userId,
   categories,
   brands
-}: UserProductListSectionProps) {
+}: UserItemListSectionProps) {
   // データ管理（シンプル化）
-  const [userProducts, setUserProducts] = useState(initialUserProducts)
+  const [userItems, setUserItems] = useState(initialUserProducts)
 
-  const mutateUserProducts = (newProducts: UserItemWithDetails[]) => {
-    setUserProducts(newProducts)
+  const mutateUserItems = (newItems: UserItemWithDetails[]) => {
+    setUserItems(newItems)
   }
 
-  const handleProductsChange = (newProducts: UserItemWithDetails[]) => {
-    mutateUserProducts(newProducts)
+  const handleItemsChange = (newItems: UserItemWithDetails[]) => {
+    mutateUserItems(newItems)
   }
 
-  const handleProductAdded = (newProduct: UserItemWithDetails) => {
-    const updatedProducts = [...userProducts, newProduct].sort((a, b) => a.sortOrder - b.sortOrder)
-    mutateUserProducts(updatedProducts)
+  const handleItemAdded = (newItem: UserItemWithDetails) => {
+    const updatedItems = [...userItems, newItem].sort((a, b) => a.sortOrder - b.sortOrder)
+    mutateUserItems(updatedItems)
   }
 
   return (
@@ -74,24 +74,24 @@ export function UserProductListSection({
             使用しているアイテムを管理できます（最大30個）
           </p>
         </div>
-        <AddProductModal
+        <AddItemModal
           userId={userId}
           categories={categories}
           brands={brands}
-          onProductAdded={handleProductAdded}
+          onItemAdded={handleItemAdded}
         />
       </div>
 
-      {userProducts.length === 0 ? (
+      {userItems.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>まだアイテムが登録されていません</p>
           <p className="text-sm">「アイテムを追加」から設定を始めましょう</p>
         </div>
       ) : (
-        <DragDropProductList
-          userProducts={userProducts}
+        <DragDropItemList
+          userItems={userItems}
           userId={userId}
-          onProductsChange={handleProductsChange}
+          onItemsChange={handleItemsChange}
         />
       )}
     </div>

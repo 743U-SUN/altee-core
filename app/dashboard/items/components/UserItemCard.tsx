@@ -8,26 +8,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Edit, Eye, EyeOff, ExternalLink } from "lucide-react"
 import { UserItemWithDetails } from "@/types/item"
 import { ProductImage } from "@/components/products/product-image"
-import { EditUserProductModal } from "./EditUserProductModal"
-import { DeleteUserProductButton } from "./DeleteUserProductButton"
+import { EditUserItemModal } from "./EditUserItemModal"
+import { DeleteUserItemButton } from "./DeleteUserItemButton"
 
-interface UserProductCardProps {
-  userProduct: UserItemWithDetails
+interface UserItemCardProps {
+  userItem: UserItemWithDetails
   userId: string
-  onUpdate: (updatedUserProduct: UserItemWithDetails) => void
+  onUpdate: (updatedUserItem: UserItemWithDetails) => void
   onDelete: (deletedId: string) => void
 }
 
-export function UserProductCard({ userProduct, userId, onUpdate, onDelete }: UserProductCardProps) {
+export function UserItemCard({ userItem, userId, onUpdate, onDelete }: UserItemCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
-  const handleUpdate = (updatedUserProduct: UserItemWithDetails) => {
-    onUpdate(updatedUserProduct)
+  const handleUpdate = (updatedUserItem: UserItemWithDetails) => {
+    onUpdate(updatedUserItem)
     setIsEditModalOpen(false)
   }
 
   const handleDelete = () => {
-    onDelete(userProduct.id)
+    onDelete(userItem.id)
   }
 
   return (
@@ -37,9 +37,9 @@ export function UserProductCard({ userProduct, userId, onUpdate, onDelete }: Use
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="text-xs">
-                {userProduct.item.category.name}
+                {userItem.item.category.name}
               </Badge>
-              {userProduct.isPublic ? (
+              {userItem.isPublic ? (
                 <Eye className="h-3 w-3 text-green-600" />
               ) : (
                 <EyeOff className="h-3 w-3 text-gray-400" />
@@ -57,15 +57,15 @@ export function UserProductCard({ userProduct, userId, onUpdate, onDelete }: Use
                   編集
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => userProduct.item.amazonUrl && window.open(userProduct.item.amazonUrl, '_blank')}
+                  onClick={() => userItem.item.amazonUrl && window.open(userItem.item.amazonUrl, '_blank')}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Amazon で見る
                 </DropdownMenuItem>
-                <DeleteUserProductButton
-                  userProductId={userProduct.id}
+                <DeleteUserItemButton
+                  userItemId={userItem.id}
                   userId={userId}
-                  productName={userProduct.item.name}
+                  itemName={userItem.item.name}
                   onDelete={handleDelete}
                 />
               </DropdownMenuContent>
@@ -76,35 +76,35 @@ export function UserProductCard({ userProduct, userId, onUpdate, onDelete }: Use
         <CardContent className="space-y-3">
           <div className="flex items-start space-x-3">
             <ProductImage
-              imageStorageKey={userProduct.item.imageStorageKey}
-              customImageUrl={userProduct.item.customImageUrl}
-              amazonImageUrl={userProduct.item.amazonImageUrl}
-              alt={userProduct.item.name}
+              imageStorageKey={userItem.item.imageStorageKey}
+              customImageUrl={userItem.item.customImageUrl}
+              amazonImageUrl={userItem.item.amazonImageUrl}
+              alt={userItem.item.name}
               width={80}
               height={80}
               className="w-20 h-20 flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-sm leading-tight line-clamp-2">
-                {userProduct.item.name}
+                {userItem.item.name}
               </h3>
               <div className="flex flex-col space-y-1 mt-1">
-                {userProduct.item.brand && (
+                {userItem.item.brand && (
                   <div className="text-xs text-muted-foreground">
-                    {userProduct.item.brand.name}
+                    {userItem.item.brand.name}
                   </div>
                 )}
                 <div className="text-xs text-muted-foreground">
-                  ASIN: {userProduct.item.asin}
+                  ASIN: {userItem.item.asin}
                 </div>
               </div>
             </div>
           </div>
 
           {/* レビュー */}
-          {userProduct.review && (
+          {userItem.review && (
             <p className="text-xs text-muted-foreground line-clamp-2">
-              {userProduct.review}
+              {userItem.review}
             </p>
           )}
 
@@ -112,20 +112,20 @@ export function UserProductCard({ userProduct, userId, onUpdate, onDelete }: Use
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {userProduct.isPublic ? '公開中' : '非公開'}
+                {userItem.isPublic ? '公開中' : '非公開'}
               </span>
               <div className="text-xs text-muted-foreground">
-                {new Date(userProduct.createdAt).toLocaleDateString('ja-JP')} 登録
+                {new Date(userItem.createdAt).toLocaleDateString('ja-JP')} 登録
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <EditUserProductModal
+      <EditUserItemModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        userProduct={userProduct}
+        userItem={userItem}
         userId={userId}
         onUpdate={handleUpdate}
       />

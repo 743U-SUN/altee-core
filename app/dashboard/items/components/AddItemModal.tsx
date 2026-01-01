@@ -5,37 +5,37 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { UserItemWithDetails } from "@/types/item"
-import { ExistingProductSelector } from './ExistingProductSelector'
+import { ExistingItemSelector } from './ExistingItemSelector'
 
-interface AddProductModalProps {
+interface AddItemModalProps {
   isOpen?: boolean
   onClose?: () => void
-  onProductAdded: (userItem: UserItemWithDetails) => void
+  onItemAdded: (userItem: UserItemWithDetails) => void
   userId: string
   categories: { id: string; name: string }[]
   brands: { id: string; name: string }[]
 }
 
-export function AddProductModal({
+export function AddItemModal({
   isOpen: controlledIsOpen,
   onClose: controlledOnClose,
-  onProductAdded,
+  onItemAdded,
   userId,
   categories,
   brands
-}: AddProductModalProps) {
+}: AddItemModalProps) {
   const [internalOpen, setInternalOpen] = useState(false)
 
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen
 
-  const handleProductAdded = useCallback((userItem: UserItemWithDetails) => {
-    onProductAdded(userItem)
+  const handleItemAdded = useCallback((userItem: UserItemWithDetails) => {
+    onItemAdded(userItem)
     if (controlledOnClose) {
       controlledOnClose()
     } else {
       setInternalOpen(false)
     }
-  }, [onProductAdded, controlledOnClose])
+  }, [onItemAdded, controlledOnClose])
 
   const handleClose = useCallback(() => {
     if (controlledOnClose) {
@@ -74,11 +74,11 @@ export function AddProductModal({
           </DialogDescription>
         </DialogHeader>
 
-        <ExistingProductSelector
+        <ExistingItemSelector
           userId={userId}
           categories={categories}
           brands={brands}
-          onProductAdded={handleProductAdded}
+          onItemAdded={handleItemAdded}
         />
 
         <div className="flex justify-end pt-4 border-t">
