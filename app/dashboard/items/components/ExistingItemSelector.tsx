@@ -16,7 +16,7 @@ import { toast } from "sonner"
 import { createUserItem, getItems, checkUserItemExists } from "@/app/actions/item-actions"
 import { UserItemWithDetails } from "@/types/item"
 import { Item, ItemCategory } from '@prisma/client'
-import { ProductImage } from "@/components/products/product-image"
+import { ItemImage } from "@/components/items/item-image"
 
 type SearchItemResult = Item & {
   category: ItemCategory
@@ -181,7 +181,7 @@ const ExistingItemSelectorComponent = ({
             >
               <CardContent className="p-3">
                 <div className="flex items-center space-x-3">
-                  <ProductImage
+                  <ItemImage
                     imageStorageKey={item.imageStorageKey}
                     customImageUrl={item.customImageUrl}
                     amazonImageUrl={item.amazonImageUrl}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ExternalLink } from "lucide-react"
-import { ProductImage } from "@/components/products/product-image"
+import { ItemImage } from "@/components/items/item-image"
 import { UserItemForPublicPage } from '@/types/item'
 
 interface UserPublicItemCardProps {
@@ -40,7 +40,7 @@ export function UserPublicItemCard({ userItem }: UserPublicItemCardProps) {
 
       <CardContent className="space-y-4 flex-1 flex flex-col">
         <div className="flex items-start space-x-3">
-          <ProductImage
+          <ItemImage
             imageStorageKey={item.imageStorageKey}
             customImageUrl={item.customImageUrl}
             amazonImageUrl={item.amazonImageUrl}

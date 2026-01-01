@@ -4,7 +4,7 @@ import Image from 'next/image'
 import React, { useState, memo } from 'react'
 import { cn } from '@/lib/utils'
 
-interface ProductImageProps {
+interface ItemImageProps {
   imageStorageKey?: string | null
   customImageUrl?: string | null
   amazonImageUrl?: string | null
@@ -15,7 +15,7 @@ interface ProductImageProps {
   priority?: boolean
 }
 
-const ProductImageComponent = ({
+const ItemImageComponent = ({
   imageStorageKey,
   customImageUrl,
   amazonImageUrl,
@@ -24,13 +24,13 @@ const ProductImageComponent = ({
   height = 300,
   className,
   priority = false
-}: ProductImageProps) => {
+}: ItemImageProps) => {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   // R2優先、フォールバックでカスタムURL、次にAmazon画像、最後にプレースホルダー
   const getImageSrc = () => {
-    if (hasError) return '/images/product-placeholder.svg'
+    if (hasError) return '/images/item-placeholder.svg'
     if (imageStorageKey) {
       return `/api/files/${imageStorageKey}`
     }
@@ -40,7 +40,7 @@ const ProductImageComponent = ({
     if (amazonImageUrl) {
       return amazonImageUrl
     }
-    return '/images/product-placeholder.svg'
+    return '/images/item-placeholder.svg'
   }
 
   const src = getImageSrc()
@@ -60,7 +60,7 @@ const ProductImageComponent = ({
           isLoading ? "opacity-0" : "opacity-100"
         )}
         onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-          console.error('[ProductImage] Image load error:', src, e)
+          console.error('[ItemImage] Image load error:', src, e)
           setHasError(true)
           setIsLoading(false)
         }}
@@ -83,7 +83,7 @@ const ProductImageComponent = ({
 }
 
 // propsの比較関数 - 画像URLが同じなら再レンダリングをスキップ
-const arePropsEqual = (prevProps: ProductImageProps, nextProps: ProductImageProps) => {
+const arePropsEqual = (prevProps: ItemImageProps, nextProps: ItemImageProps) => {
   return (
     prevProps.imageStorageKey === nextProps.imageStorageKey &&
     prevProps.customImageUrl === nextProps.customImageUrl &&
@@ -97,4 +97,4 @@ const arePropsEqual = (prevProps: ProductImageProps, nextProps: ProductImageProp
 }
 
 // メモ化されたコンポーネントをエクスポート
-export const ProductImage = memo(ProductImageComponent, arePropsEqual)
+export const ItemImage = memo(ItemImageComponent, arePropsEqual)

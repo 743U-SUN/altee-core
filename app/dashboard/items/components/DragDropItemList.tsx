@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { GripVertical, ExternalLink, Eye, EyeOff, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { UserItemWithDetails } from "@/types/item"
-import { ProductImage } from "@/components/products/product-image"
+import { ItemImage } from "@/components/items/item-image"
 import { Badge } from "@/components/ui/badge"
 import {
   DndContext,
@@ -231,7 +231,7 @@ function ItemCard({
         )}
 
         <div className="flex-shrink-0">
-          <ProductImage
+          <ItemImage
             imageStorageKey={item.item.imageStorageKey}
             customImageUrl={item.item.customImageUrl}
             amazonImageUrl={item.item.amazonImageUrl}

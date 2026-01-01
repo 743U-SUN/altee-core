@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Eye, EyeOff, ExternalLink } from "lucide-react"
 import { UserItemWithDetails } from "@/types/item"
-import { ProductImage } from "@/components/products/product-image"
+import { ItemImage } from "@/components/items/item-image"
 import { EditUserItemModal } from "./EditUserItemModal"
 import { DeleteUserItemButton } from "./DeleteUserItemButton"
 
@@ -75,7 +75,7 @@ export function UserItemCard({ userItem, userId, onUpdate, onDelete }: UserItemC
 
         <CardContent className="space-y-3">
           <div className="flex items-start space-x-3">
-            <ProductImage
+            <ItemImage
               imageStorageKey={userItem.item.imageStorageKey}
               customImageUrl={userItem.item.customImageUrl}
               amazonImageUrl={userItem.item.amazonImageUrl}

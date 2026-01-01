@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { updateUserItem } from "@/app/actions/item-actions"
 import { UserItemWithDetails } from "@/types/item"
-import { ProductImage } from "@/components/products/product-image"
+import { ItemImage } from "@/components/items/item-image"
 
 const userItemSchema = z.object({
   isPublic: z.boolean(),
@@ -93,7 +93,7 @@ export function EditUserItemModal({
           </CardHeader>
           <CardContent>
             <div className="flex items-start space-x-4">
-              <ProductImage
+              <ItemImage
                 imageStorageKey={userItem.item.imageStorageKey}
                 customImageUrl={userItem.item.customImageUrl}
                 amazonImageUrl={userItem.item.amazonImageUrl}
