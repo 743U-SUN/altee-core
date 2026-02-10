@@ -1,6 +1,14 @@
 import { DefaultSession } from "next-auth"
 import { UserRole } from "@prisma/client"
 
+// @auth/core の AdapterUser 型を拡張（PrismaAdapter との互換性のため）
+declare module "@auth/core/adapters" {
+  interface AdapterUser {
+    role: UserRole
+    isActive: boolean
+  }
+}
+
 declare module "next-auth" {
   interface Session {
     user: {

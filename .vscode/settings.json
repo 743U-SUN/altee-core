@@ -1,0 +1,17 @@
+{
+  // Docker環境用の設定
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // next.config.tsなどのビルド設定ファイルの型エラーを抑制
+  "typescript.validate.enable": true,
+
+  // 特定ファイルの型チェックを除外（オプション）
+  "javascript.validate.enable": true,
+
+  // エディタ設定
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
