@@ -81,13 +81,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Invalidate RSS Feed cache for this channel
-    revalidateTag(`youtube-${channelId}`)
+    revalidateTag(`youtube-${channelId}`, 'max')
     console.log(`[YouTube Webhook] Invalidated cache for channel ${channelId}`)
 
     // Optionally invalidate user profile pages
     for (const user of users) {
       if (user.handle) {
-        revalidateTag(`user-${user.handle}`)
+        revalidateTag(`user-${user.handle}`, 'max')
         console.log(`[YouTube Webhook] Invalidated cache for user ${user.handle}`)
       }
     }

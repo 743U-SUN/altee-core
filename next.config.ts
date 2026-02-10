@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  turbopack: {}, // Silence Turbopack warning for Next.js 16
   async rewrites() {
     return [
       {

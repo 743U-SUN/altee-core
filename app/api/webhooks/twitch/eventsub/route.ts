@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
 
         // キャッシュ無効化
         if (user.handle) {
-          revalidateTag(`user-${user.handle}`)
+          revalidateTag(`user-${user.handle}`, 'max')
           console.log(`[Twitch EventSub] Invalidated cache for user ${user.handle}`)
         }
 
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
         // キャッシュ無効化
         if (user.handle) {
-          revalidateTag(`user-${user.handle}`)
+          revalidateTag(`user-${user.handle}`, 'max')
           console.log(`[Twitch EventSub] Invalidated cache for user ${user.handle}`)
         }
 
