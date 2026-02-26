@@ -6,7 +6,7 @@ import {
   type ItemInput,
   type ItemCSVRow,
   type CSVImportResult,
-} from '@/lib/validation/item'
+} from '@/lib/validations/item'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 
@@ -48,16 +48,16 @@ export async function getItemsAction(filters: GetItemsFilters = {}) {
         brandId ? { brandId } : {},
         search
           ? {
-              OR: [
-                { name: { contains: search, mode: 'insensitive' as const } },
-                {
-                  description: {
-                    contains: search,
-                    mode: 'insensitive' as const,
-                  },
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive' as const,
                 },
-              ],
-            }
+              },
+            ],
+          }
           : {},
       ],
     }

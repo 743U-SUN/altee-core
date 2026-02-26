@@ -6,9 +6,10 @@ import {
   LogOut,
   Settings,
   Shield,
+  Edit,
 } from "lucide-react"
 import Link from "next/link"
-import { logoutAction } from "@/app/actions/auth"
+import { logoutAction } from "@/app/actions/auth/auth"
 
 import {
   Avatar,
@@ -118,6 +119,12 @@ export function NavUser({
                   </Link>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/profile-editor">
+                  <Edit />
+                  プロフィール編集
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/dashboard">
                   <Settings />

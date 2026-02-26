@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect, notFound } from "next/navigation"
-import { getArticle } from "@/app/actions/article-actions"
+import { getArticle } from "@/app/actions/content/article-actions"
 import { ArticleForm } from "../components/ArticleForm"
 
 interface PageProps {

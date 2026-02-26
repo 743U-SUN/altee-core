@@ -1,28 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Trash2, ExternalLink, GripVertical } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
-import { updateLinkType, deleteLinkType } from "@/app/actions/link-actions"
+import { updateLinkType, deleteLinkType } from "@/app/actions/admin/link-type-actions"
 import { EditLinkTypeModal } from "./EditLinkTypeModal"
 import { AddLinkTypeModal } from "./AddLinkTypeModal"
 import {
@@ -76,7 +76,7 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
       // デフォルトがない場合は最初のアイコンを使用
       return `/api/files/${linkType.icons[0].iconKey}`
     }
-    
+
     return null
   }
 
@@ -130,9 +130,6 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
         </code>
       </TableCell>
       <TableCell>
-        {linkType._count?.userLinks || 0}
-      </TableCell>
-      <TableCell>
         <Switch
           checked={linkType.isActive}
           onCheckedChange={(checked) => onToggleActive(linkType.id, checked)}
@@ -173,6 +170,7 @@ const fetcher = async (url: string) => {
 
 export function LinkTypeTable() {
   const [editingLinkType, setEditingLinkType] = useState<LinkType | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   // dnd-kit sensors設定（モバイル対応）
   const sensors = useSensors(
@@ -198,90 +196,65 @@ export function LinkTypeTable() {
   )
 
   // アクティブ状態の切り替え
-  const handleToggleActive = async (id: string, isActive: boolean) => {
-    try {
-      // 楽観的更新
-      await mutate(
-        linkTypes.map(lt => 
-          lt.id === id ? { ...lt, isActive } : lt
-        ),
-        false
-      )
-
-      const result = await updateLinkType(id, { isActive })
-      
-      if (result.success) {
-        toast.success(isActive ? "リンクタイプを有効にしました" : "リンクタイプを無効にしました")
-        // 再検証して最新データを取得
-        mutate()
-      } else {
-        toast.error(result.error || "更新に失敗しました")
-        // エラー時は元に戻す
-        mutate()
-      }
-    } catch {
-      toast.error("更新に失敗しました")
-      mutate()
-    }
-  }
-
-  // 削除
-  const handleDelete = async (id: string) => {
-    try {
-      // まず通常削除を試みる
-      const result = await deleteLinkType(id, false)
-
-      // 使用中の場合は確認ダイアログを表示
-      if (!result.success && result.requiresForce) {
-        const usageCount = result.usageCount || 0
-        const confirmMessage =
-          `⚠️ このリンクタイプは${usageCount}個のユーザーリンクで使用中です。\n\n` +
-          `削除すると、これらのリンクもすべて削除されます。\n` +
-          `この操作は取り消せません。\n\n` +
-          `削除しますか？`
-
-        if (!confirm(confirmMessage)) {
-          return
-        }
-
-        // 強制削除を実行
+  const handleToggleActive = (id: string, isActive: boolean) => {
+    startTransition(async () => {
+      try {
+        // 楽観的更新
         await mutate(
-          linkTypes.filter(lt => lt.id !== id),
+          linkTypes.map(lt =>
+            lt.id === id ? { ...lt, isActive } : lt
+          ),
           false
         )
 
-        const forceResult = await deleteLinkType(id, true)
+        const result = await updateLinkType(id, { isActive })
 
-        if (forceResult.success) {
-          toast.success(forceResult.message || "リンクタイプを削除しました")
+        if (result.success) {
+          toast.success(isActive ? "リンクタイプを有効にしました" : "リンクタイプを無効にしました")
+          // 再検証して最新データを取得
           mutate()
         } else {
-          toast.error(forceResult.error || "削除に失敗しました")
+          toast.error(result.error || "更新に失敗しました")
+          // エラー時は元に戻す
           mutate()
         }
-      } else if (result.success) {
-        // 通常削除成功
-        if (!confirm("このリンクタイプを削除しますか？")) return
+      } catch {
+        toast.error("更新に失敗しました")
+        mutate()
+      }
+    })
+  }
 
+  // 削除処理
+  const handleDelete = (id: string) => {
+    if (!confirm("このリンクタイプを削除しますか？")) return
+
+    startTransition(async () => {
+      try {
         await mutate(
           linkTypes.filter(lt => lt.id !== id),
           false
         )
 
-        toast.success("リンクタイプを削除しました")
+        const result = await deleteLinkType(id, false)
+
+        if (result.success) {
+          toast.success("リンクタイプを削除しました")
+          mutate()
+        } else {
+          toast.error(result.error || "削除に失敗しました")
+          mutate()
+        }
+      } catch (error) {
+        console.error('Delete error:', error)
+        toast.error("削除に失敗しました")
         mutate()
-      } else {
-        toast.error(result.error || "削除に失敗しました")
       }
-    } catch (error) {
-      console.error('Delete error:', error)
-      toast.error("削除に失敗しました")
-      mutate()
-    }
+    })
   }
 
   // 並び替え
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
     if (!over || active.id === over.id) {
@@ -296,30 +269,32 @@ export function LinkTypeTable() {
     }
 
     const newLinkTypes = arrayMove(linkTypes, oldIndex, newIndex)
-    
-    // 楽観的更新
-    await mutate(newLinkTypes, false)
 
-    // サーバーに並び順を保存
-    try {
-      const updatePromises = newLinkTypes.map((linkType, index) =>
-        updateLinkType(linkType.id, { sortOrder: index })
-      )
-      
-      await Promise.all(updatePromises)
-      toast.success("並び順を更新しました")
-      mutate()
-    } catch {
-      // エラーの場合は元に戻す
-      toast.error("並び替えに失敗しました")
-      mutate()
-    }
+    startTransition(async () => {
+      // 楽観的更新
+      await mutate(newLinkTypes, false)
+
+      // サーバーに並び順を保存
+      try {
+        const updatePromises = newLinkTypes.map((linkType, index) =>
+          updateLinkType(linkType.id, { sortOrder: index })
+        )
+
+        await Promise.all(updatePromises)
+        toast.success("並び順を更新しました")
+        mutate()
+      } catch {
+        // エラーの場合は元に戻す
+        toast.error("並び替えに失敗しました")
+        mutate()
+      }
+    })
   }
 
   // 編集完了
   const handleLinkTypeUpdated = (updatedLinkType: LinkType) => {
     mutate(
-      linkTypes.map(lt => 
+      linkTypes.map(lt =>
         lt.id === updatedLinkType.id ? updatedLinkType : lt
       ),
       false
@@ -366,7 +341,6 @@ export function LinkTypeTable() {
                       <TableHead>サービス</TableHead>
                       <TableHead>ステータス</TableHead>
                       <TableHead>URLパターン</TableHead>
-                      <TableHead>使用数</TableHead>
                       <TableHead>有効</TableHead>
                       <TableHead className="w-[70px]"></TableHead>
                     </TableRow>

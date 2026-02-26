@@ -35,7 +35,8 @@ yarn-error.log*
 !.env.example
 
 # database backups
-backups/
+backups/*
+!backups/.gitkeep
 
 # vercel
 .vercel

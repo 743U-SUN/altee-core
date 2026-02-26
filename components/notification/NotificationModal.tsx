@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ExternalLink } from "lucide-react"
@@ -62,9 +63,12 @@ export function NotificationModal({ isOpen, onClose, notification }: Notificatio
                 </div>
               )}
               
-              <img 
+              <Image
                 src={`/api/files/${notification.image.storageKey}`}
                 alt={notification.title || "お知らせ画像"}
+                width={800}
+                height={600}
+                unoptimized
                 className={`w-full h-auto max-h-96 object-contain rounded-lg ${isImageLoading ? 'hidden' : ''}`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}

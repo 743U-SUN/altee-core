@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { InlineEdit } from '@/components/ui/inline-edit';
+import { InlineEdit } from '@/components/inline-edit';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { GripVertical, Trash2, Loader2 } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
@@ -56,6 +56,12 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    background: 'var(--theme-card-bg, hsl(var(--card)))',
+    borderColor: isDragging
+      ? 'var(--theme-text-accent, hsl(var(--primary)))'
+      : 'var(--theme-card-border, hsl(var(--border)))',
+    borderRadius: 'var(--theme-card-radius, 0.5rem)',
+    boxShadow: 'var(--theme-card-shadow)',
   };
 
   const isDeleting = parentState.isDeleting[parentItem.id] || false;
@@ -103,9 +109,7 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-card rounded-lg border ${
-        isDragging ? 'border-primary' : 'border-border'
-      } p-2 md:p-6`}
+      className="border p-2 md:p-6"
     >
       {/* カテゴリー情報編集（アコーディオン） */}
       <Accordion
@@ -125,15 +129,24 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
               {...listeners}
             >
               <GripVertical className="h-5 w-5 text-muted-foreground" />
-              <div className="w-8 h-8 bg-primary/10 text-primary text-sm font-medium rounded-full flex items-center justify-center">
+              <div
+                className="w-8 h-8 text-sm font-medium rounded-full flex items-center justify-center"
+                style={{
+                  background: 'var(--theme-accent-bg, hsl(var(--primary) / 0.1))',
+                  color: 'var(--theme-text-accent, hsl(var(--primary)))',
+                }}
+              >
                 {index + 1}
               </div>
             </div>
 
             {/* 親アイテム名表示（アコーディオントリガー） - 横幅いっぱいに */}
             <div className="flex-1 min-w-0">
-              <AccordionTrigger className="w-full hover:no-underline py-2 [&[data-state=open]>h3]:text-primary">
-                <h3 className="text-lg font-medium text-card-foreground transition-colors text-left">
+              <AccordionTrigger className="w-full hover:no-underline py-2">
+                <h3
+                  className="text-lg font-medium transition-colors text-left"
+                  style={{ color: 'var(--theme-text-primary, hsl(var(--card-foreground)))' }}
+                >
                   {config.parentConfig.itemDisplayName(parentItem, index)}
                 </h3>
               </AccordionTrigger>
@@ -170,7 +183,11 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
             >
               {config.parentConfig.editableFields.map((field) => (
                 <div key={field.key}>
-                  <Label htmlFor={`${parentItem.id}-${field.key}`} className="text-sm font-medium text-card-foreground mb-2 block">
+                  <Label
+                    htmlFor={`${parentItem.id}-${field.key}`}
+                    className="text-sm font-medium mb-2 block"
+                    style={{ color: 'var(--theme-text-primary, hsl(var(--card-foreground)))' }}
+                  >
                     {field.label}
                     {field.maxLength && ` (${field.maxLength}文字以内)`}
                   </Label>

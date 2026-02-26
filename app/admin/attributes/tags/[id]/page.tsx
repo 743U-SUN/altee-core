@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect, notFound } from "next/navigation"
-import { getTag } from "@/app/actions/tag-actions"
+import { getTag } from "@/app/actions/content/tag-actions"
 import { TagForm } from "../components/TagForm"
 
 interface PageProps {

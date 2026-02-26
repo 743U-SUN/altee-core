@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getTags } from "@/app/actions/tag-actions"
+import { getTags } from "@/app/actions/content/tag-actions"
 import { TagList } from "./components/TagList"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"

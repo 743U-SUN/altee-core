@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Trash2, RefreshCw, FileX, HardDrive, Database, Clock, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { detectOrphanFiles, cleanupOrphanFiles, getDeletionStats } from '@/app/actions/cleanup-actions'
-import { cleanupExpiredFiles, getDeletedMediaFiles, restoreMediaFile } from '@/app/actions/media-actions'
+import { detectOrphanFiles, cleanupOrphanFiles, getDeletionStats } from '@/app/actions/admin/cleanup-actions'
+import { cleanupExpiredFiles, getDeletedMediaFiles, restoreMediaFile } from '@/app/actions/media/media-actions'
 
 interface OrphanFile {
   container: string

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ExternalLink } from "lucide-react"
@@ -61,9 +62,12 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
                   <span className="text-muted-foreground">読み込み中...</span>
                 </div>
               )}
-              <img 
+              <Image
                 src={`/api/files/${contact.image.storageKey}`}
                 alt={contact.title || "連絡方法画像"}
+                width={800}
+                height={600}
+                unoptimized
                 className={`w-full h-auto max-h-96 object-contain rounded-lg ${isImageLoading ? 'hidden' : ''}`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ interface User {
   role: UserRole
   isActive: boolean
   image: string | null
-  createdAt: Date
+  createdAt: string
   _count: {
     accounts: number
   }
@@ -43,8 +43,8 @@ interface UserListClientProps {
   search?: string
   role?: UserRole
   isActive?: boolean
-  createdFrom?: Date
-  createdTo?: Date
+  createdFrom?: string
+  createdTo?: string
 }
 
 export function UserListClient({
@@ -60,15 +60,15 @@ export function UserListClient({
 }: UserListClientProps) {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
 
-  const handleSelectAll = useCallback((checked: boolean) => {
+  const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedUsers(new Set(users.map(user => user.id)))
     } else {
       setSelectedUsers(new Set())
     }
-  }, [users])
+  }
 
-  const handleSelectUser = useCallback((userId: string, checked: boolean) => {
+  const handleSelectUser = (userId: string, checked: boolean) => {
     setSelectedUsers(prev => {
       const newSelected = new Set(prev)
       if (checked) {
@@ -78,19 +78,12 @@ export function UserListClient({
       }
       return newSelected
     })
-  }, [])
+  }
 
-  const { isAllSelected, isIndeterminate, selectedUsersArray, filteredSelectedUsers } = useMemo(() => {
-    const selectedArray = Array.from(selectedUsers)
-    const filteredSelected = users.filter(user => selectedUsers.has(user.id))
-    
-    return {
-      isAllSelected: users.length > 0 && selectedUsers.size === users.length,
-      isIndeterminate: selectedUsers.size > 0 && selectedUsers.size < users.length,
-      selectedUsersArray: selectedArray,
-      filteredSelectedUsers: filteredSelected
-    }
-  }, [users, selectedUsers])
+  const selectedUsersArray = Array.from(selectedUsers)
+  const filteredSelectedUsers = users.filter(user => selectedUsers.has(user.id))
+  const isAllSelected = users.length > 0 && selectedUsers.size === users.length
+  const isIndeterminate = selectedUsers.size > 0 && selectedUsers.size < users.length
 
   if (users.length === 0) {
     return (
@@ -194,8 +187,8 @@ export function UserListClient({
         search={search}
         role={role}
         isActive={isActive?.toString()}
-        createdFrom={createdFrom?.toISOString().split('T')[0]}
-        createdTo={createdTo?.toISOString().split('T')[0]}
+        createdFrom={createdFrom}
+        createdTo={createdTo}
       />
     </div>
   )

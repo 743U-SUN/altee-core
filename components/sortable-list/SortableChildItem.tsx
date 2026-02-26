@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { InlineEdit } from '@/components/ui/inline-edit';
+import { InlineEdit } from '@/components/inline-edit';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { GripVertical, Trash2, Loader2, MessageSquare } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
@@ -47,6 +47,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    borderColor: 'var(--theme-card-border, hsl(var(--border)))',
   };
 
   const isDeleting = childState.isDeleting[childItem.id] || false;
@@ -72,9 +73,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
     <div
       ref={setNodeRef}
       style={style}
-      className={`border border-border border-x-0 border-b-0 hover:bg-muted/50 ${
-        isDragging ? 'opacity-50' : ''
-      }`}
+      className={`border border-x-0 border-b-0 hover:bg-muted/50 ${isDragging ? 'opacity-50' : ''}`}
     >
       <AccordionItem
         key={childItem.id}
@@ -138,7 +137,11 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
             <div className="space-y-4">
               {config.childConfig.editableFields.map((field) => (
                 <div key={field.key}>
-                  <Label htmlFor={`${childItem.id}-${field.key}`} className="text-xs font-medium text-card-foreground mb-2 block">
+                  <Label
+                    htmlFor={`${childItem.id}-${field.key}`}
+                    className="text-xs font-medium mb-2 block"
+                    style={{ color: 'var(--theme-text-primary, hsl(var(--card-foreground)))' }}
+                  >
                     {field.label}
                     {field.maxLength && ` (${field.maxLength}文字以内)`}
                   </Label>

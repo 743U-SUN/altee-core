@@ -11,10 +11,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { userSetupSchema, type UserSetupSchema } from '@/lib/validation/user-setup';
+import { userSetupSchema, type UserSetupSchema } from '@/lib/validations/user-setup';
 import { completeUserSetup, checkHandleAvailability } from './actions';
 import { UserRole } from '@prisma/client';
-import type { UserRoleSchema } from '@/lib/validation/user-setup';
+import type { UserRoleSchema } from '@/lib/validations/user-setup';
 
 interface SetupFormProps {
   initialCharacterName: string;
@@ -27,7 +27,7 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
   const [handleCheckStatus, setHandleCheckStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [handleError, setHandleError] = useState<string>('');
   const [submitError, setSubmitError] = useState<string>('');
-  
+
   const form = useForm<UserSetupSchema>({
     resolver: zodResolver(userSetupSchema),
     defaultValues: {
@@ -46,10 +46,10 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
       const timeoutId = setTimeout(async () => {
         setHandleCheckStatus('checking');
         setHandleError('');
-        
+
         try {
           const result = await checkHandleAvailability(watchedHandle);
-          
+
           if (result.success && result.data?.available) {
             setHandleCheckStatus('available');
           } else {
@@ -75,7 +75,7 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
 
     try {
       const result = await completeUserSetup(data);
-      
+
       if (result.success) {
         router.push('/dashboard');
         router.refresh();
@@ -202,11 +202,11 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
           )}
 
           {/* 送信ボタン */}
-          <Button 
-            type="submit" 
-            className="w-full" 
+          <Button
+            type="submit"
+            className="w-full"
             disabled={
-              isSubmitting || 
+              isSubmitting ||
               (watchedRole === 'USER' && handleCheckStatus !== 'available')
             }
           >

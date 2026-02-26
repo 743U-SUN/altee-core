@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { bulkUpdateUserRole, bulkToggleUserActive } from "@/app/actions/user-management"
+import { bulkUpdateUserRole, bulkToggleUserActive } from "@/app/actions/admin/user-management"
 import { UserRole } from "@prisma/client"
 import { Users, X } from "lucide-react"
 import { toast } from "sonner"

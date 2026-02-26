@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { SetupForm } from './setup-form';
+
+export const metadata: Metadata = {
+  title: '初期設定',
+  robots: { index: false, follow: false },
+}
 
 export default async function SetupPage() {
   const session = await auth();

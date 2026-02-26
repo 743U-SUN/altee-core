@@ -1,0 +1,14 @@
+import { Skeleton } from '@/components/ui/skeleton'
+
+export default function AdminLoading() {
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  )
+}

@@ -3,7 +3,7 @@ import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
-import { extractOAuthImageUrl, updateUserImage, isEmailBlacklisted } from "@/services/auth"
+import { extractOAuthImageUrl, updateUserImage, isEmailBlacklisted } from "@/services/auth/auth"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -72,7 +72,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             await prisma.user.update({
               where: { id: user.id },
               data: { role: 'ADMIN' }
-            }).catch(() => {}) // エラー無視（既にADMINの場合）
+            }).catch(() => { }) // エラー無視（既にADMINの場合）
           }
         }
 
@@ -120,7 +120,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           handle: dbUser.handle,
           characterName: dbUser.characterName,
         }
-        
+
         return session
       } catch (error) {
         console.error('Session callback error:', error)
@@ -140,7 +140,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (url.startsWith('/')) {
           return `${baseUrl}${url}`
         }
-        
+
         // 同じドメインの場合
         if (new URL(url).origin === baseUrl) {
           return url

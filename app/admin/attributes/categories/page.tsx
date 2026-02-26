@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getCategories } from "@/app/actions/category-actions"
+import { getCategories } from "@/app/actions/content/category-actions"
 import { CategoryList } from "./components/CategoryList"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"

@@ -1,16 +1,22 @@
+import type { Metadata } from 'next'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getMediaFiles, getMediaStats } from '@/app/actions/media-actions'
+import { getMediaFiles, getMediaStats } from '@/app/actions/media/media-actions'
 import { MediaTable } from './components/MediaTable'
 import { MediaFilters } from './components/MediaFilters'
 import { HardDrive, Image as ImageIcon, FileText, Calendar, Trash2, Upload } from 'lucide-react'
 import { Suspense } from 'react'
 import { MediaType } from '@prisma/client'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'メディア管理',
+  robots: { index: false, follow: false },
+}
 
 interface MediaPageProps {
   searchParams: Promise<{

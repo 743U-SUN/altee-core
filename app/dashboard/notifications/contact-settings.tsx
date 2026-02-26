@@ -5,18 +5,28 @@ import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { InlineEdit } from "@/components/ui/inline-edit"
+import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
-import { updateUserContact, deleteUserContact } from "@/app/actions/contact-actions"
+import { updateUserContact, deleteUserContact } from "@/app/actions/user/contact-actions"
 import { CONTACT_CONSTRAINTS } from "@/types/contacts"
 import type { UserContact } from "@/types/contacts"
 import type { UploadedFile } from "@/types/image-upload"
 
 interface ContactSettingsProps {
   initialData: UserContact | null
+  showLink?: boolean       // リンクURL入力欄の表示制御
+  showButton?: boolean     // ボタンテキスト入力欄の表示制御
+  showImage?: boolean      // 画像アップロード欄の表示制御
+  compact?: boolean        // コンパクト表示（保存・削除ボタンを非表示）
 }
 
-export function ContactSettings({ initialData }: ContactSettingsProps) {
+export function ContactSettings({
+  initialData,
+  showLink = true,
+  showButton = true,
+  showImage = true,
+  compact = false,
+}: ContactSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEnabled, setIsEnabled] = useState(initialData?.isEnabled ?? false)
   const [title, setTitle] = useState(initialData?.title ?? "")
@@ -26,15 +36,15 @@ export function ContactSettings({ initialData }: ContactSettingsProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(
     initialData?.image
       ? [{
-          id: initialData.image.id,
-          name: initialData.image.originalName,
-          originalName: initialData.image.originalName,
-          key: initialData.image.storageKey,
-          url: `/api/files/${initialData.image.storageKey}`,
-          size: 0,
-          type: initialData.image.mimeType,
-          uploadedAt: new Date().toISOString(),
-        }]
+        id: initialData.image.id,
+        name: initialData.image.originalName,
+        originalName: initialData.image.originalName,
+        key: initialData.image.storageKey,
+        url: `/api/files/${initialData.image.storageKey}`,
+        size: 0,
+        type: initialData.image.mimeType,
+        uploadedAt: new Date().toISOString(),
+      }]
       : []
   )
 
@@ -319,20 +329,22 @@ export function ContactSettings({ initialData }: ContactSettingsProps) {
           </div>
 
           {/* リンクURL */}
-          <div className="space-y-2">
-            <Label>リンクURL（任意）</Label>
-            <InlineEdit
-              value={linkUrl}
-              onSave={handleLinkUrlSave}
-              placeholder="https://example.com/contact"
-            />
-            <p className="text-sm text-muted-foreground">
-              問い合わせフォームやメールアドレスへのリンクを設定できます
-            </p>
-          </div>
+          {showLink && (
+            <div className="space-y-2">
+              <Label>リンクURL（任意）</Label>
+              <InlineEdit
+                value={linkUrl}
+                onSave={handleLinkUrlSave}
+                placeholder="https://example.com/contact"
+              />
+              <p className="text-sm text-muted-foreground">
+                問い合わせフォームやメールアドレスへのリンクを設定できます
+              </p>
+            </div>
+          )}
 
           {/* ボタンテキスト */}
-          {linkUrl && (
+          {showButton && linkUrl && (
             <div className="space-y-2">
               <Label>ボタンテキスト</Label>
               <InlineEdit
@@ -348,44 +360,48 @@ export function ContactSettings({ initialData }: ContactSettingsProps) {
           )}
 
           {/* 画像アップロード */}
-          <div className="space-y-2">
-            <Label>画像（任意）</Label>
-            <ImageUploader
-              mode="immediate"
-              previewSize="medium"
-              maxFiles={1}
-              folder="user-contacts"
-              value={uploadedFiles}
-              onUpload={handleImageUpload}
-              showPreview={true}
-            />
-            <p className="text-sm text-muted-foreground">
-              最大1000px（幅・高さ）の画像をアップロードできます
-            </p>
-          </div>
+          {showImage && (
+            <div className="space-y-2">
+              <Label>画像（任意）</Label>
+              <ImageUploader
+                mode="immediate"
+                previewSize="medium"
+                maxFiles={1}
+                folder="user-contacts"
+                value={uploadedFiles}
+                onUpload={handleImageUpload}
+                showPreview={true}
+              />
+              <p className="text-sm text-muted-foreground">
+                最大1000px（幅・高さ）の画像をアップロードできます
+              </p>
+            </div>
+          )}
         </>
       )}
 
-      <div className="flex gap-4">
-        <Button
-          type="button"
-          onClick={handleSaveAll}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "保存中..." : "設定を保存"}
-        </Button>
-
-        {initialData && (
+      {!compact && (
+        <div className="flex gap-4">
           <Button
             type="button"
-            variant="destructive"
-            onClick={handleDelete}
+            onClick={handleSaveAll}
             disabled={isSubmitting}
           >
-            設定を削除
+            {isSubmitting ? "保存中..." : "設定を保存"}
           </Button>
-        )}
-      </div>
+
+          {initialData && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+            >
+              設定を削除
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

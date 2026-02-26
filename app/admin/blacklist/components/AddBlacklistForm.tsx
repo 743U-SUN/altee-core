@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { addBlacklistedEmail } from "@/app/actions/blacklist"
+import { addBlacklistedEmail } from "@/app/actions/admin/blacklist"
 import { toast } from "sonner"
 import { Mail } from "lucide-react"
 

@@ -7,7 +7,7 @@ import {
   Shield,
 } from "lucide-react"
 import Link from "next/link"
-import { logoutAction } from "@/app/actions/auth"
+import { logoutAction } from "@/app/actions/auth/auth"
 
 import {
   Avatar,

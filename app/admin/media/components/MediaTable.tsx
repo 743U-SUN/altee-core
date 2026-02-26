@@ -1,4 +1,4 @@
-import { getMediaFiles, MediaFilesFilter } from "@/app/actions/media-actions"
+import { getMediaFiles, MediaFilesFilter } from "@/app/actions/media/media-actions"
 import { MediaTableClient } from "./MediaTableClient"
 import { MediaType } from "@prisma/client"
 

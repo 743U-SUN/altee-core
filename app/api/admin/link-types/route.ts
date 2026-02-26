@@ -15,11 +15,6 @@ export async function GET() {
       include: {
         icons: {
           orderBy: { sortOrder: 'asc' }
-        },
-        _count: {
-          select: {
-            userLinks: true
-          }
         }
       },
       orderBy: {

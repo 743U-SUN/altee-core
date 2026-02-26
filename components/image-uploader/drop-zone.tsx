@@ -84,8 +84,8 @@ export function DropZone({
   }
 
   const dimensions = getDimensions()
-  const isSmall = dimensions.width <= 80
-  const isMedium = dimensions.width <= 160
+  const isSmall = dimensions.width <= 80 || dimensions.height <= 80
+  const isMedium = dimensions.width <= 160 || dimensions.height <= 160
 
   return (
     <div

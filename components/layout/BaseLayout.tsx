@@ -6,10 +6,11 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
 import { getLayoutConfig, mergeLayoutConfig, LayoutVariant, LayoutOverrides, UserData } from "@/lib/layout-config"
+import { cn } from "@/lib/utils"
 
 const MobileFooter = dynamic(
   () => import("./MobileFooter").then(mod => ({ default: mod.MobileFooter })),
-  { 
+  {
     loading: () => null,
     ssr: false
   }
@@ -17,7 +18,7 @@ const MobileFooter = dynamic(
 
 const MobileSidebarSheet = dynamic(
   () => import("./MobileSidebarSheet").then(mod => ({ default: mod.MobileSidebarSheet })),
-  { 
+  {
     loading: () => null,
     ssr: false
   }
@@ -30,11 +31,11 @@ interface BaseLayoutProps {
   children: React.ReactNode
 }
 
-export function BaseLayout({ 
-  variant = 'default', 
-  overrides, 
+export function BaseLayout({
+  variant = 'default',
+  overrides,
   user,
-  children 
+  children
 }: BaseLayoutProps) {
   const finalConfig = useMemo(() => {
     const baseConfig = getLayoutConfig(variant)
@@ -63,7 +64,7 @@ export function BaseLayout({
               "--sidebar-width": finalConfig.sidebarWidth || "350px",
             } as React.CSSProperties}
           >
-            <Sidebar 
+            <Sidebar
               firstSidebarConfig={finalConfig.firstSidebar}
               secondSidebarConfig={finalConfig.secondSidebar}
               verticalMobileLayout={false}
@@ -82,7 +83,7 @@ export function BaseLayout({
           <Header config={finalConfig.header} />
           <MobileSidebarSheet
             open={false}
-            onOpenChange={() => {}}
+            onOpenChange={() => { }}
             secondSidebarContent={finalConfig.secondSidebar.content}
             verticalLayout={true}
             noPadding={variant === 'user-profile'}
@@ -90,8 +91,8 @@ export function BaseLayout({
           <main className="flex flex-1 flex-col gap-4 p-4 pb-20">
             {children}
           </main>
-          <MobileFooter 
-            sidebarConfig={finalConfig.firstSidebar} 
+          <MobileFooter
+            sidebarConfig={finalConfig.firstSidebar}
             mobileFooterConfig={finalConfig.mobileFooter}
           />
         </div>
@@ -106,19 +107,22 @@ export function BaseLayout({
         "--sidebar-width": finalConfig.sidebarWidth || "350px",
       } as React.CSSProperties}
     >
-      <Sidebar 
+      <Sidebar
         firstSidebarConfig={finalConfig.firstSidebar}
         secondSidebarConfig={finalConfig.secondSidebar}
         verticalMobileLayout={finalConfig.mobileLayout.verticalLayout}
       />
       <SidebarInset>
         <Header config={finalConfig.header} />
-        <main className="flex flex-1 flex-col gap-4 p-4 pb-20 lg:pb-4">
+        <main className={cn(
+          "flex flex-1 flex-col gap-4 p-4 pb-20 lg:pb-4",
+          finalConfig.mainClassName
+        )}>
           {children}
         </main>
       </SidebarInset>
-      <MobileFooter 
-        sidebarConfig={finalConfig.firstSidebar} 
+      <MobileFooter
+        sidebarConfig={finalConfig.firstSidebar}
         mobileFooterConfig={finalConfig.mobileFooter}
       />
     </SidebarProvider>

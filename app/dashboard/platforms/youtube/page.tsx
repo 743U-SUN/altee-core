@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getUserYoutubeSettings, getMyRssFeedVideos } from "@/app/actions/youtube-actions"
+import { getUserYoutubeSettings, getMyRssFeedVideos } from "@/app/actions/social/youtube-actions"
 import { YouTubeTabContent } from "../components/YouTubeTabContent"
 
 export default async function YouTubePlatformPage() {

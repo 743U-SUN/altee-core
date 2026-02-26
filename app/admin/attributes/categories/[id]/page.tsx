@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect, notFound } from "next/navigation"
-import { getCategory } from "@/app/actions/category-actions"
+import { getCategory } from "@/app/actions/content/category-actions"
 import { CategoryForm } from "../components/CategoryForm"
 
 interface PageProps {

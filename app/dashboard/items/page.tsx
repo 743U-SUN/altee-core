@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getUserItems } from "@/app/actions/item-actions"
+
+export const metadata: Metadata = {
+  title: 'アイテム管理',
+  robots: { index: false, follow: false },
+}
+import { getUserItems } from "@/app/actions/content/item-actions"
 import { UserItemWithDetails } from "@/types/item"
 import { UserItemListSection } from "./components/UserItemListSection"
 import { prisma } from '@/lib/prisma'

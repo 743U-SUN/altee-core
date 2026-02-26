@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MarkdownPreview } from '@/components/ui/markdown-preview'
-import { MarkdownToolbar } from '@/components/ui/markdown-toolbar'
-import { ImageInsertModal } from '@/components/ui/image-insert-modal'
+import { MarkdownPreview } from '@/components/editor/markdown-preview'
+import { MarkdownToolbar } from '@/components/editor/markdown-toolbar'
+import { ImageInsertModal } from '@/components/editor/image-insert-modal'
 import { Edit, Eye } from 'lucide-react'
 import type { FormValues } from './types'
 
@@ -48,13 +48,13 @@ export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
       newCursorPosition = start + text.length
     }
 
-    const newValue = 
-      currentValue.slice(0, start) + 
-      newText + 
+    const newValue =
+      currentValue.slice(0, start) +
+      newText +
       currentValue.slice(end)
-      
+
     form.setValue('content', newValue, { shouldValidate: true })
-    
+
     // カーソル位置を設定
     setTimeout(() => {
       textarea.focus()
@@ -95,17 +95,17 @@ export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                
+
                 <TabsContent value="edit" className="mt-0">
                   <div className="sticky top-[120px] z-4 bg-card">
-                    <MarkdownToolbar 
+                    <MarkdownToolbar
                       onInsert={handleMarkdownInsert}
                       onImageInsert={handleImageInsert}
                       disabled={isSubmitting}
                     />
                   </div>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="# 記事タイトル
 
 記事の内容をMarkdown形式で記述してください。
@@ -138,7 +138,7 @@ console.log('Hello, World!');
                     />
                   </FormControl>
                 </TabsContent>
-                
+
                 <TabsContent value="preview" className="mt-0">
                   <div className="min-h-[400px] border rounded-md p-4 bg-muted/30">
                     {field.value ? (

@@ -1,50 +1,26 @@
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { User, Logs, UserCircle, Share2, Smartphone, HelpCircle, Bell } from "lucide-react"
+import { UserCircle, Bell, Tv } from "lucide-react"
 import { SetupChecker } from "./setup-checker"
 
 const settingsItems = [
   {
-    title: "基本情報設定",
-    description: "アカウントの基本情報を管理",
-    href: "/dashboard/account",
-    icon: User,
-  },
-  {
-    title: "プロフィール設定",
-    description: "公開プロフィールの編集",
-    href: "/dashboard/profile",
+    title: "プロフィールエディター",
+    description: "プロフィール・テーマ・セクションの編集",
+    href: "/dashboard/profile-editor",
     icon: UserCircle,
   },
   {
-    title: "ユーザーデータ設定",
-    description: "ユーザーデータの編集",
-    href: "/dashboard/userdata",
-    icon: Logs,
+    title: "プラットフォーム連携",
+    description: "Twitch・YouTubeとの連携設定",
+    href: "/dashboard/platforms",
+    icon: Tv,
   },
   {
     title: "通知・連絡方法設定",
     description: "お知らせと連絡方法の設定",
     href: "/dashboard/notifications",
     icon: Bell,
-  },
-  {
-    title: "SNSリンク設定",
-    description: "ソーシャルメディアのリンクを管理",
-    href: "/dashboard/links",
-    icon: Share2,
-  },
-  {
-    title: "デバイス設定",
-    description: "接続されたデバイスの管理",
-    href: "/dashboard/device",
-    icon: Smartphone,
-  },
-  {
-    title: "FAQ設定",
-    description: "よくある質問の設定",
-    href: "/dashboard/faq",
-    icon: HelpCircle,
   },
 ]
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { UserItemForPublicPage } from '@/types/item'
 import { UserPublicItemCard } from './UserPublicItemCard'
 

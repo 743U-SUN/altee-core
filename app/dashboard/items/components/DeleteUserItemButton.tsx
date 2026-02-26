@@ -5,7 +5,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Loader2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
-import { deleteUserItem } from "@/app/actions/item-actions"
+import { deleteUserItem } from "@/app/actions/content/item-actions"
 
 interface DeleteUserItemButtonProps {
   userItemId: string

@@ -1,4 +1,4 @@
-import { getBlacklistedEmails } from "@/app/actions/blacklist"
+import { getBlacklistedEmails } from "@/app/actions/admin/blacklist"
 import { BlacklistTableClient } from "./BlacklistTableClient"
 
 export async function BlacklistTable() {

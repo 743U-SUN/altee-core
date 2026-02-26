@@ -1,4 +1,4 @@
-import { getUserDetail } from "@/app/actions/user-management"
+import { getUserDetail } from "@/app/actions/admin/user-management"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

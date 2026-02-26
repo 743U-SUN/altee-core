@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import type { ImageUploaderProps, UploadedFile } from '@/types/image-upload'
 import { validateImageFiles } from '@/lib/image-uploader/image-validator'
 import { processImage, processArticleImage } from '@/lib/image-uploader/image-processor'
-import { uploadImageAction, deleteImageAction } from '@/app/actions/image-upload-actions'
+import { uploadImageAction, deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { DropZone } from './drop-zone'
 import { ImagePreview } from './image-preview'
 

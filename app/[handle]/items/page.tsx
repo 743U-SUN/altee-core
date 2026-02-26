@@ -1,4 +1,5 @@
-import { getUserPublicItemsByHandle } from '@/app/actions/item-actions'
+import { cache } from 'react'
+import { getUserPublicItemsByHandle } from '@/app/actions/content/item-actions'
 import { UserPublicItemList } from './components/UserPublicItemList'
 import { notFound } from 'next/navigation'
 
@@ -6,21 +7,21 @@ interface UserItemsPageProps {
   params: Promise<{ handle: string }>
 }
 
+// React.cache()でリクエスト単位のデデュプリケーション
+const getItemsData = cache(async (handle: string) => {
+  return getUserPublicItemsByHandle(handle)
+})
+
 export default async function UserItemsPage({ params }: UserItemsPageProps) {
   const { handle } = await params
 
-  // ユーザーの公開アイテム情報を取得
-  const result = await getUserPublicItemsByHandle(handle)
+  const result = await getItemsData(handle)
 
   if (!result.success || !result.data) {
     notFound()
   }
 
-  // ユーザー情報を取得するために、最初のアイテムからユーザー名を取得
-  // または、Server Actionを拡張してユーザー情報も返すようにする
   const userItems = result.data
-
-  // handleからユーザー名を取得（簡易版）
   const userName = `@${handle}`
 
   return (
@@ -33,12 +34,10 @@ export default async function UserItemsPage({ params }: UserItemsPageProps) {
   )
 }
 
-// ページのメタデータを生成
 export async function generateMetadata({ params }: UserItemsPageProps) {
   const { handle } = await params
 
-  // ユーザー情報を取得してメタデータを生成
-  const result = await getUserPublicItemsByHandle(handle)
+  const result = await getItemsData(handle)
 
   if (!result.success || !result.data) {
     return {

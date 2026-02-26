@@ -10,12 +10,12 @@ import { Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react"
 import {
   updateTwitchChannel,
   updateLivePriority
-} from "@/app/actions/twitch-actions"
+} from "@/app/actions/social/twitch-actions"
 import {
   createTwitchEventSubSubscription,
   deleteTwitchEventSubSubscription,
   getTwitchEventSubSubscriptionStatus
-} from "@/app/actions/twitch-actions"
+} from "@/app/actions/social/twitch-actions"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 

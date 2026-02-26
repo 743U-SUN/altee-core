@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { removeBlacklistedEmail } from "@/app/actions/blacklist"
+import { removeBlacklistedEmail } from "@/app/actions/admin/blacklist"
 import { toast } from "sonner"
 import { Trash2, Mail, Calendar } from "lucide-react"
 

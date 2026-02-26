@@ -25,7 +25,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { deleteUserItem, reorderUserItems, updateUserItem } from "@/app/actions/item-actions"
+import { deleteUserItem, reorderUserItems, updateUserItem } from "@/app/actions/content/item-actions"
 
 // EditUserItemModalの遅延読み込み
 const EditUserItemModal = dynamic(() => import('./EditUserItemModal').then(mod => ({ default: mod.EditUserItemModal })), {

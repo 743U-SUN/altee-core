@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, Search } from "lucide-react"
 import { toast } from "sonner"
-import { createUserItem, getItems, checkUserItemExists } from "@/app/actions/item-actions"
+import { createUserItem, getItems, checkUserItemExists } from "@/app/actions/content/item-actions"
 import { UserItemWithDetails } from "@/types/item"
 import { Item, ItemCategory } from '@prisma/client'
 import { ItemImage } from "@/components/items/item-image"

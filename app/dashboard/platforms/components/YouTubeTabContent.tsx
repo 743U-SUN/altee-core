@@ -19,7 +19,7 @@ import {
   addRecommendedVideo,
   extractChannelIdFromUrl,
   getMyRssFeedVideos
-} from "@/app/actions/youtube-actions"
+} from "@/app/actions/social/youtube-actions"
 import { toast } from "sonner"
 import { RecommendedVideosList } from "./RecommendedVideosList"
 import Link from "next/link"

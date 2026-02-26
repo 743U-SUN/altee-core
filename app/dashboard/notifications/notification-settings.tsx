@@ -5,18 +5,26 @@ import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { InlineEdit } from "@/components/ui/inline-edit"
+import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
-import { updateUserNotification, deleteUserNotification } from "@/app/actions/notification-actions"
+import { updateUserNotification, deleteUserNotification } from "@/app/actions/user/notification-actions"
 import { NOTIFICATION_CONSTRAINTS } from "@/types/notifications"
 import type { UserNotification } from "@/types/notifications"
 import type { UploadedFile } from "@/types/image-upload"
 
 interface NotificationSettingsProps {
   initialData: UserNotification | null
+  showLink?: boolean      // リンクURL入力欄の表示制御
+  showButton?: boolean    // ボタンテキスト入力欄の表示制御
+  compact?: boolean       // コンパクト表示（保存・削除ボタンを非表示）
 }
 
-export function NotificationSettings({ initialData }: NotificationSettingsProps) {
+export function NotificationSettings({
+  initialData,
+  showLink = true,
+  showButton = true,
+  compact = false,
+}: NotificationSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEnabled, setIsEnabled] = useState(initialData?.isEnabled ?? false)
   const [title, setTitle] = useState(initialData?.title ?? "")
@@ -26,15 +34,15 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(
     initialData?.image
       ? [{
-          id: initialData.image.id,
-          name: initialData.image.originalName,
-          originalName: initialData.image.originalName,
-          key: initialData.image.storageKey,
-          url: `/api/files/${initialData.image.storageKey}`,
-          size: 0,
-          type: initialData.image.mimeType,
-          uploadedAt: new Date().toISOString(),
-        }]
+        id: initialData.image.id,
+        name: initialData.image.originalName,
+        originalName: initialData.image.originalName,
+        key: initialData.image.storageKey,
+        url: `/api/files/${initialData.image.storageKey}`,
+        size: 0,
+        type: initialData.image.mimeType,
+        uploadedAt: new Date().toISOString(),
+      }]
       : []
   )
 
@@ -319,20 +327,22 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
           </div>
 
           {/* リンクURL */}
-          <div className="space-y-2">
-            <Label>リンクURL（任意）</Label>
-            <InlineEdit
-              value={linkUrl}
-              onSave={handleLinkUrlSave}
-              placeholder="https://example.com"
-            />
-            <p className="text-sm text-muted-foreground">
-              ボタンをクリックした際に開くリンクを設定できます
-            </p>
-          </div>
+          {showLink && (
+            <div className="space-y-2">
+              <Label>リンクURL（任意）</Label>
+              <InlineEdit
+                value={linkUrl}
+                onSave={handleLinkUrlSave}
+                placeholder="https://example.com"
+              />
+              <p className="text-sm text-muted-foreground">
+                ボタンをクリックした際に開くリンクを設定できます
+              </p>
+            </div>
+          )}
 
           {/* ボタンテキスト */}
-          {linkUrl && (
+          {showButton && linkUrl && (
             <div className="space-y-2">
               <Label>ボタンテキスト</Label>
               <InlineEdit
@@ -366,26 +376,28 @@ export function NotificationSettings({ initialData }: NotificationSettingsProps)
         </>
       )}
 
-      <div className="flex gap-4">
-        <Button
-          type="button"
-          onClick={handleSaveAll}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "保存中..." : "設定を保存"}
-        </Button>
-
-        {initialData && (
+      {!compact && (
+        <div className="flex gap-4">
           <Button
             type="button"
-            variant="destructive"
-            onClick={handleDelete}
+            onClick={handleSaveAll}
             disabled={isSubmitting}
           >
-            設定を削除
+            {isSubmitting ? "保存中..." : "設定を保存"}
           </Button>
-        )}
-      </div>
+
+          {initialData && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+            >
+              設定を削除
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

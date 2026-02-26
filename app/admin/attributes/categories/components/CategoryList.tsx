@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Edit, Trash2, Folder, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
-import { deleteCategory } from "@/app/actions/category-actions"
+import { deleteCategory } from "@/app/actions/content/category-actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { Category, Pagination } from './types'

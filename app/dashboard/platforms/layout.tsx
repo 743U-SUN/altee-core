@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { PlatformNavigation } from "./components/PlatformNavigation"
@@ -22,7 +23,9 @@ export default async function PlatformsLayout({
         </p>
       </div>
 
-      <PlatformNavigation />
+      <Suspense fallback={<div className="h-10 border-b" />}>
+        <PlatformNavigation />
+      </Suspense>
 
       <div className="w-full max-w-5xl mx-auto min-h-[600px]">
         {children}

@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { userSetupSchema, handleAvailabilityCheckSchema, type UserSetupSchema } from '@/lib/validation/user-setup';
+import { userSetupSchema, handleAvailabilityCheckSchema, type UserSetupSchema } from '@/lib/validations/user-setup';
 import { checkHandleAvailability as checkHandle } from '@/lib/handle-utils';
 import { revalidatePath } from 'next/cache';
 
@@ -21,7 +21,7 @@ type ActionResult<T = unknown> = {
 export async function completeUserSetup(data: UserSetupSchema): Promise<ActionResult> {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return { success: false, error: '認証が必要です' };
     }
@@ -29,9 +29,9 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
     // バリデーション
     const validation = userSetupSchema.safeParse(data);
     if (!validation.success) {
-      return { 
-        success: false, 
-        error: validation.error.errors[0]?.message || 'データが正しくありません' 
+      return {
+        success: false,
+        error: validation.error.errors[0]?.message || 'データが正しくありません'
       };
     }
 
@@ -41,9 +41,9 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
     if (validatedData.role === 'USER' && validatedData.handle) {
       const handleAvailability = await checkHandle(validatedData.handle);
       if (!handleAvailability.available) {
-        return { 
-          success: false, 
-          error: handleAvailability.error || 'ハンドルが利用できません' 
+        return {
+          success: false,
+          error: handleAvailability.error || 'ハンドルが利用できません'
         };
       }
     }
@@ -84,9 +84,9 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
     return { success: true };
   } catch (error) {
     console.error('User setup error:', error);
-    return { 
-      success: false, 
-      error: 'セットアップ中にエラーが発生しました' 
+    return {
+      success: false,
+      error: 'セットアップ中にエラーが発生しました'
     };
   }
 }
@@ -110,7 +110,7 @@ export async function checkHandleAvailability(handle: string): Promise<ActionRes
 
     // Handle重複チェック
     const result = await checkHandle(validation.data.handle);
-    
+
     return {
       success: true,
       data: {

@@ -27,7 +27,7 @@ export async function getUserNavData(): Promise<UserNavData | null> {
     include: {
       profile: {
         include: {
-          profileImage: true
+          avatarImage: true // アイコン画像（ヘッダー・ネームカード用）
         }
       }
     }
@@ -37,12 +37,12 @@ export async function getUserNavData(): Promise<UserNavData | null> {
     return null
   }
 
-  // プロフィール画像の優先順位
+  // アイコン画像の優先順位
   let avatar: string | null = null
-  
-  // 1. カスタムプロフィール画像（MediaFile）
-  if (user.profile?.profileImage?.storageKey) {
-    avatar = `/api/files/${user.profile.profileImage.storageKey}`
+
+  // 1. カスタムアイコン画像（MediaFile）
+  if (user.profile?.avatarImage?.storageKey) {
+    avatar = `/api/files/${user.profile.avatarImage.storageKey}`
   }
   // 2. OAuth提供者の画像
   else if (user.image) {

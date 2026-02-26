@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { updateUserItem } from "@/app/actions/item-actions"
+import { updateUserItem } from "@/app/actions/content/item-actions"
 import { UserItemWithDetails } from "@/types/item"
 import { ItemImage } from "@/components/items/item-image"
 

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import {
   itemCategorySchema,
   type ItemCategoryInput,
-} from '@/lib/validation/item'
+} from '@/lib/validations/item'
 import { revalidatePath } from 'next/cache'
 
 // ===== カテゴリ一覧取得 =====

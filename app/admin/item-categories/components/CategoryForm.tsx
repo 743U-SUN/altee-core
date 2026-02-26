@@ -9,7 +9,7 @@ import {
   itemCategorySchema,
   type ItemCategoryInput,
   ITEM_TYPES,
-} from '@/lib/validation/item'
+} from '@/lib/validations/item'
 import { createCategoryAction, updateCategoryAction } from '../actions'
 import { Button } from '@/components/ui/button'
 import {

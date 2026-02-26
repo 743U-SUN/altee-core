@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Upload, FileText, CheckCircle2, XCircle } from 'lucide-react'
 import { importItemsFromCSVAction } from '../../actions'
-import type { ItemCSVRow, CSVImportResult } from '@/lib/validation/item'
+import type { ItemCSVRow, CSVImportResult } from '@/lib/validations/item'
 import { useRouter } from 'next/navigation'
 
 export function CSVImportForm() {

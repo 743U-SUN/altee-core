@@ -1,4 +1,4 @@
-import { Home, Users, MonitorSmartphone, Link, Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon, Tv, Video } from "lucide-react"
+import { Home, Users, MonitorSmartphone, Link, Bell, Tag, Logs, Settings, Image, BarChart3, Shield, UserCircle, Command, Building, NotebookPen, Share2, HelpCircle, CogIcon, Tv, Video, Palette } from "lucide-react"
 import type { UserNotification } from "@/types/notifications"
 import type { UserContact } from "@/types/contacts"
 
@@ -24,6 +24,7 @@ export const iconMap = {
   MonitorSmartphone,
   Tv,
   Video,
+  Palette,
 } as const
 
 export type IconName = keyof typeof iconMap
@@ -99,6 +100,7 @@ export interface LayoutConfig {
   mobileFooter: MobileFooterConfig
   mobileLayout: MobileLayoutConfig
   sidebarWidth?: string
+  mainClassName?: string
 }
 
 export type LayoutVariant = 'default' | 'admin' | 'user-profile' | 'public' | 'minimal' | 'dashboard'
@@ -110,6 +112,7 @@ export interface LayoutOverrides {
   mobileFooter?: Partial<MobileFooterConfig>
   mobileLayout?: Partial<MobileLayoutConfig>
   sidebarWidth?: string
+  mainClassName?: string
 }
 
 // デフォルトユーザーデータ
@@ -195,6 +198,12 @@ const adminNavItems: NavItem[] = [
     url: "/admin/attributes",
     icon: Tag,
     isActive: false,
+  },
+  {
+    title: "Backgrounds",
+    url: "/admin/section-backgrounds",
+    icon: Palette,
+    isActive: false,
   }
 ]
 
@@ -208,34 +217,15 @@ const dashboardNavItems: NavItem[] = [
     isActive: true,
   },
   {
-    title: "プロフィール",
-    url: "/dashboard/profile",
+    title: "プロフィールエディター",
+    url: "/dashboard/profile-editor",
     icon: UserCircle,
-    isActive: false,
-  },
-  {
-    title: "ユーザーデータ",
-    url: "/dashboard/userdata",
-    icon: Logs,
-    isActive: false,
-  },
-  {
-    title: "SNSリンク",
-    url: "/dashboard/links",
-    icon: Share2,
     isActive: false,
   },
   {
     title: "プラットフォーム",
     url: "/dashboard/platforms",
     icon: Tv,
-    isActive: false,
-  },
-  // デバイス管理 removed in Phase 10 (Device system deleted)
-  {
-    title: "FAQ管理",
-    url: "/dashboard/faq",
-    icon: HelpCircle,
     isActive: false,
   },
   {
@@ -250,6 +240,10 @@ const dashboardNavItems: NavItem[] = [
     icon: Home,
     isActive: false,
   }
+  // Phase 3: プロフィールとセクションを /dashboard/profile-editor に統合済み
+  // 旧UI removed in Phase 2:
+  // - SNSリンク (/dashboard/links) → backups/legacy-dashboard/
+  // - FAQ管理 (/dashboard/faq) → backups/legacy-dashboard/
 ]
 
 // バリアント設定の定義
@@ -460,5 +454,6 @@ export function mergeLayoutConfig(
       ...overrides.mobileLayout,
     },
     sidebarWidth: overrides.sidebarWidth || baseConfig.sidebarWidth,
+    mainClassName: overrides.mainClassName || baseConfig.mainClassName,
   }
 }

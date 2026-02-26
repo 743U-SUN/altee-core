@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { deleteMediaFile, bulkDeleteMediaFiles } from '@/app/actions/media-actions'
+import { deleteMediaFile, bulkDeleteMediaFiles } from '@/app/actions/media/media-actions'
 
 export function useMediaDeletion() {
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null)

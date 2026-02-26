@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Edit, Trash2, Globe, FileX, Download } from "lucide-react"
 import Link from "next/link"
-import { deleteArticle, toggleArticlePublished, getArticle } from "@/app/actions/article-actions"
+import { deleteArticle, toggleArticlePublished, getArticle } from "@/app/actions/content/article-actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { downloadMarkdownFile, createExportDataFromArticle } from "@/lib/markdown-export"
@@ -49,8 +49,8 @@ interface ArticleListProps {
 export function ArticleList({ articles, pagination }: ArticleListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isToggling, setIsToggling] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const handleDeleteClick = (article: Article) => {
@@ -58,34 +58,35 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
     setDeleteDialogOpen(true)
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!articleToDelete) return
-    
-    setIsDeleting(true)
-    try {
-      await deleteArticle(articleToDelete.id)
-      toast.success('記事が削除されました')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '削除に失敗しました')
-    } finally {
-      setIsDeleting(false)
-      setDeleteDialogOpen(false)
-      setArticleToDelete(null)
-    }
+    startTransition(async () => {
+      try {
+        await deleteArticle(articleToDelete.id)
+        toast.success('記事が削除されました')
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '削除に失敗しました')
+      } finally {
+        setDeleteDialogOpen(false)
+        setArticleToDelete(null)
+      }
+    })
   }
 
-  const handleTogglePublished = async (articleId: string) => {
-    setIsToggling(articleId)
-    try {
-      await toggleArticlePublished(articleId)
-      toast.success('公開状態を変更しました')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '公開状態の変更に失敗しました')
-    } finally {
-      setIsToggling(null)
-    }
+  const handleTogglePublished = (articleId: string) => {
+    setTogglingId(articleId)
+    startTransition(async () => {
+      try {
+        await toggleArticlePublished(articleId)
+        toast.success('公開状態を変更しました')
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '公開状態の変更に失敗しました')
+      } finally {
+        setTogglingId(null)
+      }
+    })
   }
 
   const handleExport = async (article: Article) => {
@@ -151,9 +152,9 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
                       編集
                     </DropdownMenuItem>
                   </Link>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleTogglePublished(article.id)}
-                    disabled={isToggling === article.id}
+                    disabled={togglingId === article.id}
                   >
                     {article.published ? (
                       <>
@@ -229,10 +230,10 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              disabled={isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? "削除中..." : "削除"}
+              {isPending ? "削除中..." : "削除"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

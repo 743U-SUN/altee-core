@@ -25,11 +25,11 @@ model User {
   articles               Article[]    // 記事の著者
   mediaFiles             MediaFile[]  // アップロードしたメディアファイル
   profile                UserProfile? // プロフィール情報
-  userLinks              UserLink[]   // ユーザーのSNSリンク
   faqCategories          FaqCategory[] // FAQカテゴリー
-  userData               UserData[]   // ユーザーデータ
+  userSections           UserSection[] // ユーザープロフィールセクション
   notification           UserNotification? // お知らせ（1対1）
   contact                UserContact?  // 連絡方法（1対1）
+  gift                   UserGift?     // ギフト設定（1対1）
   // userDevices removed (Device system deleted in Phase 10)
   userItems              UserItem[] // ユーザー所有アイテム
 
@@ -140,10 +140,11 @@ model MediaFile {
   uploaderId          String         // 管理者ID（必須）
   uploader            User           @relation(fields: [uploaderId], references: [id])
   articles            Article[]      // サムネイル用リレーション
-  profileImages       UserProfile[]  @relation("ProfileImage")
-  linkIcons           UserLink[]     @relation("LinkIcon")
+  characterImages     UserProfile[]  @relation("CharacterImage") // キャラクター画像（9:16縦長）
+  avatarImages        UserProfile[]  @relation("AvatarImage")    // アイコン画像（1:1正方形）
   notificationImages  UserNotification[] @relation("NotificationImage")
   contactImages       UserContact[]  @relation("ContactImage")
+  giftImages          UserGift[]     @relation("GiftImage")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   
@@ -252,14 +253,54 @@ model UserProfile {
   userId             String     @unique
   user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                String?
-  profileImageId     String?
-  profileImage       MediaFile? @relation("ProfileImage", fields: [profileImageId], references: [id])
+  characterImageId   String?    // キャラクター画像（9:16縦長、プロフィール左カラム用）
+  characterImage     MediaFile? @relation("CharacterImage", fields: [characterImageId], references: [id])
+  avatarImageId      String?    // アイコン画像（1:1正方形、ヘッダー・ネームカード用）
+  avatarImage        MediaFile? @relation("AvatarImage", fields: [avatarImageId], references: [id])
   backgroundImageKey String?    // 管理者用意の背景画像ファイル名
+  themePreset        String?    @default("claymorphic") // テーマプリセット名
+  themeSettings      Json?      // テーマ設定（visibility等）
+  bannerImageKey     String?    // バナー画像キー
+  characterBackgroundKey String? // CharacterColumn専用背景画像キー
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
   @@index([userId])
   @@map("user_profiles")
+}
+
+model UserSection {
+  id          String   @id @default(cuid())
+  userId      String
+  sectionType String   // 'profile-card' | 'faq' | 'links' | 'bar-graph' | ...
+  title       String?
+  sortOrder   Int
+  isVisible   Boolean  @default(true)
+  data        Json     // セクション固有データ
+  settings    Json?    // SectionSettings - バンドの見た目設定（背景・パディング）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sortOrder])
+  @@map("user_sections")
+}
+
+model SectionBackgroundPreset {
+  id           String   @id @default(cuid())
+  name         String   // 管理UI表示名 "Midnight Blue"
+  category     String   // "solid" | "gradient" | "pattern" | "animated"
+  config       Json     // 背景の詳細設定（カテゴリごとに異なる）
+  thumbnailKey String?  // R2上のサムネイル画像キー（プレビュー表示用）
+  cssString    String?  // CSSに直接使える文字列（グラデ等）
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("section_background_presets")
 }
 
 model LinkType {
@@ -272,10 +313,9 @@ model LinkType {
   sortOrder    Int @default(0) // 管理画面での表示順序
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
-  userLinks    UserLink[]
+
   icons        LinkTypeIcon[] // 複数アイコンオプション
-  
+
   @@index([isActive])
   @@index([sortOrder])
   @@map("link_types")
@@ -292,34 +332,10 @@ model LinkTypeIcon {
   updatedAt    DateTime @updatedAt
   
   linkType     LinkType @relation(fields: [linkTypeId], references: [id], onDelete: Cascade)
-  userLinks    UserLink[] // このアイコンを選択したユーザーリンク
-  
+
   @@index([linkTypeId])
   @@index([sortOrder])
   @@map("link_type_icons")
-}
-
-model UserLink {
-  id                     String @id @default(cuid())
-  userId                 String
-  linkTypeId             String
-  url                    String
-  customLabel            String? // カスタムリンクのラベル（最大10文字）
-  customIconId           String? // ユーザーアップロードアイコン
-  selectedLinkTypeIconId String? // 選択されたプリセットアイコン
-  sortOrder              Int @default(0) // ユーザー内での表示順序
-  isVisible              Boolean @default(true) // 表示/非表示
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  
-  user                   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  linkType               LinkType @relation(fields: [linkTypeId], references: [id])
-  customIcon             MediaFile? @relation("LinkIcon", fields: [customIconId], references: [id])
-  selectedLinkTypeIcon   LinkTypeIcon? @relation(fields: [selectedLinkTypeIconId], references: [id])
-  
-  @@index([userId])
-  @@index([sortOrder])
-  @@map("user_links")
 }
 
 model FaqCategory {
@@ -357,24 +373,6 @@ model FaqQuestion {
   @@map("faq_questions")
 }
 
-model UserData {
-  id          String   @id @default(cuid())
-  userId      String   // 所有者のユーザーID
-  icon        String   // Lucideアイコン名（例: "User", "Heart", "Star"）
-  field       String   // 項目名（例: "身長", "体重", "好きなもの"）
-  value       String   // 値（例: "175cm", "65kg", "読書"）
-  sortOrder   Int      @default(0) // 表示順序
-  isVisible   Boolean  @default(true) // 表示/非表示
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([sortOrder])
-  @@map("user_data")
-}
-
 model UserNotification {
   id          String     @id @default(cuid())
   userId      String     @unique
@@ -406,12 +404,28 @@ model UserContact {
   imageId     String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  
+
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   image       MediaFile? @relation("ContactImage", fields: [imageId], references: [id])
-  
+
   @@index([userId])
   @@map("user_contacts")
+}
+
+model UserGift {
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  isEnabled   Boolean    @default(false)
+  imageId     String?
+  linkUrl     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  image       MediaFile? @relation("GiftImage", fields: [imageId], references: [id])
+
+  @@index([userId])
+  @@map("user_gifts")
 }
 
 // ===== Device System =====

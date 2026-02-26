@@ -1,5 +1,6 @@
+import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
-import { handleSchema } from '@/lib/validation/user-setup';
+import { handleSchema } from '@/lib/validations/user-setup';
 import { isReservedHandle } from '@/lib/reserved-handles';
 
 /**
@@ -20,7 +21,7 @@ export async function checkHandleAvailability(handle: string): Promise<HandleAva
   try {
     // 基本的なバリデーション
     const validation = handleSchema.safeParse(handle);
-    
+
     if (!validation.success) {
       return {
         available: false,
@@ -91,10 +92,11 @@ async function generateHandleSuggestion(baseHandle: string): Promise<string> {
 
 /**
  * Handleからユーザー情報を取得
+ * React.cache()でリクエスト単位のデデュプリケーションを実装
  * @param handle 検索するhandle
  * @returns ユーザー情報（存在しない場合はnull）
  */
-export async function getUserByHandle(handle: string) {
+export const getUserByHandle = cache(async (handle: string) => {
   try {
     // @プレフィックスを削除して正規化
     const normalizedHandle = handle.startsWith('@')
@@ -111,17 +113,9 @@ export async function getUserByHandle(handle: string) {
       include: {
         profile: {
           include: {
-            profileImage: true,
+            characterImage: true, // キャラクター画像（9:16縦長）
+            avatarImage: true,    // アイコン画像（1:1正方形）
           },
-        },
-        userLinks: {
-          include: {
-            linkType: true,
-            customIcon: true,
-            selectedLinkTypeIcon: true,
-          },
-          orderBy: { sortOrder: 'asc' },
-          where: { isVisible: true },
         },
         faqCategories: {
           include: {
@@ -133,6 +127,10 @@ export async function getUserByHandle(handle: string) {
           where: { isVisible: true },
           orderBy: { sortOrder: 'asc' },
         },
+        userSections: {
+          where: { isVisible: true },
+          orderBy: { sortOrder: 'asc' },
+        },
       },
     });
 
@@ -141,7 +139,7 @@ export async function getUserByHandle(handle: string) {
     console.error('Get user by handle error:', error);
     return null;
   }
-}
+});
 
 /**
  * Handleが存在するかチェック（簡易版）
@@ -155,7 +153,7 @@ export async function handleExists(handle: string): Promise<boolean> {
       where: { handle: normalizedHandle },
       select: { id: true },
     });
-    
+
     return !!user;
   } catch (error) {
     console.error('Handle exists check error:', error);

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Altee Core - モバイルアプリ',
     short_name: 'Altee',
-    description: 'Next.js 15 + App Router による高性能Webアプリケーション',
+    description: 'VTuber・配信者向けプロフィールサービス',
     start_url: '/',
     display: 'standalone', // ブラウザUI完全非表示
     background_color: '#0f172a', // ダークモード基調

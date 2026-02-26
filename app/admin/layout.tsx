@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { BaseLayout } from "@/components/layout/BaseLayout"
-import { getAdminStats } from "@/app/actions/admin-stats"
+import { getAdminStats } from "@/app/actions/admin/stats"
 import { getSidebarContent } from "@/lib/sidebar-content-registry"
 import { getUserNavData } from "@/lib/user-data"
 
@@ -27,12 +27,12 @@ export default async function AdminLayout({
     redirect('/unauthorized');
   }
   
-  // 統計データを取得してサイドバーコンテンツを生成
-  const stats = await getAdminStats()
+  // 統計データとユーザー情報を並列取得
+  const [stats, user] = await Promise.all([
+    getAdminStats(),
+    getUserNavData(),
+  ])
   const adminSidebarContent = getSidebarContent("admin", stats)
-  
-  // ユーザー情報を取得
-  const user = await getUserNavData()
   
   return (
     <BaseLayout 

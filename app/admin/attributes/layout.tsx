@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { AttributeNavigation } from "./components/AttributeNavigation"
@@ -23,7 +24,9 @@ export default async function AttributesLayout({
         </p>
       </div>
       
-      <AttributeNavigation />
+      <Suspense fallback={<div className="h-10 border-b" />}>
+        <AttributeNavigation />
+      </Suspense>
       
       <div className="min-h-[600px]">
         {children}

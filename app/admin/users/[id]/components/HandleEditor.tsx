@@ -18,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { updateUserHandle } from "@/app/actions/user-management"
+import { updateUserHandle } from "@/app/actions/admin/user-management"
 import { AtSign, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 

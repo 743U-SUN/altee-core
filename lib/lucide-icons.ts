@@ -1,0 +1,112 @@
+import type { LucideIcon } from 'lucide-react'
+import {
+  User,
+  Users,
+  UserCheck,
+  Crown,
+  Activity,
+  Heart,
+  Zap,
+  Scale,
+  Star,
+  ThumbsUp,
+  Award,
+  Medal,
+  Book,
+  Music,
+  Camera,
+  Coffee,
+  Utensils,
+  Dumbbell,
+  Bike,
+  Mountain,
+  Waves,
+  Home,
+  MapPin,
+  Car,
+  Plane,
+  Calendar,
+  Clock,
+  Sun,
+  Moon,
+  Mail,
+  Phone,
+  MessageCircle,
+  Globe,
+  Briefcase,
+  GraduationCap,
+  Code,
+  Laptop,
+  Gift,
+  Tag,
+  Flag,
+  Target,
+  Gamepad2,
+  Palette,
+  Circle,
+  HelpCircle,
+} from 'lucide-react'
+
+/**
+ * 共通 Lucide アイコンマップ
+ * セクションコンポーネント（FAQ, Links, Timeline など）で使用
+ */
+export const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
+  User,
+  Users,
+  UserCheck,
+  Crown,
+  Activity,
+  Heart,
+  Zap,
+  Scale,
+  Star,
+  ThumbsUp,
+  Award,
+  Medal,
+  Book,
+  Music,
+  Camera,
+  Coffee,
+  Utensils,
+  Dumbbell,
+  Bike,
+  Mountain,
+  Waves,
+  Home,
+  MapPin,
+  Car,
+  Plane,
+  Calendar,
+  Clock,
+  Sun,
+  Moon,
+  Mail,
+  Phone,
+  MessageCircle,
+  Globe,
+  Briefcase,
+  GraduationCap,
+  Code,
+  Laptop,
+  Gift,
+  Tag,
+  Flag,
+  Target,
+  Gamepad2,
+  Palette,
+  Circle,
+  HelpCircle,
+}
+
+/**
+ * アイコン名から LucideIcon コンポーネントを取得
+ * 見つからない場合は fallback（デフォルト: Circle）を返す
+ */
+export function getLucideIcon(
+  iconName: string | undefined,
+  fallback: LucideIcon = Circle
+): LucideIcon {
+  if (!iconName) return fallback
+  return LUCIDE_ICON_MAP[iconName] ?? fallback
+}

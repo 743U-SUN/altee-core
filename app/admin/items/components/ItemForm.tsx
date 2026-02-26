@@ -8,7 +8,7 @@ import { Item, ItemCategory, Brand } from '@prisma/client'
 import {
   itemSchema,
   type ItemInput,
-} from '@/lib/validation/item'
+} from '@/lib/validations/item'
 import { createItemAction, updateItemAction } from '../actions'
 import { Button } from '@/components/ui/button'
 import {

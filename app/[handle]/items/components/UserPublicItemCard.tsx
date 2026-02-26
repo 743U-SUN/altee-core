@@ -1,8 +1,6 @@
-'use client'
-
+import Link from "next/link"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { ExternalLink } from "lucide-react"
 import { ItemImage } from "@/components/items/item-image"
 import { UserItemForPublicPage } from '@/types/item'
@@ -28,13 +26,16 @@ export function UserPublicItemCard({ userItem }: UserPublicItemCardProps) {
               </Badge>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => item.amazonUrl && window.open(item.amazonUrl, '_blank')}
-          >
-            <ExternalLink className="h-3 w-3" />
-          </Button>
+          {item.amazonUrl && (
+            <Link
+              href={item.amazonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          )}
         </div>
       </CardHeader>
 

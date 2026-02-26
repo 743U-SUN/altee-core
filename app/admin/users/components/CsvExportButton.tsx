@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Download, Loader2 } from "lucide-react"
-import { getUsersForCsvExport } from "@/app/actions/user-management"
+import { getUsersForCsvExport } from "@/app/actions/admin/user-management"
 import { UserRole } from "@prisma/client"
 import { toast } from "sonner"
 
@@ -11,8 +11,8 @@ interface CsvExportButtonProps {
   search?: string
   role?: UserRole
   isActive?: boolean
-  createdFrom?: Date
-  createdTo?: Date
+  createdFrom?: string
+  createdTo?: string
 }
 
 export function CsvExportButton({

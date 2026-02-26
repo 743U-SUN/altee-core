@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
+import Image from "next/image"
 import { fetchYoutubeRssFeed } from "@/services/youtube/youtube-api"
 
 interface VideosPageProps {
@@ -105,10 +106,12 @@ export default async function VideosPage({ params }: VideosPageProps) {
                 >
                   <div className="aspect-video bg-muted relative">
                     {video.thumbnail && (
-                      <img
+                      <Image
                         src={video.thumbnail}
                         alt={video.title || video.videoId}
-                        className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                        fill
+                        className="object-cover group-hover:opacity-90 transition-opacity"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     )}
                   </div>
@@ -144,10 +147,12 @@ export default async function VideosPage({ params }: VideosPageProps) {
                 >
                   <div className="aspect-video bg-muted relative">
                     {video.thumbnail && (
-                      <img
+                      <Image
                         src={video.thumbnail}
                         alt={video.title}
-                        className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                        fill
+                        className="object-cover group-hover:opacity-90 transition-opacity"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     )}
                   </div>

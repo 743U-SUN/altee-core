@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { InlineEdit } from '@/components/ui/inline-edit';
+import { InlineEdit } from '@/components/inline-edit';
 import { GripVertical, Trash2, Loader2 } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -66,9 +66,8 @@ export function SortableItem<T extends SortableItemType>({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-card rounded-lg border ${
-        isDragging ? 'border-primary' : 'border-border'
-      } p-4 md:p-6`}
+      className={`bg-card rounded-lg border ${isDragging ? 'border-primary' : 'border-border'
+        } p-4 md:p-6`}
     >
       {/* ヘッダー: ドラッグハンドルと削除ボタン */}
       <div className="flex items-center gap-4 mb-4">

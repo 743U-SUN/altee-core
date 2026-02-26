@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { toast } from "sonner"
-import { updateLinkType } from "@/app/actions/link-actions"
+import { updateLinkType } from "@/app/actions/admin/link-type-actions"
 import { MultipleIconUploadSection } from "./MultipleIconUploadSection"
 import type { LinkType } from "@/types/link-type"
 
@@ -36,7 +36,7 @@ const editLinkTypeFormSchema = z.object({
 type EditLinkTypeFormData = z.infer<typeof editLinkTypeFormSchema>
 
 export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: EditLinkTypeModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<EditLinkTypeFormData>({
     resolver: zodResolver(editLinkTypeFormSchema),
@@ -47,26 +47,25 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
     },
   })
 
-  const onSubmit = async (data: EditLinkTypeFormData) => {
-    setIsSubmitting(true)
-    try {
-      const result = await updateLinkType(linkType.id, {
-        displayName: data.displayName,
-        urlPattern: data.urlPattern || undefined,
-        isActive: data.isActive,
-      })
+  const onSubmit = (data: EditLinkTypeFormData) => {
+    startTransition(async () => {
+      try {
+        const result = await updateLinkType(linkType.id, {
+          displayName: data.displayName,
+          urlPattern: data.urlPattern || undefined,
+          isActive: data.isActive,
+        })
 
-      if (result.success && result.data) {
-        toast.success("リンクタイプを更新しました")
-        onLinkTypeUpdated(result.data as LinkType)
-      } else {
-        toast.error(result.error || "リンクタイプの更新に失敗しました")
+        if (result.success && result.data) {
+          toast.success("リンクタイプを更新しました")
+          onLinkTypeUpdated(result.data as LinkType)
+        } else {
+          toast.error(result.error || "リンクタイプの更新に失敗しました")
+        }
+      } catch {
+        toast.error("リンクタイプの更新に失敗しました")
       }
-    } catch {
-      toast.error("リンクタイプの更新に失敗しました")
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
 
@@ -76,7 +75,7 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
         <DialogHeader>
           <DialogTitle>リンクタイプを編集</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* 識別名表示（編集不可） */}
@@ -95,9 +94,9 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
                 <FormItem>
                   <FormLabel>表示名</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="例: YouTube, Instagram" 
-                      {...field} 
+                    <Input
+                      placeholder="例: YouTube, Instagram"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -114,10 +113,10 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
                     URLパターン <span className="text-sm text-muted-foreground">（正規表現、オプション）</span>
                   </FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="例: ^https://(www\\.)?(youtube\\.com|youtu\\.be).*"
                       rows={3}
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -155,11 +154,6 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
                     <FormLabel className="text-base">有効状態</FormLabel>
                     <div className="text-sm text-muted-foreground">
                       ユーザーが選択できるかどうか
-                      {(linkType._count?.userLinks || 0) > 0 && (
-                        <div className="text-xs text-orange-600 mt-1">
-                          現在 {linkType._count?.userLinks} 個のリンクで使用中
-                        </div>
-                      )}
                     </div>
                   </div>
                   <FormControl>
@@ -176,8 +170,8 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
               <Button type="button" variant="outline" onClick={onCancel}>
                 キャンセル
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "更新中..." : "更新"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "更新中..." : "更新"}
               </Button>
             </div>
           </form>

@@ -1,273 +1,61 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Next.js 16 App Router + PostgreSQL + Prisma web application.
 
-## Commands
+## Communication
 
-**Development (Local):**
+- Respond in Japanese (internal thinking can be in English)
+
+## Quick Commands
+
 ```bash
-docker compose -f compose.dev.yaml up -d  # Start development environment
-npm run dev                                # Start development server with Turbopack
-npm run build                              # Build for production
-npm run lint                               # Run ESLint checks
-docker compose -f compose.dev.yaml down   # Stop development environment
+# Development
+docker compose -f compose.dev.yaml up -d && npm run dev
+
+# Lint & Type check
+npm run lint && npx tsc --noEmit
+
+# Database (local)
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate
 ```
 
-**Database (Prisma):**
-```bash
-DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:push        # Push schema changes to database
-DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate     # Create and run migrations
-DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio:local # Open Prisma Studio (local)
-docker compose -f compose.dev.yaml exec app npm run db:studio                                                # Open Prisma Studio (Docker)
-npm run db:generate                           # Generate Prisma Client
-```
+## Core Rules
 
-**Production (VPS):**
-```bash
-docker compose -f compose.prod.yaml up -d    # Start production environment
-docker compose -f compose.prod.yaml down     # Stop production environment
-docker compose -f compose.prod.yaml restart  # Restart production environment
-docker compose -f compose.prod.yaml logs -f  # View logs
-```
+- Server Components first, Client Components only when needed
+- Server Actions first (API Routes only for webhooks/external APIs)
+- TypeScript/ESLint errors must always be zero
+- Use shadcn/ui + lucide-react (don't reinvent UI)
+- No global state libraries (use nuqs for URL state when needed)
+- Production DB changes: always use migrate (never db:push)
 
-**Production Database Management:**
-```bash
-./scripts/migrate-production.sh              # Run production migrations with backup
-./scripts/backup-database.sh [description]   # Create database backup
-```
+## PWA (Progressive Web App) Support
+- Use **Serwist** (`@serwist/turbopack`) for Next.js 16 Turbopack PWA integration.
+- Service Worker logic lives in `app/sw.ts`.
+- Route handler at `app/serwist/[path]/route.ts` generates `sw.js`.
+- Registration via `components/pwa/SerwistRegister.tsx` using `@serwist/window`.
+- See `docs/GUIDES/PWA-GUIDE.md` for full instructions.
 
-**Production Prisma Studio (SSH Access):**
-```bash
-ssh sakura-vps                               # Connect to VPS
-docker compose -f compose.prod.yaml exec app npx prisma studio  # Start Prisma Studio
-# Access via browser: http://localhost:5555 (while SSH connected)
-```
+## Architecture
 
-**Database Schema Updates:**
-```bash
-# IMPORTANT: Always create migrations for schema changes, never use db:push in production
-docker compose -f compose.dev.yaml exec app npx prisma migrate dev --name migration_name  # Create and apply migration (development)
-./scripts/migrate-production.sh              # Apply migrations to production (with automatic backup)
-```
+- `app/` - Routes and pages (App Router)
+- `components/` - Reusable UI (no business logic)
+- `lib/` - Utility functions
+- `services/` - Business logic and external APIs
+- Feature-specific components: same level as page.tsx
 
-**⚠️ Database Schema Change Rules:**
-- **NEVER** use `db:push` for schema changes that need to be deployed to production
-- **ALWAYS** use `npx prisma migrate dev --name <descriptive_name>` to create proper migration files
-- **ALWAYS** test migrations in development before applying to production
-- Migration files must be committed to git and deployed through the normal deployment process
-- For production deployments, always use `./scripts/migrate-production.sh` for automatic backup and safe migration
+## Data Patterns
 
-## Architecture Overview
+| Scenario | Implementation |
+|----------|----------------|
+| Non-interactive | Server Components + Server Actions |
+| Interactive | Client Components + Server Actions + useSWR |
 
-This is a Next.js 15.3.3 application using the App Router paradigm with the following key architectural decisions:
+## Security (3-Layer Auth)
 
-1. **Server-First Approach**: Default to Server Components. Use Client Components only when interactivity is required.
+1. **Middleware**: Route-level auth check
+2. **Layout**: State verification and redirects
+3. **Page/Actions**: Final permission check
 
-2. **Server Actions**: Primary method for server-side processing and mutations. API Routes should only be used when absolutely necessary (e.g., webhooks, external API integrations).
+## References
 
-3. **Type Safety**: TypeScript is mandatory. All code must pass TypeScript checks with zero errors. ESLint must also report zero errors.
-
-4. **Component Architecture**:
-   - `app/` - Routes and pages following Next.js App Router conventions
-   - `components/` - Pure UI components without business logic
-   - `lib/` - Utility functions and helpers
-   - `services/` - Business logic and external API integrations
-   - All shadcn/ui components are pre-installed in `components/ui/`
-
-5. **State Management**:
-   - URL state using `nuqs` for shareable application state
-   - React Hook Form + Zod for form state and validation
-   - No global state management libraries
-
-6. **Data Fetching Patterns**:
-   - Server Components for non-interactive data display
-   - Client Components + Server Actions + useSWR for interactive data needs
-   - Direct database queries in Server Components/Actions (when Prisma is configured)
-
-## Important Development Guidelines
-
-1. **YAGNI Principle**: Build only what is immediately needed. Avoid premature abstractions.
-
-2. **Component Usage**: Always use existing shadcn/ui components from `components/ui/` before creating custom components.
-
-3. **Icons**: Use lucide-react for all icons.
-
-4. **Forms**: Implement forms using react-hook-form with Zod schemas for validation.
-
-5. **Styling**: Use Tailwind CSS classes. The project uses Tailwind v4 with PostCSS.
-
-6. **Authentication**: When implementing auth, follow the 3-layer pattern:
-   - Middleware (route protection)
-   - Layout (UI adaptation)
-   - Page/Actions (data access control)
-
-## Core Development Rules
-
-### Technology Stack
-- Next.js: ^15
-- React: ^19
-- PostgreSQL: ^17.4
-- Prisma ORM: ^6.7
-- TypeScript: ^5
-- Docker
-
-### Core Principles
-1. **App Router** as standard
-2. **TypeScript mandatory** - ESLint/type errors must always be zero
-3. **Server Actions first** - Use Server Actions for server processing. API Routes only when absolutely necessary (external APIs, webhooks)
-4. **YAGNI** (You Aren't Gonna Need It) - Don't build until needed
-5. **KISS** (Keep It Simple, Stupid) - Simplicity beats complexity
-
-### Directory Layout
-```
-app/         # Routing & pages
-components/  # Reusable UI (no business logic)
-lib/         # Utility functions
-hooks/       # Custom hooks
-types/       # Type definitions
-constants/   # Constants
-config/      # Config values & environment variable wrappers
-services/    # External API wrappers & business logic
-demo/        # Manual test pages accessible from frontend
-```
-
-- **Feature-specific components**: Same level as corresponding page.tsx
-- **Reusable components**: Place in components/
-
-### Data Handling Patterns
-
-| Dependency | Implementation |
-|------------|----------------|
-| Not dependent on user interaction | Server Components + Server Actions |
-| Dependent on user interaction | Client Components + Server Actions + useSWR |
-
-- Updates via Server Actions
-- Immediate reflection via useSWR.mutate for optimistic updates
-
-### UI Guidelines
-- **Always use shadcn/ui components** - Don't reinvent the wheel
-- **Icons**: Use lucide-react exclusively
-- **State Management**:
-  - URL state: Use nuqs
-  - No global state libraries (except NextAuth SessionProvider)
-  - Data state managed as Server State
-
-### Performance Optimization
-- Minimize `use client`, `useEffect`, `useState` - RSC first
-- Client-side: Use Suspense with fallbacks
-- Dynamic imports for lazy loading
-- Images: next/image, Links: next/link
-- Strict route-based code splitting
-
-### Forms and Validation
-- Controlled components + react-hook-form
-- Schema validation with Zod
-- Validate on both client and server
-
-### Quality, Security & Testing
-
-#### Error Handling
-- Guard clauses with early returns
-- Success path at the end
-
-#### Accessibility
-- Semantic HTML + ARIA
-- Keyboard navigation support
-
-#### Authentication/Authorization 3-Layer Architecture
-1. **Middleware**: Route-level authentication checks (e.g., /user/* → auth required)
-2. **Layout**: Detailed state verification and redirects (onboarding completion, account validity)
-3. **Page/Server Actions**: Final permission checks with principle of least privilege
-- Implementation: Guard clauses at each layer, assume authenticated for subsequent processing
-- See docs/security-guide.md for detailed implementation
-
-#### Testing
-- Place UI-based test pages in demo/ directory
-- Enable manual browser-based verification of all Server Actions and client functions
-
-#### Development and Testing Workflow
-**CRITICAL**: Follow these steps for all feature implementations:
-
-1. **Pre-Implementation**:
-   - Read and understand the current implementation
-   - Check existing database schema and relations
-   - Identify all files that will be modified
-   - Create a git commit of the current state as a baseline
-
-2. **Implementation**:
-   - Make changes incrementally
-   - Test each change before moving to the next
-   - Follow TypeScript strict mode requirements
-   - Use existing patterns and conventions from the codebase
-
-3. **Version Control**:
-   - Create commits at logical checkpoints to enable rollback if needed
-   - Commit message format: `feat/fix/refactor: Brief description`
-   - Example: `feat: Add dynamic character name display to user profile`
-
-4. **Error Verification** (Run before browser testing):
-   - TypeScript: `npx tsc --noEmit` → Must show 0 errors
-   - ESLint: `npx eslint <modified-files>` → Must show 0 errors
-   - Build check: Verify `npm run dev` starts without errors
-   - Fix all errors before proceeding to browser testing
-
-5. **Browser Testing with MCP Playwright**:
-   - **ALWAYS** use MCP Playwright to verify implementations visually
-   - Navigation: `mcp__playwright__browser_navigate` to open target pages
-   - Structure check: `mcp__playwright__browser_snapshot` to verify DOM structure
-   - Visual verification: `mcp__playwright__browser_take_screenshot` with `fullPage: true`
-   - Console errors: Check `browser_console_messages` for runtime errors
-   - Test interactions: Click buttons, fill forms, verify state changes
-   - Test edge cases: Empty states, long text, missing data
-
-6. **Data Verification**:
-   - Verify data is fetched correctly from database
-   - Check that changes in dashboard reflect on public pages
-   - Test with different user accounts if applicable
-   - Verify proper handling of null/undefined values
-
-7. **Implementation Reporting**:
-   - Only report completion after ALL checks pass:
-     - ✅ Git commits created with clear messages
-     - ✅ TypeScript errors: 0
-     - ✅ ESLint errors: 0
-     - ✅ Browser testing via MCP Playwright complete
-     - ✅ Console errors: 0 (check via MCP Playwright)
-     - ✅ Visual verification with screenshots
-     - ✅ Data flow verified (dashboard → public page)
-   - Report must include:
-     - Summary of what was implemented
-     - Modified files list with line numbers
-     - Screenshot(s) showing working implementation
-     - Confirmation of zero errors
-
-### Image Management
-- File storage: ConoHa Object Storage (S3-compatible, MinIO in development)
-- Unified system for image optimization, security, and upload processing
-- See docs/image-handling-guide.md and docs/image-upload-guide.md for details
-
-### Implementation Flow
-1. **Design**: Determine core principles and directory structure
-2. **Data**: Establish fetch (useSWR) and update (Server Actions + mutate) rules
-3. **UI/State**: Use shadcn/ui and lucide-react, URL state with nuqs
-4. **Performance**: Optimize with RSC, Suspense, dynamic imports
-5. **Forms & Validation**: Zod × react-hook-form
-6. **Quality Control**: Error handling → Accessibility → Dedicated Server Actions → Manual testing in demo/
-
-## File Encoding Guidelines
-
-**IMPORTANT**: Always use UTF-8 encoding when creating or editing files containing Japanese text.
-
-- **Markdown files**: Use UTF-8 encoding to prevent character corruption
-- **Source code files**: UTF-8 encoding is mandatory for Japanese comments/strings
-- **Configuration files**: Ensure UTF-8 encoding for any Japanese content
-
-**Common Issues**:
-- Japanese characters appearing as garbled text (文字化け)
-- Encoding mismatch between editor and file system
-- Invalid byte sequences in UTF-8 files
-
-**Solution**: When text appears corrupted, recreate the file with proper UTF-8 encoding.
-
-**What you have to do First**
-Read "docs/core-rules.md" and understand the rules. You have to say "I understood the core-rules" for the first conversation.
+@docs/core-rules.md
