@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { BaseSectionProps, ImageSectionData } from '@/types/profile-sections'
 import { ImageSectionModal } from './ImageSectionModal'
 import { ImageIcon } from 'lucide-react'
@@ -61,7 +62,7 @@ export function ImageSection({ section, isEditable }: BaseSectionProps) {
 
     if (bg.type === 'image' && bg.imageKey) {
       return {
-        backgroundImage: `url(/api/files/${bg.imageKey})`,
+        backgroundImage: `url(${getPublicUrl(bg.imageKey)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }
@@ -96,7 +97,7 @@ export function ImageSection({ section, isEditable }: BaseSectionProps) {
       >
         {data.imageKey ? (
           <Image
-            src={`/api/files/${data.imageKey}`}
+            src={getPublicUrl(data.imageKey)}
             alt={data.altText || '画像'}
             fill
             sizes={IMAGE_SIZES.medium}

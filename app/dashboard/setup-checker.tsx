@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { cachedAuth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 
@@ -7,7 +7,7 @@ interface SetupCheckerProps {
 }
 
 export async function SetupChecker({ children }: SetupCheckerProps) {
-  const session = await auth();
+  const session = await cachedAuth();
   
   if (!session?.user) {
     return children; // 認証チェックは親で行われる

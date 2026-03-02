@@ -15,6 +15,7 @@ export const RESERVED_HANDLES = [
   'g',          // グループ関連ページ
 
   // 機能系
+  'demo',       // デモ・テストページ
   'settings',
   'help',
   'about',

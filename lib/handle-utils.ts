@@ -131,6 +131,12 @@ export const getUserByHandle = cache(async (handle: string) => {
           where: { isVisible: true },
           orderBy: { sortOrder: 'asc' },
         },
+        userNews: {
+          where: { published: true, adminHidden: false },
+          orderBy: { sortOrder: 'asc' },
+          include: { thumbnail: { select: { storageKey: true } } },
+          take: 3,
+        },
       },
     });
 

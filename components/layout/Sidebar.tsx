@@ -148,9 +148,9 @@ export function Sidebar({
         )}
       </SidebarPrimitive>
 
-      {/* Second Sidebar */}
+      {/* Second Sidebar - overflow-hiddenで子のScrollAreaとの二重スクロールバーを防止 */}
       <SidebarPrimitive collapsible="none" className="hidden flex-1 lg:flex">
-        <SidebarContent>
+        <SidebarContent className="overflow-hidden">
           {secondSidebarConfig.content || (
             <div className="p-4 text-muted-foreground text-sm">
               カスタムコンテンツエリア

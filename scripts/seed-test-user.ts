@@ -45,6 +45,7 @@ async function main() {
                 gameButton: true,
                 snsButton: true,
                 notification: true,
+                newsPage: true,
               },
             },
           },

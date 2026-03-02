@@ -5,7 +5,6 @@ import type { ThemePreset } from '@/lib/themes/types'
 
 interface ThemePreviewClientProps {
   themes: ThemePreset[]
-  grouped: Record<string, ThemePreset[]>
   cssVariableKeys: readonly string[]
 }
 
@@ -13,57 +12,33 @@ interface ThemePreviewClientProps {
  * テーマプレビュー（クライアントコンポーネント）
  * テーマ選択・プレビュー・CSS変数表示
  */
-export function ThemePreviewClient({ themes, grouped, cssVariableKeys }: ThemePreviewClientProps) {
+export function ThemePreviewClient({ themes, cssVariableKeys }: ThemePreviewClientProps) {
   const [selectedId, setSelectedId] = useState<string>(themes[0]?.id ?? '')
 
   const selected = themes.find((t) => t.id === selectedId)
 
   return (
     <div className="space-y-8">
-      {/* テーマ選択タブ（スタイル別） */}
-      <div className="space-y-4">
-        {Object.entries(grouped).map(([name, variants]) => (
-          <div key={name}>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">{name}</h2>
-            <div className="flex flex-wrap gap-2">
-              {variants.map((theme) => (
-                <button
-                  key={theme.id}
-                  onClick={() => setSelectedId(theme.id)}
-                  className={`
-                    px-4 py-2 rounded-full text-sm font-medium transition-all border-2
-                    ${selectedId === theme.id
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                    }
-                  `}
-                >
-                  {theme.displayName}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* プレビューカード */}
       {selected && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* テーマプレビュー */}
           <div
-            className="rounded-2xl p-6 space-y-4"
+            className="p-6 space-y-4"
             style={{
               ...Object.fromEntries(
                 Object.entries(selected.variables)
               ),
               backgroundColor: selected.palette.background,
+              borderRadius: selected.variables['--theme-card-radius'] ?? '12px',
             }}
           >
             <div
-              className="rounded-2xl p-5 space-y-3"
+              className="p-5 space-y-3"
               style={{
                 backgroundColor: selected.palette.cardBackground,
                 boxShadow: selected.variables['--theme-card-shadow'] ?? 'none',
+                borderRadius: selected.variables['--theme-card-radius'] ?? '12px',
               }}
             >
               <h3

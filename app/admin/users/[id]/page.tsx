@@ -1,10 +1,12 @@
 import { getUserDetail } from "@/app/actions/admin/user-management"
+import { adminGetUserNewsList } from "@/app/actions/admin/user-news-admin-actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { UserActions } from "./components/UserActions"
 import { HandleEditor } from "./components/HandleEditor"
+import { UserNewsAdmin } from "./components/UserNewsAdmin"
 import { ArrowLeft, Calendar, Shield, User, Mail, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -17,7 +19,10 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { id } = await params
 
   try {
-    const user = await getUserDetail(id)
+    const [user, userNews] = await Promise.all([
+      getUserDetail(id),
+      adminGetUserNewsList(id),
+    ])
 
     return (
       <div className="container mx-auto p-6 flex flex-col gap-6">
@@ -216,6 +221,9 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* ニュース記事管理 */}
+          <UserNewsAdmin news={userNews} />
 
           {/* ハンドル変更 */}
           <HandleEditor user={user} />

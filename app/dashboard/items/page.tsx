@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -13,7 +13,7 @@ import { UserItemListSection } from "./components/UserItemListSection"
 import { prisma } from '@/lib/prisma'
 
 export default async function UserItemsPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id) {
     redirect('/auth/signin')

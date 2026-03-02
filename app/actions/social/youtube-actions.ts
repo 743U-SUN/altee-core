@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
+import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { fetchYoutubeVideoMetadata, getYoutubeThumbnailUrl, fetchYoutubeRssFeed } from "@/services/youtube/youtube-api"
@@ -12,7 +12,7 @@ import {
   DEFAULT_RSS_FEED_LIMIT,
   YOUTUBE_CHANNEL_ID_PATTERN,
   YOUTUBE_VIDEO_ID_PATTERN
-} from "@/constants/platform"
+} from "@/services/youtube/constants"
 
 // =============================================================================
 // バリデーションスキーマ
@@ -86,10 +86,7 @@ export async function extractChannelIdFromUrl(url: string): Promise<{
  */
 export async function updateYoutubeChannel(data: z.infer<typeof youtubeChannelSchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const validatedData = youtubeChannelSchema.parse(data)
 
@@ -141,10 +138,7 @@ export async function updateYoutubeChannel(data: z.infer<typeof youtubeChannelSc
  */
 export async function addRecommendedVideo(videoUrl: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     // URLから Video ID を抽出
     let videoId = videoUrl
@@ -241,10 +235,7 @@ export async function addRecommendedVideo(videoUrl: string) {
  */
 export async function deleteRecommendedVideo(id: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     // 所有権チェック
     const video = await prisma.youTubeRecommendedVideo.findUnique({
@@ -289,10 +280,7 @@ export async function deleteRecommendedVideo(id: string) {
  */
 export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideosSchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const validatedData = reorderVideosSchema.parse(data)
 
@@ -336,10 +324,7 @@ export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideo
  */
 export async function toggleRecommendedVideosVisibility(isVisible: boolean) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     await prisma.youTubeRecommendedVideo.updateMany({
       where: { userId: session.user.id },
@@ -365,10 +350,7 @@ export async function toggleRecommendedVideosVisibility(isVisible: boolean) {
  */
 export async function getMyRssFeedVideos() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -394,10 +376,7 @@ export async function getMyRssFeedVideos() {
  */
 export async function getUserYoutubeSettings() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -426,10 +405,7 @@ export async function getUserYoutubeSettings() {
  */
 export async function getYouTubeMetadata(url: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    await requireAuth()
 
     // URLから Video ID を抽出
     let videoId = url

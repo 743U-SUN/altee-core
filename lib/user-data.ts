@@ -1,4 +1,5 @@
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { prisma } from '@/lib/prisma'
 
 export interface UserNavData {
@@ -16,7 +17,7 @@ export interface UserNavData {
  * プロフィール画像の優先順位: カスタム画像 > OAuth画像
  */
 export async function getUserNavData(): Promise<UserNavData | null> {
-  const session = await auth()
+  const session = await cachedAuth()
   
   if (!session?.user?.id) {
     return null
@@ -42,7 +43,7 @@ export async function getUserNavData(): Promise<UserNavData | null> {
 
   // 1. カスタムアイコン画像（MediaFile）
   if (user.profile?.avatarImage?.storageKey) {
-    avatar = `/api/files/${user.profile.avatarImage.storageKey}`
+    avatar = getPublicUrl(user.profile.avatarImage.storageKey)
   }
   // 2. OAuth提供者の画像
   else if (user.image) {

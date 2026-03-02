@@ -17,8 +17,7 @@ interface EditableSectionWrapperProps {
 
 /**
  * 編集可能なセクションのラッパー
- * 左側: 上下移動ボタン（縦配置）
- * 右側: 編集ボタン（上）+ 削除ボタン（下）
+ * 下部: 操作ツールバー（移動・編集・削除を水平配置、セクションに重なって表示）
  * 常時表示、レスポンシブ対応
  */
 export function EditableSectionWrapper({
@@ -32,75 +31,66 @@ export function EditableSectionWrapper({
   onDelete,
 }: EditableSectionWrapperProps) {
   return (
-    <div className="relative">
-      {/* 左側: 上下移動ボタン（縦配置） */}
-      <div
-        className="
-          absolute -left-8 top-1/2 -translate-y-1/2 z-[5]
-          flex flex-col gap-3
-          md:-left-8
-        "
-      >
-        <Button
-          size="icon"
-          variant="simple1"
-          className="h-8 w-8 bg-gray-600/90 backdrop-blur-sm shadow-md"
-          onClick={onMoveUp}
-          disabled={isFirst}
-          title="上へ移動"
-        >
-          <ChevronUp className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="simple1"
-          className="h-8 w-8 bg-gray-600/90 backdrop-blur-sm shadow-md"
-          onClick={onMoveDown}
-          disabled={isLast}
-          title="下へ移動"
-        >
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* セクションコンテンツ */}
+    <div>
       {children}
 
-      {/* 右側: 編集＋スタイル＋削除ボタン（縦配置） */}
-      <div
-        className="
-          absolute -right-8 top-1/2 -translate-y-1/2 z-[5]
-          flex flex-col gap-3
-          md:-right-8
-        "
-      >
-        <Button
-          size="icon"
-          variant="simple1"
-          className="h-8 w-8 bg-gray-600/90 backdrop-blur-sm shadow-md"
-          onClick={onEdit}
-          title="編集"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="simple1"
-          className="h-8 w-8 bg-gray-600/90 backdrop-blur-sm shadow-md"
-          onClick={onStyleEdit}
-          title="スタイル設定"
-        >
-          <Palette className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="destructive"
-          className="h-8 w-8 bg-destructive/90 backdrop-blur-sm shadow-md"
-          onClick={onDelete}
-          title="削除"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      {/* 下端: 操作ツールバー（セクションに重なって配置） */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30">
+        <div className="flex items-center gap-1 bg-gray-800/70 backdrop-blur-sm rounded-full px-2 py-1 shadow-lg">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-white hover:bg-white/20 rounded-full"
+            onClick={onMoveUp}
+            disabled={isFirst}
+            title="上へ移動"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-white hover:bg-white/20 rounded-full"
+            onClick={onMoveDown}
+            disabled={isLast}
+            title="下へ移動"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+
+          <div className="w-px h-5 bg-gray-500/50 mx-1" />
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-white hover:bg-white/20 rounded-full"
+            onClick={onEdit}
+            title="編集"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-white hover:bg-white/20 rounded-full"
+            onClick={onStyleEdit}
+            title="スタイル設定"
+          >
+            <Palette className="h-4 w-4" />
+          </Button>
+
+          <div className="w-px h-5 bg-gray-500/50 mx-1" />
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full"
+            onClick={onDelete}
+            title="削除"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )

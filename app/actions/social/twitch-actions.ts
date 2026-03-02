@@ -1,11 +1,12 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
+import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { getTwitchUserId, createTwitchEventSub, deleteTwitchEventSub, getTwitchEventSubStatus } from "@/services/twitch/twitch-api"
-import { TWITCH_USERNAME_PATTERN } from "@/constants/platform"
+
+const TWITCH_USERNAME_PATTERN = /^[a-zA-Z0-9_]{4,25}$/
 
 // =============================================================================
 // バリデーションスキーマ
@@ -28,10 +29,7 @@ const livePrioritySchema = z.enum(["youtube", "twitch"])
  */
 export async function updateTwitchChannel(data: z.infer<typeof twitchChannelSchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const validatedData = twitchChannelSchema.parse(data)
 
@@ -67,10 +65,7 @@ export async function updateTwitchChannel(data: z.infer<typeof twitchChannelSche
  */
 export async function updateLivePriority(priority: z.infer<typeof livePrioritySchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const validatedPriority = livePrioritySchema.parse(priority)
 
@@ -103,10 +98,7 @@ export async function updateLivePriority(priority: z.infer<typeof livePrioritySc
  */
 export async function createTwitchEventSubSubscription(twitchUserId: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     return await createTwitchEventSub(twitchUserId, session.user.id)
   } catch (error) {
@@ -120,10 +112,7 @@ export async function createTwitchEventSubSubscription(twitchUserId: string) {
  */
 export async function deleteTwitchEventSubSubscription() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     return await deleteTwitchEventSub(session.user.id)
   } catch (error) {
@@ -137,10 +126,7 @@ export async function deleteTwitchEventSubSubscription() {
  */
 export async function getTwitchEventSubSubscriptionStatus() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, isSubscribed: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     return await getTwitchEventSubStatus(session.user.id)
   } catch (error) {
@@ -158,10 +144,7 @@ export async function getTwitchEventSubSubscriptionStatus() {
  */
 export async function getUserTwitchSettings() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },

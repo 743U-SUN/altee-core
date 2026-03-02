@@ -1,10 +1,10 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { AttributeDashboard } from "./components/AttributeDashboard"
 import { prisma } from "@/lib/prisma"
 
 export default async function AttributesPage() {
-  const session = await auth()
+  const session = await cachedAuth()
   
   // 最終権限チェック（Page層）
   if (session?.user?.role !== 'ADMIN') {

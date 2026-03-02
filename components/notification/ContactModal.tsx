@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ExternalLink } from "lucide-react"
@@ -63,7 +64,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
                 </div>
               )}
               <Image
-                src={`/api/files/${contact.image.storageKey}`}
+                src={getPublicUrl(contact.image.storageKey)}
                 alt={contact.title || "連絡方法画像"}
                 width={800}
                 height={600}

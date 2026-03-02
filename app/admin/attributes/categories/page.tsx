@@ -1,4 +1,4 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { getCategories } from "@/app/actions/content/category-actions"
 import { CategoryList } from "./components/CategoryList"
@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function CategoriesPage({ searchParams }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   if (session?.user?.role !== 'ADMIN') {
     redirect('/unauthorized')

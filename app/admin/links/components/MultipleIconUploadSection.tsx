@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Star, StarOff, Trash2, Upload } from "lucide-react"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import Image from "next/image"
 import { toast } from "sonner"
 import {
@@ -210,7 +211,7 @@ export function MultipleIconUploadSection({
                     {/* アイコン画像 */}
                     <div className="flex items-center justify-center h-16">
                       <Image
-                        src={`/api/files/${icon.iconKey}`}
+                        src={getPublicUrl(icon.iconKey)}
                         alt={icon.iconName}
                         width={48}
                         height={48}

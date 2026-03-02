@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { AttributeNavigation } from "./components/AttributeNavigation"
 
@@ -8,7 +8,7 @@ export default async function AttributesLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   // 管理者権限チェック（Layout層）
   if (session?.user?.role !== 'ADMIN') {

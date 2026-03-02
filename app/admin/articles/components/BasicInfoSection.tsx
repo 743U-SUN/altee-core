@@ -1,17 +1,15 @@
 'use client'
 
-import { Control } from 'react-hook-form'
+import { useFormContext } from 'react-hook-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { FormValues } from './types'
 
-interface BasicInfoSectionProps {
-  control: Control<FormValues>
-}
+export function BasicInfoSection() {
+  const { control } = useFormContext<FormValues>()
 
-export function BasicInfoSection({ control }: BasicInfoSectionProps) {
   return (
     <Card>
       <CardHeader>
@@ -63,7 +61,7 @@ export function BasicInfoSection({ control }: BasicInfoSectionProps) {
             <FormItem>
               <FormLabel>要約（任意）</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="記事の簡単な要約を入力"
                   className="min-h-[80px]"
                   {...field}

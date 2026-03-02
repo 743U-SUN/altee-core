@@ -23,3 +23,5 @@ export {
   pastelBlue,
   pastelDreamThemes,
 } from './pastel-dream'
+
+export { tacticalDark, tacticalThemes } from './tactical'

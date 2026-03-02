@@ -68,7 +68,18 @@ function isImageGridItem(item: unknown): item is ImageGridItem {
 // ImageHeroData の型ガード
 export function isImageHeroData(data: unknown): data is ImageHeroData {
   if (!isRecord(data)) return false
-  return data.item === undefined || isImageGridItem(data.item)
+  const itemValid = data.item === undefined || isImageGridItem(data.item)
+  const mobileKeyValid = data.mobileImageKey === undefined || typeof data.mobileImageKey === 'string'
+  const charKeyValid = data.characterImageKey === undefined || typeof data.characterImageKey === 'string'
+  const speechesValid = data.speeches === undefined || (
+    Array.isArray(data.speeches) && data.speeches.every((s: unknown) => {
+      if (!isRecord(s)) return false
+      return hasStringProp(s, 'id') && hasStringProp(s, 'text') && hasNumberProp(s, 'sortOrder')
+    })
+  )
+  const modeValid = data.speechDisplayMode === undefined ||
+    data.speechDisplayMode === 'sequential' || data.speechDisplayMode === 'random'
+  return itemValid && mobileKeyValid && charKeyValid && speechesValid && modeValid
 }
 
 // ImageGrid2Data の型ガード

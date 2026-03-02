@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { BaseSectionProps, WeeklyScheduleData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge, Divider } from '@/components/decorations'
@@ -22,7 +23,7 @@ export function WeeklyScheduleSection({ section }: BaseSectionProps) {
       {data.imageKey && (
         <div className="absolute bottom-4 right-4 w-32 h-32 md:w-40 md:h-40 opacity-50 pointer-events-none rounded-xl overflow-hidden">
           <Image
-            src={`/api/files/${data.imageKey}`}
+            src={getPublicUrl(data.imageKey)}
             alt=""
             fill
             className="object-cover"
@@ -49,14 +50,7 @@ export function WeeklyScheduleSection({ section }: BaseSectionProps) {
                 {offset > 0 && <Divider className="my-3" />}
                 <div className="flex items-center gap-3 pr-8 md:pr-12">
                   {/* 漢字曜日バッジ */}
-                  <div
-                    className="
-                      shrink-0 w-7 h-7 flex items-center justify-center
-                      rounded-md text-xs font-bold
-                      bg-[var(--theme-accent-bg,rgba(176,125,79,0.1))]
-                      text-[var(--theme-text-accent,#b07d4f)]
-                    "
-                  >
+                  <div className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold bg-[var(--theme-accent-bg,rgba(176,125,79,0.1))] text-[var(--theme-text-accent,#b07d4f)]">
                     {weekday}
                   </div>
                   {/* 日付 */}

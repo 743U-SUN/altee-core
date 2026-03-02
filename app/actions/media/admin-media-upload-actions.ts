@@ -4,8 +4,10 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { MediaType } from '@prisma/client'
+import type { MediaType } from '@prisma/client'
 import { sanitizeSVGFile } from '@/lib/image-uploader/svg-sanitizer'
+import { TYPE_TO_FOLDER } from '@/lib/image-uploader/upload-type-map'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 
 interface MediaUploadData {
   uploadType: MediaType
@@ -14,9 +16,6 @@ interface MediaUploadData {
   tags?: string[]
 }
 
-/**
- * メディアファイルをアップロード（メタデータ付き）
- */
 interface UploadedFileData {
   id: string
   name: string
@@ -46,14 +45,13 @@ export async function uploadMediaFileAction(
       return { success: false, error: 'ファイルが選択されていません' }
     }
 
-    // ファイル情報
     const fileName = file.name
     const fileType = file.type
     const fileSize = file.size
-    
+
     // ファイル形式チェック
     const supportedTypes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
       'image/webp', 'image/svg+xml'
     ]
     if (!supportedTypes.includes(fileType)) {
@@ -65,43 +63,27 @@ export async function uploadMediaFileAction(
     if (fileSize > maxSize) {
       return { success: false, error: 'ファイルサイズが10MBを超えています' }
     }
-    
+
     // ユニークなファイル名を生成
     const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 8)
+    const randomString = crypto.randomUUID().slice(0, 8)
     const extension = fileName.split('.').pop() || ''
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
-    
+
     // uploadTypeに基づいてフォルダを決定
-    let folder: string
-    switch (metadata.uploadType) {
-      case 'THUMBNAIL':
-        folder = 'article-thumbnails'
-        break
-      case 'CONTENT':
-        folder = 'article-images'
-        break
-      case 'SYSTEM':
-        folder = 'system-assets'
-        break
-      case 'ICON':
-        folder = 'admin-icons'
-        break
-      case 'BACKGROUND':
-        folder = 'backgrounds'
-        break
-      default:
-        return { success: false, error: '無効なアップロードタイプです' }
+    const folder = TYPE_TO_FOLDER[metadata.uploadType]
+    if (!folder) {
+      return { success: false, error: '無効なアップロードタイプです' }
     }
 
-    // Swift最適化された階層構造: folder/YYYY/MM/filename
+    // 日付ベースの階層構造: folder/YYYY/MM/filename
     const date = new Date()
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const key = `${folder}/${year}/${month}/${uniqueFileName}`
-    
+
     let processedFile = file
-    
+
     // SVGファイルの場合はサニタイズ
     if (fileType === 'image/svg+xml') {
       const sanitizeResult = await sanitizeSVGFile(file)
@@ -111,25 +93,21 @@ export async function uploadMediaFileAction(
       processedFile = sanitizeResult.sanitizedFile!
     }
 
-    // S3へのアップロード
     const fileBuffer = Buffer.from(await processedFile.arrayBuffer())
 
-    const command = new PutObjectCommand({
+    await storageClient.send(new PutObjectCommand({
       Bucket: STORAGE_BUCKET,
       Key: key,
       Body: fileBuffer,
       ContentType: fileType,
       ContentLength: fileBuffer.length,
-    })
+    }))
 
-    await storageClient.send(command)
-
-    // データベースに保存
     const storageKey = `${STORAGE_BUCKET}/${key}`
     const mediaFile = await prisma.mediaFile.create({
       data: {
         storageKey,
-        containerName: folder, // フォルダ名を保存（バケット名ではなく）
+        containerName: folder,
         originalName: fileName,
         fileName: uniqueFileName,
         fileSize: fileBuffer.length,
@@ -142,12 +120,11 @@ export async function uploadMediaFileAction(
       },
     })
 
-    // レスポンス用のデータを構築
-    const uploadedFile = {
+    const uploadedFile: UploadedFileData = {
       id: mediaFile.id,
       name: uniqueFileName,
       originalName: fileName,
-      url: `${process.env.NEXT_PUBLIC_STORAGE_URL}/${storageKey}`,
+      url: getPublicUrl(storageKey),
       key: storageKey,
       size: fileSize,
       type: fileType,

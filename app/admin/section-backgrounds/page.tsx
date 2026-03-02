@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminSectionBackgroundsPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id || session.user.role !== 'ADMIN') {
     redirect('/unauthorized')

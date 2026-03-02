@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { UserRole } from "@prisma/client"
@@ -66,10 +67,7 @@ export async function updateUserGift(data: z.infer<typeof giftSchema>) {
   try {
     console.log('[updateUserGift] 受信データ:', JSON.stringify(data, null, 2))
 
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {
@@ -141,10 +139,7 @@ export async function updateUserGift(data: z.infer<typeof giftSchema>) {
 // ギフト設定を削除
 export async function deleteUserGift() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {

@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { generateCssString } from '@/lib/sections/background-utils'
 import {
@@ -11,22 +11,11 @@ import {
   type PresetInput,
 } from '@/lib/validations/section-settings'
 
-// ===== 認証ヘルパー =====
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    return { error: '管理者権限が必要です' }
-  }
-  return { userId: session.user.id }
-}
-
 // ===== 一覧取得 =====
 
 export async function getPresetsAction() {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     const presets = await prisma.sectionBackgroundPreset.findMany({
       orderBy: { sortOrder: 'asc' },
@@ -43,8 +32,7 @@ export async function getPresetsAction() {
 
 export async function getPresetByIdAction(id: string) {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     const validatedId = cuidSchema.parse(id)
 
@@ -70,8 +58,7 @@ export async function getPresetByIdAction(id: string) {
 
 export async function createPresetAction(input: PresetInput) {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     const validated = presetInputSchema.parse(input)
 
@@ -107,8 +94,7 @@ export async function createPresetAction(input: PresetInput) {
 
 export async function updatePresetAction(id: string, input: PresetInput) {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     const validatedId = cuidSchema.parse(id)
     const validated = presetInputSchema.parse(input)
@@ -154,8 +140,7 @@ export async function updatePresetAction(id: string, input: PresetInput) {
 
 export async function deletePresetAction(id: string) {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     const validatedId = cuidSchema.parse(id)
 
@@ -187,8 +172,7 @@ export async function deletePresetAction(id: string) {
 
 export async function togglePresetActiveAction(id: string, isActive: boolean) {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     const validatedId = cuidSchema.parse(id)
 
@@ -215,8 +199,7 @@ export async function updatePresetSortOrderAction(
   items: { id: string; sortOrder: number }[]
 ) {
   try {
-    const authResult = await requireAdmin()
-    if ('error' in authResult) return { success: false, error: authResult.error }
+    await requireAdmin()
 
     await prisma.$transaction(
       items.map((item) =>

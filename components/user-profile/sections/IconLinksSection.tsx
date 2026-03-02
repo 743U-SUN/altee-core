@@ -40,16 +40,7 @@ export function IconLinksSection({ section, isEditable }: BaseSectionProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 title={item.platform}
-                className="
-                  flex items-center justify-center w-12 h-12
-                  rounded-xl
-                  bg-[var(--theme-card-bg)]
-                  text-[var(--theme-text-secondary)]
-                  hover:text-[var(--theme-accent-color,var(--theme-text-primary))]
-                  hover:scale-110
-                  transition-all duration-300
-                  active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-2px_-2px_4px_rgba(255,255,255,0.7)]
-                "
+                className="flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--theme-card-bg)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-accent-color,var(--theme-text-primary))] hover:scale-110 transition-all duration-300 active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-2px_-2px_4px_rgba(255,255,255,0.7)]"
                 style={{
                   boxShadow: 'var(--theme-card-shadow)',
                 }}

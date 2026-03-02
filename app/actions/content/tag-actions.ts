@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -12,17 +12,6 @@ const tagSchema = z.object({
   description: z.string().max(200, '説明は200文字以内で入力してください').optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, '正しいカラーコードを入力してください').optional(),
 })
-
-// 管理者権限チェック
-async function requireAdminAuth() {
-  const session = await auth()
-  
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    throw new Error('管理者権限が必要です')
-  }
-  
-  return session
-}
 
 // スラッグ生成用ヘルパー
 function generateSlug(name: string): string {
@@ -36,7 +25,7 @@ function generateSlug(name: string): string {
 
 // タグ作成
 export async function createTag(formData: FormData) {
-  await requireAdminAuth()
+  await requireAdmin()
   
   const validatedFields = tagSchema.safeParse({
     name: formData.get('name'),
@@ -81,7 +70,7 @@ export async function createTag(formData: FormData) {
 
 // タグ更新
 export async function updateTag(id: string, formData: FormData) {
-  await requireAdminAuth()
+  await requireAdmin()
   
   const validatedFields = tagSchema.safeParse({
     name: formData.get('name'),
@@ -139,7 +128,7 @@ export async function updateTag(id: string, formData: FormData) {
 
 // タグ削除
 export async function deleteTag(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const tag = await prisma.tag.findUnique({
@@ -175,7 +164,7 @@ export async function deleteTag(id: string) {
 
 // タグ一覧取得
 export async function getTags(page: number = 1, limit: number = 20) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const offset = (page - 1) * limit
@@ -211,7 +200,7 @@ export async function getTags(page: number = 1, limit: number = 20) {
 
 // タグ詳細取得
 export async function getTag(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const tag = await prisma.tag.findUnique({
@@ -243,6 +232,8 @@ export async function getTag(id: string) {
 
 // 全タグ取得（記事作成時のセレクタ用）
 export async function getAllTags() {
+  await requireAdmin()
+
   try {
     const tags = await prisma.tag.findMany({
       orderBy: { name: 'asc' }

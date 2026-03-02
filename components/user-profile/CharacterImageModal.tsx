@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { updateUserProfile } from '@/app/actions/user/profile-actions'
 import { toast } from 'sonner'
@@ -44,7 +45,7 @@ export function CharacterImageModal({
 
   // 背景画像のURL計算
   const currentBackgroundImageUrl = currentCharacterBackgroundKey
-    ? `/api/files/${currentCharacterBackgroundKey}`
+    ? getPublicUrl(currentCharacterBackgroundKey)
     : null
 
   // モーダルが閉じた時に状態をリセット
@@ -191,6 +192,7 @@ export function CharacterImageModal({
                     src={currentCharacterImageUrl}
                     alt="現在のキャラクター画像"
                     fill
+                    sizes="128px"
                     className="rounded-lg object-cover"
                   />
                 </div>
@@ -257,6 +259,7 @@ export function CharacterImageModal({
                     src={currentBackgroundImageUrl}
                     alt="現在の背景画像"
                     fill
+                    sizes="(max-width: 768px) 100vw, 640px"
                     className="rounded-lg object-cover"
                   />
                 </div>

@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { auth } from '@/auth'
+import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import type { ThemeSettings, BackgroundSettings } from '@/types/profile-sections'
@@ -79,10 +79,7 @@ export async function updateUserThemeSettings(settings: {
   }
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // 入力バリデーション（ホワイトリスト検証）
     const parseResult = themeSettingsSchema.safeParse(settings)
@@ -196,10 +193,7 @@ export async function updateThemeBackground(
   background?: BackgroundSettings
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // 入力バリデーション
     const parseResult = backgroundSettingsSchema.safeParse(background)

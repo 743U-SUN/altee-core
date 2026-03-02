@@ -90,6 +90,7 @@ export function EditableProfileClient({
         onNotificationClick={handleNotificationClick}
       >
         <div className="w-full">
+          <EditableSectionRenderer sections={sections} presets={presets} />
           <div className="flex justify-center py-4">
             <Button
               onClick={() => setIsAddSectionModalOpen(true)}
@@ -101,7 +102,6 @@ export function EditableProfileClient({
               セクションを追加
             </Button>
           </div>
-          <EditableSectionRenderer sections={sections} presets={presets} />
         </div>
       </UserProfileLayout>
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth';
+import { cachedAuth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { SetupForm } from './setup-form';
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 export default async function SetupPage() {
-  const session = await auth();
+  const session = await cachedAuth();
   
   if (!session?.user) {
     redirect('/auth/signin');

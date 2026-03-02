@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { EditModal } from '../EditModal'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { Button } from '@/components/ui/button'
@@ -130,10 +131,10 @@ export function ImageSectionModal({
             <div className="space-y-2">
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                 <Image
-                  src={`/api/files/${currentData.imageKey}`}
+                  src={getPublicUrl(currentData.imageKey)}
                   alt={currentData.altText || '現在の画像'}
                   fill
-                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 640px"
                   className="object-cover"
                 />
               </div>
@@ -274,10 +275,10 @@ export function ImageSectionModal({
               {currentData.background?.imageKey && bgUploadedFiles.length === 0 && (
                 <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                   <Image
-                    src={`/api/files/${currentData.background.imageKey}`}
+                    src={getPublicUrl(currentData.background.imageKey)}
                     alt="現在の背景"
                     fill
-                    unoptimized
+                    sizes="(max-width: 768px) 100vw, 640px"
                     className="object-cover"
                   />
                 </div>

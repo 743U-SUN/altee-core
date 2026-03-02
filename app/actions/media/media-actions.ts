@@ -2,17 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
+import { requireAdmin } from '@/lib/auth'
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { MediaType } from '@prisma/client'
-
-async function requireAdminAuth() {
-  const session = await auth()
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    throw new Error('管理者権限が必要です')
-  }
-  return session
-}
 
 // S3クライアント（ストレージ削除用）
 function getS3Client() {
@@ -38,7 +31,7 @@ export interface MediaFilesFilter {
 }
 
 export async function getMediaFiles(filter: MediaFilesFilter = {}) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const { containerName, uploadType, search, tags, month, page = 1, limit = 20 } = filter
   const skip = (page - 1) * limit
@@ -122,7 +115,7 @@ export async function getMediaFiles(filter: MediaFilesFilter = {}) {
   // publicUrlを追加したメディアファイル
   const mediaFilesWithUrl = mediaFiles.map(file => ({
     ...file,
-    publicUrl: `/api/files/${file.storageKey}`,
+    publicUrl: getPublicUrl(file.storageKey),
   }))
 
   return {
@@ -137,7 +130,7 @@ export async function getMediaFiles(filter: MediaFilesFilter = {}) {
 }
 
 export async function getMediaStats() {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const [
     totalFiles,
@@ -214,7 +207,7 @@ export async function getMediaStats() {
 }
 
 export async function deleteMediaFile(fileId: string) {
-  const session = await requireAdminAuth()
+  const session = await requireAdmin()
 
   const mediaFile = await prisma.mediaFile.findUnique({
     where: { id: fileId, deletedAt: null },
@@ -262,7 +255,7 @@ export async function deleteMediaFile(fileId: string) {
 }
 
 export async function bulkDeleteMediaFiles(fileIds: string[]) {
-  const session = await requireAdminAuth()
+  const session = await requireAdmin()
 
   if (fileIds.length === 0) {
     throw new Error('削除するファイルが選択されていません')
@@ -312,7 +305,7 @@ export async function bulkDeleteMediaFiles(fileIds: string[]) {
 
 // 使用状況確認（特定ファイルがどこで使われているか）
 export async function getMediaFileUsage(fileId: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const mediaFile = await prisma.mediaFile.findUnique({
     where: { id: fileId },
@@ -344,7 +337,7 @@ export async function getMediaFileUsage(fileId: string) {
 
 // 論理削除されたファイルを復旧
 export async function restoreMediaFile(fileId: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const mediaFile = await prisma.mediaFile.findUnique({
     where: { id: fileId },
@@ -379,7 +372,7 @@ export async function restoreMediaFile(fileId: string) {
 
 // 30日経過したファイルを物理削除
 export async function cleanupExpiredFiles() {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const now = new Date()
   
@@ -451,7 +444,7 @@ export async function cleanupExpiredFiles() {
 
 // 論理削除されたファイル一覧を取得（ゴミ箱機能用）
 export async function getDeletedMediaFiles(filter: MediaFilesFilter = {}) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const { containerName, uploadType, search, month, page = 1, limit = 20 } = filter
   const skip = (page - 1) * limit

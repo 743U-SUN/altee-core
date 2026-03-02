@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { prisma } from '@/lib/prisma'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { EditableProfileClient } from './EditableProfileClient'
@@ -16,7 +17,7 @@ import {
 } from '@/types/profile-sections'
 
 export default async function ProfileEditorPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id) {
     redirect('/auth/signin')
@@ -50,10 +51,10 @@ export default async function ProfileEditorPage() {
     ? (user.profile.themeSettings as unknown as ThemeSettings)
     : DEFAULT_THEME_SETTINGS
   const characterImageUrl = user.profile.characterImage?.storageKey
-    ? `/api/files/${user.profile.characterImage.storageKey}`
+    ? getPublicUrl(user.profile.characterImage.storageKey)
     : null
   const avatarImageUrl = user.profile.avatarImage?.storageKey
-    ? `/api/files/${user.profile.avatarImage.storageKey}`
+    ? getPublicUrl(user.profile.avatarImage.storageKey)
     : null
 
   return (

@@ -89,6 +89,7 @@ export function ImagePreview({
       {/* オーバーレイ削除ボタン */}
       {deletePosition === 'overlay' && (
         <button
+          type="button"
           onClick={handleDelete}
           className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors z-10"
           title="削除"
@@ -107,6 +108,7 @@ export function ImagePreview({
         
         <div className="flex flex-col gap-1 min-w-0">
           <button
+            type="button"
             onClick={handleDelete}
             className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
             title="削除"

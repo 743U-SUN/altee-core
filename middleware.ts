@@ -8,15 +8,16 @@ const SYSTEM_ROUTES = [
   'favicon.ico',
   'manifest.webmanifest',
   'api',
-  // 'devices' removed in Phase 10 (Device system deleted)
-  'items',   // /itemsページ
+  'items',      // /itemsページ
+  'serwist',    // PWA service worker route
+  'sw',         // Service worker
 ] as const
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
   // 認証保護パス
-  const protectedPaths = ['/admin', '/user']
+  const protectedPaths = ['/admin', '/dashboard']
   const isProtectedPath = protectedPaths.some(path =>
     pathname.startsWith(path)
   )
@@ -40,18 +41,10 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  // パス情報をヘッダーに追加（layout.tsxでの条件分岐用）
-  const requestHeaders = new Headers(req.headers)
-  requestHeaders.set('x-pathname', pathname)
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  })
+  return NextResponse.next()
 }
 
-export const proxyConfig = {
+export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ]

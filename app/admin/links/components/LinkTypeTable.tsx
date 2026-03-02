@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Trash2, ExternalLink, GripVertical } from "lucide-react"
 import { toast } from "sonner"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import Image from "next/image"
 import { updateLinkType, deleteLinkType } from "@/app/actions/admin/link-type-actions"
 import { EditLinkTypeModal } from "./EditLinkTypeModal"
@@ -71,10 +72,10 @@ function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
       // デフォルトアイコンを探す
       const defaultIcon = linkType.icons.find(icon => icon.isDefault)
       if (defaultIcon) {
-        return `/api/files/${defaultIcon.iconKey}`
+        return getPublicUrl(defaultIcon.iconKey)
       }
       // デフォルトがない場合は最初のアイコンを使用
-      return `/api/files/${linkType.icons[0].iconKey}`
+      return getPublicUrl(linkType.icons[0].iconKey)
     }
 
     return null

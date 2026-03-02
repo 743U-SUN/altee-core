@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { updateSection } from '@/app/actions/user/section-actions'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import type { ProfileCardData } from '@/types/profile-sections'
@@ -165,7 +166,7 @@ export function ProfileCardEditModal({
             <div className="space-y-2">
               <div className="relative w-24 h-24 rounded-xl overflow-hidden border">
                 <Image
-                  src={`/api/files/${currentData.avatarImageKey}`}
+                  src={getPublicUrl(currentData.avatarImageKey)}
                   alt="現在のプロフィール画像"
                   fill
                   className="object-cover"

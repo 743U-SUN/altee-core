@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { PresetForm } from '../components/PresetForm'
 
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 export default async function NewPresetPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id || session.user.role !== 'ADMIN') {
     redirect('/unauthorized')

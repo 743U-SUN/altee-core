@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { prisma } from '@/lib/prisma'
 import { getFaqCategories } from '@/app/actions/content/faq-actions'
 import { EditableFAQClient } from './EditableFAQClient'
@@ -15,7 +16,7 @@ import {
 } from '@/types/profile-sections'
 
 export default async function DashboardFaqsPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id) {
     redirect('/auth/signin')
@@ -53,7 +54,7 @@ export default async function DashboardFaqsPage() {
 
   let characterImageUrl: string | null = null
   if (user.profile.characterImage?.storageKey) {
-    characterImageUrl = `/api/files/${user.profile.characterImage.storageKey}`
+    characterImageUrl = getPublicUrl(user.profile.characterImage.storageKey)
   }
 
   const initialFaqCategories = faqResult.success ? ((faqResult.data as unknown[]) ?? []) : []

@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { PlatformNavigation } from "./components/PlatformNavigation"
 
@@ -8,7 +8,7 @@ export default async function PlatformsLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id) {
     redirect("/auth/signin")

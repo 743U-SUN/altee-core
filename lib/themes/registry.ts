@@ -4,7 +4,7 @@
  */
 
 import type { ThemePreset, ThemeBase } from './types'
-import { claymorphicThemes, minimalThemes, pastelDreamThemes } from './presets'
+import { claymorphicThemes, minimalThemes, pastelDreamThemes, tacticalThemes } from './presets'
 
 /**
  * 全テーマプリセットのレジストリ
@@ -24,6 +24,7 @@ function registerThemes(themes: ThemePreset[]): void {
 registerThemes(claymorphicThemes)
 registerThemes(minimalThemes)
 registerThemes(pastelDreamThemes)
+registerThemes(tacticalThemes)
 
 /**
  * テーマを取得

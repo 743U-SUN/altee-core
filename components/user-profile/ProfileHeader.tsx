@@ -11,9 +11,11 @@ import {
   Mail,
   Bell,
   Package,
+  Newspaper,
   Gamepad2,
   Pencil,
 } from 'lucide-react'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { usePathname } from 'next/navigation'
 import type { ThemeSettings } from '@/types/profile-sections'
 import type { CSSProperties } from 'react'
@@ -47,17 +49,26 @@ export const ProfileHeader = memo(function ProfileHeader({
 }: ProfileHeaderProps) {
   const pathname = usePathname()
 
-  const navItems = useMemo(() => inDashboard ? [
-    { label: 'Profile', href: '/dashboard/profile-editor', icon: User },
-    { label: 'Items', href: '/dashboard/items', icon: Package },
-    { label: 'Videos', href: '/dashboard/platforms', icon: Video },
-    { label: 'FAQs', href: '/dashboard/faqs', icon: HelpCircle },
-  ] : [
-    { label: 'Profile', href: `/@${handle}`, icon: User },
-    { label: 'Items', href: `/@${handle}/items`, icon: Package },
-    { label: 'Videos', href: `/@${handle}/videos`, icon: Video },
-    { label: 'FAQs', href: `/@${handle}/faqs`, icon: HelpCircle },
-  ], [inDashboard, handle])
+  const navItems = useMemo(() => {
+    const items = inDashboard ? [
+      { label: 'Profile', href: '/dashboard/profile-editor', icon: User },
+      { label: 'Items', href: '/dashboard/items', icon: Package },
+      { label: 'News', href: '/dashboard/news', icon: Newspaper },
+      { label: 'Videos', href: '/dashboard/platforms', icon: Video },
+      { label: 'FAQs', href: '/dashboard/faqs', icon: HelpCircle },
+    ] : [
+      { label: 'Profile', href: `/@${handle}`, icon: User },
+      { label: 'Items', href: `/@${handle}/items`, icon: Package },
+      { label: 'News', href: `/@${handle}/news`, icon: Newspaper },
+      { label: 'Videos', href: `/@${handle}/videos`, icon: Video },
+      { label: 'FAQs', href: `/@${handle}/faqs`, icon: HelpCircle },
+    ]
+    // 公開ページ側のみ visibility で News を除外（ダッシュボードは常に表示）
+    if (!inDashboard && visibility.newsPage === false) {
+      return items.filter((item) => item.label !== 'News')
+    }
+    return items
+  }, [inDashboard, handle, visibility.newsPage])
 
   // ネームカード背景スタイルを計算
   const namecardStyle = useMemo((): CSSProperties => {
@@ -67,7 +78,7 @@ export const ProfileHeader = memo(function ProfileHeader({
     }
     if ((namecard.type === 'preset' || namecard.type === 'image') && namecard.imageKey) {
       return {
-        backgroundImage: `url(/api/files/${namecard.imageKey})`,
+        backgroundImage: `url(${getPublicUrl(namecard.imageKey)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }

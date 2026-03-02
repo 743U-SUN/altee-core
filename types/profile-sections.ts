@@ -20,14 +20,17 @@ export interface SectionBandBackground {
   presetId?: string // SectionBackgroundPreset.id
 }
 
-/** パディングサイズ */
+/** パディングサイズ（プリセット） */
 export type SectionPaddingSize = 'none' | 'sm' | 'md' | 'lg' | 'xl'
+
+/** パディング値（プリセット or カスタムpx） */
+export type SectionPaddingValue = SectionPaddingSize | number
 
 /** レスポンシブパディング */
 export interface ResponsivePadding {
-  mobile: SectionPaddingSize     // < 768px（必須）
-  tablet?: SectionPaddingSize    // 768px〜1024px（省略時: mobile を継承）
-  desktop?: SectionPaddingSize   // > 1024px（省略時: tablet を継承）
+  mobile: SectionPaddingValue     // < 768px（必須）
+  tablet?: SectionPaddingValue    // 768px〜1024px（省略時: mobile を継承）
+  desktop?: SectionPaddingValue   // > 1024px（省略時: tablet を継承）
 }
 
 /** セクション設定（UserSection.settings の JSON 構造） */
@@ -191,9 +194,20 @@ export interface ImageGridItem {
   sortOrder: number          // 並び順 (2col/3colのみ使用)
 }
 
+// セリフアイテム（ImageHeroData.speeches の要素）
+export interface SpeechBubbleItem {
+  id: string           // nanoid()
+  text: string         // セリフ本文（最大50文字）
+  sortOrder: number    // 並び順
+}
+
 // image-hero セクションのdata構造
 export interface ImageHeroData {
-  item: ImageGridItem
+  item: ImageGridItem                         // PC背景画像（imageKeyのみ使用）
+  mobileImageKey?: string                     // モバイル/タブレット背景画像（3:4推奨）
+  characterImageKey?: string                  // キャラクター画像（9:16）
+  speeches?: SpeechBubbleItem[]               // セリフリスト（最大10件）
+  speechDisplayMode?: 'sequential' | 'random' // セリフ表示モード
 }
 
 // image-grid-2 セクションのdata構造
@@ -319,6 +333,7 @@ export interface ThemeSettings {
     gameButton: boolean // ゲームボタン（デフォルト: false）
     snsButton: boolean // SNSシェアボタン（デフォルト: false）
     notification: boolean // 通知アイコン（デフォルト: false）
+    newsPage: boolean // NEWSページ（デフォルト: true）
   }
 
   // 背景設定
@@ -351,6 +366,7 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
     gameButton: true,
     snsButton: true,
     notification: true,
+    newsPage: true,
   },
 }
 

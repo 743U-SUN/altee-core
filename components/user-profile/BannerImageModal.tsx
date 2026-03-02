@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { getBackgroundImages, updateUserProfile } from '@/app/actions/user/profile-actions'
 import { toast } from 'sonner'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { Check } from 'lucide-react'
 import Image from 'next/image'
 import { EditModal } from './EditModal'
@@ -164,9 +165,10 @@ export function BannerImageModal({
               <div className="flex items-center gap-4">
                 <div className="relative w-24 h-16 rounded overflow-hidden bg-muted">
                   <Image
-                    src={`/api/files/${bg.storageKey}`}
+                    src={getPublicUrl(bg.storageKey)}
                     alt={bg.altText || bg.originalName}
                     fill
+                    sizes="96px"
                     className="object-cover"
                   />
                 </div>

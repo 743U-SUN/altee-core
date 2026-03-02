@@ -61,10 +61,16 @@ export type PresetInput = z.infer<typeof presetInputSchema>
 
 const paddingSizeSchema = z.enum(['none', 'sm', 'md', 'lg', 'xl'])
 
+/** プリセット or カスタムpx値（0〜200） */
+const paddingValueSchema = z.union([
+  paddingSizeSchema,
+  z.number().int().min(0).max(200),
+])
+
 const responsivePaddingSchema = z.object({
-  mobile: paddingSizeSchema,
-  tablet: paddingSizeSchema.optional(),
-  desktop: paddingSizeSchema.optional(),
+  mobile: paddingValueSchema,
+  tablet: paddingValueSchema.optional(),
+  desktop: paddingValueSchema.optional(),
 })
 
 const sectionBandBackgroundSchema = z.discriminatedUnion('type', [

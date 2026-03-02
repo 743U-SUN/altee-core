@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
   async rewrites() {
     return [
@@ -68,18 +71,21 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'img.youtube.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.ytimg.com',
+        hostname: '*.ytimg.com',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'placehold.co',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.altee.me',
       },
     ],
     minimumCacheTTL: 86400, // 24時間キャッシュ

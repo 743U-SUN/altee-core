@@ -5,12 +5,13 @@
  */
 
 import type { ThemePreset, ThemeColorPalette, ThemeDecorations } from '../types'
+import { DEFAULT_DECORATIONS } from '../types'
 
 /**
  * Pastel Dream ベース装飾設定
  */
 const pastelDecorations: ThemeDecorations = {
-  badge: 'pill',
+  ...DEFAULT_DECORATIONS,
   divider: 'dots',
   iconContainer: 'circle',
   cardHover: 'glow',

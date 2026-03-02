@@ -61,3 +61,19 @@ test-results/
 
 # Tool specific
 .claude/
+.agents/
+
+# IDE
+.vscode/
+.idea/
+
+# Build / Cache
+.turbo/
+.turbopack/
+dist/
+
+# Playwright test reports
+playwright-report/
+
+# OS specific
+Thumbs.db

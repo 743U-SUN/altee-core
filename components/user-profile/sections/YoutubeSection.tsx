@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import Image from 'next/image'
 import type { BaseSectionProps, YoutubeSectionData } from '@/types/profile-sections'
+import { IMAGE_SIZES } from '@/lib/image-sizes'
 import { Youtube } from 'lucide-react'
 import { YouTubeEmbed } from '@next/third-parties/google'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
@@ -39,6 +40,7 @@ export function YoutubeSection({ section, isEditable }: BaseSectionProps) {
                                 src={data.thumbnail || `https://img.youtube.com/vi/${data.videoId}/maxresdefault.jpg`}
                                 alt={data.title || "Youtube Video"}
                                 fill
+                                sizes={IMAGE_SIZES.medium}
                                 className="object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/20">

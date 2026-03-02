@@ -47,7 +47,7 @@ function SortableChildItemComponent<TParent extends SortableParentItem, TChild e
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    borderColor: 'var(--theme-card-border, hsl(var(--border)))',
+    border: 'var(--theme-card-border, 1px solid hsl(var(--border)))',
   };
 
   const isDeleting = childState.isDeleting[childItem.id] || false;

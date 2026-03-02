@@ -8,8 +8,7 @@ import { ThemePreviewClient } from './ThemePreviewClient'
  */
 export default function DemoThemesPage() {
   const themes = getAllThemes()
-  const grouped = getThemesGroupedByName()
-  const groupNames = Object.keys(grouped)
+  const groupNames = Object.keys(getThemesGroupedByName())
   const cssVariableKeys = [...THEME_CSS_VARIABLES]
 
   return (
@@ -26,7 +25,6 @@ export default function DemoThemesPage() {
 
         <ThemePreviewClient
           themes={themes}
-          grouped={grouped}
           cssVariableKeys={cssVariableKeys}
         />
       </div>

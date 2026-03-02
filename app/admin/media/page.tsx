@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,7 +31,7 @@ interface MediaPageProps {
 }
 
 export default async function MediaPage({ searchParams }: MediaPageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
 
   // 3層認証アーキテクチャ：Page層での最終権限チェック
   if (!session?.user?.id || session.user.role !== 'ADMIN') {

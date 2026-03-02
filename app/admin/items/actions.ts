@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth'
 import {
   itemSchema,
   type ItemInput,
@@ -137,6 +138,7 @@ export async function getItemByIdAction(id: string) {
 // ===== アイテム作成 =====
 
 export async function createItemAction(input: ItemInput) {
+  await requireAdmin()
   try {
     // "null" 文字列を null に変換
     const normalizedInput = {
@@ -238,6 +240,7 @@ export async function createItemAction(input: ItemInput) {
 // ===== アイテム更新 =====
 
 export async function updateItemAction(id: string, input: ItemInput) {
+  await requireAdmin()
   try {
     // "null" 文字列を null に変換
     const normalizedInput = {
@@ -364,6 +367,7 @@ export async function updateItemAction(id: string, input: ItemInput) {
 // ===== アイテム削除 =====
 
 export async function deleteItemAction(id: string) {
+  await requireAdmin()
   try {
     // アイテムの存在確認
     const item = await prisma.item.findUnique({
@@ -418,6 +422,7 @@ export async function deleteItemAction(id: string) {
 export async function importItemsFromCSVAction(
   rows: ItemCSVRow[]
 ): Promise<CSVImportResult> {
+  await requireAdmin()
   const result: CSVImportResult = {
     success: 0,
     failed: 0,

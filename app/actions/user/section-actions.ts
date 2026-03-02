@@ -1,6 +1,6 @@
 'use server'
 
-import { auth } from '@/auth'
+import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import type { UserSection, SectionSettings } from '@/types/profile-sections'
@@ -186,8 +186,8 @@ export async function createSection(
   data: unknown = {}
 ): Promise<{ success: boolean; error?: string; section?: UserSection }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.id !== userId) {
+    const session = await requireAuth()
+    if (session.user.id !== userId) {
       return { success: false, error: '権限がありません' }
     }
 
@@ -209,12 +209,16 @@ export async function createSection(
     // サンプルデータを生成
     const sectionData = generateSampleData(sectionType, data)
 
+    const definition = SECTION_REGISTRY[sectionType]
     const section = await prisma.userSection.create({
       data: {
         userId,
         sectionType,
         sortOrder,
         data: sectionData as never,
+        settings: definition?.defaultSettings
+          ? (definition.defaultSettings as never)
+          : undefined,
       },
     })
 
@@ -235,10 +239,7 @@ export async function updateSection(
   data: Partial<{ title: string | null; isVisible: boolean; data: unknown }>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // セクションの所有者確認
     const section = await prisma.userSection.findUnique({
@@ -275,10 +276,7 @@ export async function deleteSection(
   sectionId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // セクションの所有者確認 + データ取得（画像クリーンアップ用）
     const section = await prisma.userSection.findUnique({
@@ -316,10 +314,7 @@ export async function reorderSections(
   sectionIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // 全セクションの所有者確認
     const sections = await prisma.userSection.findMany({
@@ -361,10 +356,7 @@ export async function updateSectionSettings(
   settings: SectionSettings | null
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // 入力バリデーション
     if (settings !== null) {
@@ -406,10 +398,7 @@ export async function moveSectionOrder(
   direction: 'up' | 'down'
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証されていません' }
-    }
+    const session = await requireAuth()
 
     // セクションの所有者確認と現在の情報を取得
     const section = await prisma.userSection.findUnique({

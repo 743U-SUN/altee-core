@@ -24,6 +24,13 @@ export const IMAGE_SIZES = {
 
   // アバター用
   avatar: '48px',
+
+  // ヒーロー画像用（フルスクリーン）
+  heroFull: '100vw',
+  heroMobile: '(min-width: 993px) 0px, 100vw',
+
+  // ヒーロー上キャラクター画像用（9:16、中央下配置）
+  heroCharacter: '(max-width: 992px) 40vw, 25vw',
 } as const
 
 export type ImageSizesKey = keyof typeof IMAGE_SIZES

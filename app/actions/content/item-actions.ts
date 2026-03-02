@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { userItemSchema, type UserItemInput } from '@/lib/validations/item'
 
@@ -49,6 +50,7 @@ export async function getUserItems(userId: string) {
  * ユーザーにアイテムを追加
  */
 export async function createUserItem(userId: string, data: UserItemInput) {
+  await requireAuth()
   try {
     // バリデーション
     const validated = userItemSchema.parse(data)
@@ -138,6 +140,7 @@ export async function updateUserItem(
   userItemId: string,
   data: Partial<UserItemInput>
 ) {
+  await requireAuth()
   try {
     // 所有権確認
     const userItem = await prisma.userItem.findUnique({
@@ -196,6 +199,7 @@ export async function updateUserItem(
  * ユーザーアイテムを削除
  */
 export async function deleteUserItem(userId: string, userItemId: string) {
+  await requireAuth()
   try {
     // 所有権確認
     const userItem = await prisma.userItem.findUnique({
@@ -242,6 +246,7 @@ export async function reorderUserItems(
   userId: string,
   itemIds: string[]
 ) {
+  await requireAuth()
   try {
     // トランザクションで一括更新
     await prisma.$transaction(

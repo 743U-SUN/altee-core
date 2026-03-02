@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth'
 import {
   itemCategorySchema,
   type ItemCategoryInput,
@@ -73,6 +74,7 @@ export async function getCategoryByIdAction(id: string) {
 // ===== カテゴリ作成 =====
 
 export async function createCategoryAction(input: ItemCategoryInput) {
+  await requireAdmin()
   try {
     // バリデーション
     const validated = itemCategorySchema.parse(input)
@@ -140,6 +142,7 @@ export async function updateCategoryAction(
   id: string,
   input: ItemCategoryInput
 ) {
+  await requireAdmin()
   try {
     // バリデーション
     const validated = itemCategorySchema.parse(input)
@@ -237,6 +240,7 @@ export async function updateCategoryAction(
 // ===== カテゴリ削除 =====
 
 export async function deleteCategoryAction(id: string) {
+  await requireAdmin()
   try {
     // カテゴリの存在確認
     const category = await prisma.itemCategory.findUnique({

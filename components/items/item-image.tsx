@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import React, { useState, memo } from 'react'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { cn } from '@/lib/utils'
 
 interface ItemImageProps {
@@ -32,7 +33,7 @@ const ItemImageComponent = ({
   const getImageSrc = () => {
     if (hasError) return '/images/item-placeholder.svg'
     if (imageStorageKey) {
-      return `/api/files/${imageStorageKey}`
+      return getPublicUrl(imageStorageKey)
     }
     if (customImageUrl) {
       return customImageUrl

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { EditModal } from '../../EditModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -194,9 +195,10 @@ export function WeeklyScheduleEditModal({
             <div className="space-y-2">
               <div className="relative w-20 h-20 rounded-lg overflow-hidden border">
                 <Image
-                  src={`/api/files/${currentData.imageKey}`}
+                  src={getPublicUrl(currentData.imageKey)}
                   alt="現在の背景画像"
                   fill
+                  sizes="80px"
                   className="object-cover"
                 />
               </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ExternalLink } from "lucide-react"
@@ -64,7 +65,7 @@ export function NotificationModal({ isOpen, onClose, notification }: Notificatio
               )}
               
               <Image
-                src={`/api/files/${notification.image.storageKey}`}
+                src={getPublicUrl(notification.image.storageKey)}
                 alt={notification.title || "お知らせ画像"}
                 width={800}
                 height={600}

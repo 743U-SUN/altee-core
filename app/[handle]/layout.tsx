@@ -1,4 +1,5 @@
 import { getUserByHandle } from '@/lib/handle-utils'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { isReservedHandle } from '@/lib/reserved-handles'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
@@ -27,7 +28,7 @@ function calculateBackgroundStyle(themeSettings: ThemeSettings): CSSProperties {
 
   if (bg.type === 'image' && bg.imageKey) {
     return {
-      backgroundImage: `url(/api/files/${bg.imageKey})`,
+      backgroundImage: `url(${getPublicUrl(bg.imageKey)})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
@@ -72,7 +73,7 @@ export default async function HandleLayout({
   // アイコン画像を取得（1:1正方形）
   let avatarImageUrl: string | null = null
   if (targetUser.profile.avatarImage?.storageKey) {
-    avatarImageUrl = `/api/files/${targetUser.profile.avatarImage.storageKey}`
+    avatarImageUrl = getPublicUrl(targetUser.profile.avatarImage.storageKey)
   }
 
   // 背景スタイルを計算
@@ -96,7 +97,7 @@ export default async function HandleLayout({
         }
         bottomNav={
           <Suspense fallback={null}>
-            <MobileBottomNav handle={handle} inDashboard={false} />
+            <MobileBottomNav handle={handle} inDashboard={false} visibility={themeSettings.visibility} />
           </Suspense>
         }
         floatingElements={

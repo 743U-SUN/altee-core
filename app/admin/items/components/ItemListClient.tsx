@@ -186,6 +186,7 @@ export function ItemListClient({
                         src={item.customImageUrl || item.amazonImageUrl || ''}
                         alt={item.name}
                         fill
+                        sizes="96px"
                         className="object-cover"
                       />
                     ) : (

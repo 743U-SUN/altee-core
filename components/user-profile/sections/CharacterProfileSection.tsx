@@ -3,6 +3,7 @@
 import type { BaseSectionProps, CharacterProfileData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge } from '@/components/decorations'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Twitter, Youtube, Twitch as TwitchIcon, Github, ExternalLink } from 'lucide-react'
@@ -35,7 +36,7 @@ export function CharacterProfileSection({ section }: BaseSectionProps) {
       {data.characterBackgroundKey && (
         <div className="absolute inset-0 pointer-events-none">
           <Image
-            src={`/api/files/${data.characterBackgroundKey}`}
+            src={getPublicUrl(data.characterBackgroundKey)}
             alt=""
             fill
             className="object-cover blur-sm opacity-20"
@@ -57,7 +58,7 @@ export function CharacterProfileSection({ section }: BaseSectionProps) {
           <div className="flex-shrink-0 w-full lg:w-64">
             <div className="aspect-[9/16] relative rounded-lg overflow-hidden">
               <Image
-                src={`/api/files/${data.characterImageKey}`}
+                src={getPublicUrl(data.characterImageKey)}
                 alt={data.name}
                 fill
                 className="object-cover"
@@ -79,38 +80,20 @@ export function CharacterProfileSection({ section }: BaseSectionProps) {
           )}
 
           {/* キャラクター名 */}
-          <h1
-            className="
-              text-3xl md:text-4xl lg:text-5xl font-extrabold
-              text-[var(--theme-text-primary)]
-              tracking-tight
-            "
-          >
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-[var(--theme-text-primary)] tracking-tight">
             {data.name}
           </h1>
 
           {/* キャッチコピー */}
           {data.tagline && (
-            <p
-              className="
-                text-base md:text-lg
-                text-[var(--theme-text-accent)]
-                font-medium tracking-wide
-              "
-            >
+            <p className="text-base md:text-lg text-[var(--theme-text-accent)] font-medium tracking-wide">
               {data.tagline}
             </p>
           )}
 
           {/* 自己紹介文 */}
           {data.bio && (
-            <p
-              className="
-                text-sm md:text-base
-                text-[var(--theme-text-secondary)]
-                whitespace-pre-wrap
-              "
-            >
+            <p className="text-sm md:text-base text-[var(--theme-text-secondary)] whitespace-pre-wrap">
               {data.bio}
             </p>
           )}
@@ -130,15 +113,7 @@ export function CharacterProfileSection({ section }: BaseSectionProps) {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="
-                      flex items-center justify-center
-                      w-10 h-10 rounded-full
-                      bg-theme-bar-bg
-                      text-[var(--theme-text-secondary)]
-                      hover:text-[var(--theme-text-accent)]
-                      hover:bg-theme-accent-bg
-                      transition-all duration-200
-                    "
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-theme-bar-bg text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-accent)] hover:bg-theme-accent-bg transition-all duration-200"
                     aria-label={link.platform}
                   >
                     {IconComponent ? <IconComponent className="w-5 h-5" /> : <ExternalLink className="w-5 h-5" />}

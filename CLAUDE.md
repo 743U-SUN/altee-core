@@ -56,6 +56,19 @@ DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=pub
 2. **Layout**: State verification and redirects
 3. **Page/Actions**: Final permission check
 
+## Plan Review
+
+After creating an implementation plan, run parallel subagent reviews:
+
+- **architect**: Architectural issues, scalability, and design trade-offs
+- **planner**: Task breakdown validity, dependency order, and missing steps
+- **security-reviewer**: Security gaps (only when the plan involves auth, user input, or API changes)
+- **database-reviewer**: Schema/query concerns (only when the plan involves DB changes)
+
+If reviewers find issues, automatically revise the plan before presenting to user.
+
+> **Note**: If a skill (e.g., `nextjs-refactor-planner`) includes its own Plan Review phase, that fulfills this requirement. Do NOT run a duplicate review.
+
 ## References
 
 @docs/core-rules.md

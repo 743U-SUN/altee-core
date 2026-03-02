@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateUserGift, deleteUserGift } from "@/app/actions/user/gift-actions"
 import type { UserGift } from "@/types/gift"
 import type { UploadedFile } from "@/types/image-upload"
@@ -27,7 +28,7 @@ export function GiftSettings({ initialData, compact = false }: GiftSettingsProps
           name: initialData.image.originalName,
           originalName: initialData.image.originalName,
           key: initialData.image.storageKey,
-          url: `/api/files/${initialData.image.storageKey}`,
+          url: getPublicUrl(initialData.image.storageKey),
           size: 0,
           type: initialData.image.mimeType,
           uploadedAt: new Date().toISOString(),

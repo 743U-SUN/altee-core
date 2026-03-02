@@ -3,9 +3,11 @@
 import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { requireAuth } from '@/lib/auth'
 import type { UploadedFile } from '@/types/image-upload'
 import { sanitizeSVGFile } from '@/lib/image-uploader/svg-sanitizer'
+import { FOLDER_TO_TYPE, DATE_HIERARCHY_FOLDERS } from '@/lib/image-uploader/upload-type-map'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 
 /**
  * 画像ファイルをアップロード
@@ -15,39 +17,36 @@ export async function uploadImageAction(
   folder: string = 'images'
 ): Promise<{ success: boolean; file?: UploadedFile; error?: string }> {
   try {
+    const session = await requireAuth()
+
     const file = formData.get('file') as File
     if (!file) {
       return { success: false, error: 'ファイルが選択されていません' }
     }
 
-    // ファイル情報
     const fileName = file.name
     const fileType = file.type
-    
-    // ユニークなファイル名を生成（タイムスタンプ + ランダム文字列）
+
+    // ユニークなファイル名を生成
     const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 8)
+    const randomString = crypto.randomUUID().slice(0, 8)
     const extension = fileName.split('.').pop() || ''
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
-    
-    // バケットとキーを決定（Cloudflare R2対応）
-    // R2では単一バケット内にフォルダ構造で整理
-    const bucket = STORAGE_BUCKET  // 常に "altee-images" を使用
+
+    const bucket = STORAGE_BUCKET
     let key: string
 
-    if (folder === 'article-thumbnails' || folder === 'article-images' || folder === 'system-assets' || folder === 'user-icons' || folder === 'admin-links' || folder === 'user-links' || folder === 'admin-icons' || folder === 'user-notifications' || folder === 'user-contacts') {
-      // 日付ベースの階層構造: folder/YYYY/MM/filename
+    if (DATE_HIERARCHY_FOLDERS.has(folder)) {
       const date = new Date()
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       key = `${folder}/${year}/${month}/${uniqueFileName}`
     } else {
-      // その他: folder/filename
       key = `${folder}/${uniqueFileName}`
     }
-    
+
     let processedFile = file
-    
+
     // SVGファイルの場合はサニタイズ
     if (fileType === 'image/svg+xml') {
       const sanitizeResult = await sanitizeSVGFile(file)
@@ -56,11 +55,9 @@ export async function uploadImageAction(
       }
       processedFile = sanitizeResult.sanitizedFile!
     }
-    
-    // ファイルをBufferに変換
+
     const buffer = Buffer.from(await processedFile.arrayBuffer())
-    
-    // ストレージにアップロード
+
     await storageClient.send(new PutObjectCommand({
       Bucket: bucket,
       Key: key,
@@ -68,59 +65,37 @@ export async function uploadImageAction(
       ContentType: processedFile.type,
       ContentLength: processedFile.size,
     }))
-    
-    // ユーザー認証チェック
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証が必要です' }
-    }
 
-    // MediaFileテーブルにレコード作成
+    const storageKey = `${bucket}/${key}`
     const mediaFile = await prisma.mediaFile.create({
       data: {
-        storageKey: `${bucket}/${key}`, // 完全なストレージキー
-        containerName: folder, // フォルダ名を使用
+        storageKey,
+        containerName: folder,
         originalName: fileName,
         fileName: uniqueFileName,
         fileSize: processedFile.size,
         mimeType: processedFile.type,
-        uploadType:
-          folder === 'article-thumbnails' ? 'THUMBNAIL' :
-          folder === 'user-icons' ? 'PROFILE' :
-          folder === 'system-assets' ? 'SYSTEM' :
-          folder === 'admin-icons' ? 'ICON' :
-          folder === 'admin-links' ? 'LINK_ICON' :
-          folder === 'user-links' ? 'LINK_ICON' :
-          folder === 'user-notifications' ? 'NOTIFICATION' :
-          folder === 'user-contacts' ? 'CONTACT' : 'CONTENT',
+        uploadType: FOLDER_TO_TYPE[folder] ?? 'CONTENT',
         uploaderId: session.user.id,
       }
     })
 
-    // アップロード済みファイル情報を作成
     const uploadedFile: UploadedFile = {
-      id: mediaFile.id, // データベースのIDを使用
+      id: mediaFile.id,
       name: uniqueFileName,
       originalName: fileName,
-      url: `/api/files/${mediaFile.storageKey}`, // storageKeyを使用（既にバケット名含む）
-      key: `${bucket}/${key}`, // 完全なストレージキー
+      url: getPublicUrl(storageKey),
+      key: storageKey,
       size: processedFile.size,
       type: processedFile.type,
       uploadedAt: mediaFile.createdAt.toISOString()
     }
-    
-    console.log(`Image uploaded to ${bucket}: ${key}`)
-    return { 
-      success: true, 
-      file: uploadedFile
-    }
-    
+
+    return { success: true, file: uploadedFile }
+
   } catch (error) {
     console.error('Image upload failed:', error)
-    return { 
-      success: false, 
-      error: `アップロードに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}` 
-    }
+    return { success: false, error: 'アップロードに失敗しました' }
   }
 }
 
@@ -131,19 +106,17 @@ export async function uploadImagesAction(
   files: File[],
   folder: string = 'images'
 ): Promise<{ success: boolean; files?: UploadedFile[]; errors?: string[] }> {
-  // 並列処理でアップロード
   const uploadPromises = files.map(async (file) => {
     const formData = new FormData()
     formData.append('file', file)
     return uploadImageAction(formData, folder)
   })
-  
+
   const results = await Promise.all(uploadPromises)
-  
-  // 成功したファイルとエラーを分離
+
   const successfulFiles: UploadedFile[] = []
   const errors: string[] = []
-  
+
   results.forEach((result) => {
     if (result.success && result.file) {
       successfulFiles.push(result.file)
@@ -151,7 +124,7 @@ export async function uploadImagesAction(
       errors.push(result.error || 'Unknown error')
     }
   })
-  
+
   return {
     success: successfulFiles.length > 0,
     files: successfulFiles,
@@ -166,13 +139,8 @@ export async function deleteImageAction(
   fileKey: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // ユーザー認証チェック
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証が必要です' }
-    }
+    const session = await requireAuth()
 
-    // MediaFileレコードを取得
     const mediaFile = await prisma.mediaFile.findUnique({
       where: { storageKey: fileKey }
     })
@@ -186,31 +154,25 @@ export async function deleteImageAction(
       return { success: false, error: '削除権限がありません' }
     }
 
-    // Cloudflare R2からファイルを削除
     // storageKeyの形式: "altee-images/folder/path/file.ext"
     const storageKeyParts = fileKey.split('/')
-    const bucket = storageKeyParts[0]  // "altee-images"
-    const objectKey = storageKeyParts.slice(1).join('/')  // "folder/path/file.ext"
+    const bucket = storageKeyParts[0]
+    const objectKey = storageKeyParts.slice(1).join('/')
 
     await storageClient.send(new DeleteObjectCommand({
       Bucket: bucket,
       Key: objectKey,
     }))
 
-    // MediaFileレコードを削除
     await prisma.mediaFile.delete({
       where: { id: mediaFile.id }
     })
-    
-    console.log(`Image deleted: ${fileKey}`)
+
     return { success: true }
-    
+
   } catch (error) {
     console.error('Image delete failed:', error)
-    return { 
-      success: false, 
-      error: `削除に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}` 
-    }
+    return { success: false, error: '削除に失敗しました' }
   }
 }
 
@@ -220,14 +182,12 @@ export async function deleteImageAction(
 export async function deleteImagesAction(
   fileKeys: string[]
 ): Promise<{ success: boolean; deletedKeys?: string[]; errors?: string[] }> {
-  // 並列処理で削除
   const deletePromises = fileKeys.map(key => deleteImageAction(key))
   const results = await Promise.all(deletePromises)
-  
-  // 成功したキーとエラーを分離
+
   const deletedKeys: string[] = []
   const errors: string[] = []
-  
+
   results.forEach((result, index) => {
     if (result.success) {
       deletedKeys.push(fileKeys[index])
@@ -235,7 +195,7 @@ export async function deleteImagesAction(
       errors.push(result.error || 'Unknown error')
     }
   })
-  
+
   return {
     success: deletedKeys.length > 0,
     deletedKeys: deletedKeys.length > 0 ? deletedKeys : undefined,
@@ -250,58 +210,31 @@ export async function listImagesAction(
   folder: string = 'images'
 ): Promise<{ success: boolean; files?: UploadedFile[]; error?: string }> {
   try {
-    // 既存のlistFiles関数を再利用（import必要）
-    const { listFiles } = await import('@/app/demo/article/actions')
-    const result = await listFiles()
-    
-    if (!result.success) {
-      return { success: false, error: result.message }
-    }
-    
-    // 指定フォルダのファイルのみフィルター
-    const folderFiles = result.files.filter(file => 
-      file.key.startsWith(`${folder}/`) && 
-      file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
-    )
-    
-    // UploadedFile形式に変換
-    const uploadedFiles: UploadedFile[] = folderFiles.map(file => ({
-      id: file.key.replace(`${folder}/`, '').replace(/\.[^/.]+$/, ''),
-      name: file.name,
-      originalName: file.name,
-      url: `/api/files/${file.key}`,
-      key: file.key,
-      size: file.size,
-      type: getContentType(file.name),
-      uploadedAt: file.lastModified
+    await requireAuth()
+
+    const mediaFiles = await prisma.mediaFile.findMany({
+      where: {
+        containerName: folder,
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const uploadedFiles: UploadedFile[] = mediaFiles.map(file => ({
+      id: file.id,
+      name: file.fileName,
+      originalName: file.originalName,
+      url: getPublicUrl(file.storageKey),
+      key: file.storageKey,
+      size: file.fileSize,
+      type: file.mimeType,
+      uploadedAt: file.createdAt.toISOString()
     }))
-    
-    return {
-      success: true,
-      files: uploadedFiles
-    }
-    
+
+    return { success: true, files: uploadedFiles }
+
   } catch (error) {
     console.error('List images failed:', error)
-    return { 
-      success: false, 
-      error: `画像一覧の取得に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}` 
-    }
+    return { success: false, error: '画像一覧の取得に失敗しました' }
   }
-}
-
-/**
- * ファイル名からContent-Typeを推定
- */
-function getContentType(filename: string): string {
-  const extension = filename.toLowerCase().split('.').pop()
-  const typeMap: Record<string, string> = {
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'png': 'image/png',
-    'gif': 'image/gif',
-    'webp': 'image/webp',
-    'svg': 'image/svg+xml'
-  }
-  return typeMap[extension || ''] || 'application/octet-stream'
 }

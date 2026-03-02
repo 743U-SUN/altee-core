@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 import { updateSection } from '@/app/actions/user/section-actions'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { ImageGridItem } from '@/types/profile-sections'
 import type { UploadedFile } from '@/types/image-upload'
 
@@ -89,7 +90,7 @@ export function useImageGridEditor({
         id: item.id,
         name: item.imageKey,
         originalName: item.imageKey,
-        url: `/api/files/${item.imageKey}`,
+        url: getPublicUrl(item.imageKey),
         key: item.imageKey,
         size: 0,
         type: 'image/jpeg',

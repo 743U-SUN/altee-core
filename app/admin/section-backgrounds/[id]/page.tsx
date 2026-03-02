@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { getPresetByIdAction } from '@/app/actions/admin/section-background-actions'
 import { PresetForm } from '../components/PresetForm'
@@ -14,7 +14,7 @@ export default async function EditPresetPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id || session.user.role !== 'ADMIN') {
     redirect('/unauthorized')

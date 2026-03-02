@@ -49,8 +49,7 @@ export function ThemedCard({
       )}
       style={{
         // Tailwind v4でサポートされないプロパティはstyleで
-        borderWidth: 'var(--theme-card-border-width, 0)',
-        borderColor: 'var(--theme-card-border)',
+        border: 'var(--theme-card-border, none)',
       }}
     >
       {showCornerDecor && <CornerDecor position={cornerPosition} />}

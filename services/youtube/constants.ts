@@ -1,7 +1,3 @@
-/**
- * プラットフォーム関連の定数
- */
-
 // おすすめ動画の最大数
 export const MAX_RECOMMENDED_VIDEOS = 6
 
@@ -19,6 +15,3 @@ export const YOUTUBE_CHANNEL_ID_PATTERN = /^UC[\w-]{22}$/
 
 // YouTube Video ID のパターン（11文字）
 export const YOUTUBE_VIDEO_ID_PATTERN = /^[\w-]{11}$/
-
-// Twitch Username のパターン（4-25文字の英数字とアンダースコア）
-export const TWITCH_USERNAME_PATTERN = /^[a-zA-Z0-9_]{4,25}$/

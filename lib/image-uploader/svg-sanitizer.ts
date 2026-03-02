@@ -21,7 +21,7 @@ const SVG_SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
     'svg', 'g', 'path', 'circle', 'ellipse', 'line', 'rect', 'polyline', 'polygon',
     'text', 'tspan', 'defs', 'clipPath', 'mask', 'pattern', 'image', 'switch',
-    'foreignObject', 'linearGradient', 'radialGradient', 'stop', 'use', 'symbol',
+    'linearGradient', 'radialGradient', 'stop', 'use', 'symbol',
     'marker', 'title', 'desc', 'metadata'
   ],
   

@@ -4,7 +4,7 @@
  */
 
 import { XMLParser } from "fast-xml-parser"
-import { RSS_FEED_CACHE_SECONDS } from "@/constants/platform"
+import { RSS_FEED_CACHE_SECONDS } from "./constants"
 
 /**
  * YouTube oEmbed API から動画メタデータを取得

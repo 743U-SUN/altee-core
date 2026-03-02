@@ -3,20 +3,11 @@
 import { ListObjectsV2Command, DeleteObjectCommand, type ListObjectsV2CommandOutput } from '@aws-sdk/client-s3'
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
-
-// 管理者権限チェック
-async function requireAdminAuth() {
-  const session = await auth()
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    throw new Error('管理者権限が必要です')
-  }
-  return session
-}
+import { requireAdmin } from '@/lib/auth'
 
 // 全ストレージファイル一覧を取得（単一バケット構造に対応）
 export async function getAllStorageFiles() {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const allFiles: Array<{
     container: string
@@ -76,7 +67,7 @@ export async function getAllStorageFiles() {
 
 // 孤立ファイルを検出
 export async function detectOrphanFiles() {
-  await requireAdminAuth()
+  await requireAdmin()
   
   try {
     // 1. ストレージの全ファイル取得
@@ -120,7 +111,7 @@ export async function detectOrphanFiles() {
 
 // 孤立ファイルを削除
 export async function cleanupOrphanFiles(orphanKeys: string[]) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   const deletedFiles: string[] = []
   const errors: string[] = []
@@ -179,7 +170,7 @@ export async function cleanupOrphanFiles(orphanKeys: string[]) {
 
 // 削除統計を取得
 export async function getDeletionStats() {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const orphanResult = await detectOrphanFiles()

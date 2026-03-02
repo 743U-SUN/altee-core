@@ -122,7 +122,7 @@ export function MarkdownToolbar({ onInsert, onImageInsert, disabled = false }: M
   )
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 border-b bg-muted/30 overflow-x-auto">
+    <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b bg-muted/30">
       {/* 基本フォーマット */}
       {renderToolGroup(basicTools)}
       

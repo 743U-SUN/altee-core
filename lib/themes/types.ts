@@ -100,6 +100,19 @@ export interface ThemeContextValue {
 }
 
 /**
+ * デコレーションのデフォルト値
+ * 新しいデコレーションキーを追加した場合、ここにデフォルト値を定義すれば
+ * 既存テーマプリセットは spread で自動的にデフォルトが適用される。
+ */
+export const DEFAULT_DECORATIONS: ThemeDecorations = {
+  badge: 'pill',
+  divider: 'none',
+  iconContainer: 'rounded',
+  cardHover: 'lift',
+  cornerDecor: 'none',
+}
+
+/**
  * CSS変数のキー一覧（型安全のため）
  */
 export const THEME_CSS_VARIABLES = [

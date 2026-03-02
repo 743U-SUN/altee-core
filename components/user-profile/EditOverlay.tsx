@@ -33,27 +33,10 @@ export function EditOverlay({
 
       {/* ホバー時のオーバーレイ */}
       <div
-        className="
-          absolute inset-0
-          bg-black/0 group-hover:bg-black/30
-          transition-all duration-200
-          cursor-pointer
-          rounded-md
-          flex items-center justify-center
-          opacity-0 group-hover:opacity-100
-        "
+        className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 cursor-pointer rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100"
         onClick={onClick}
       >
-        <div
-          className="
-            flex items-center gap-2
-            px-4 py-2
-            bg-white dark:bg-gray-800
-            rounded-md
-            shadow-lg
-            border border-gray-200 dark:border-gray-700
-          "
-        >
+        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
           <Pencil className="w-4 h-4" />
           <span className="text-sm font-medium">{label}</span>
         </div>

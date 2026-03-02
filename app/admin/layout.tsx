@@ -1,4 +1,4 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getAdminStats } from "@/app/actions/admin/stats"
@@ -10,7 +10,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth();
+  const session = await cachedAuth();
   
   // 認証チェック
   if (!session?.user?.email) {
@@ -19,7 +19,7 @@ export default async function AdminLayout({
   
   // アクティブユーザーチェック
   if (!session.user.isActive) {
-    redirect('/suspended');
+    redirect('/auth/suspended');
   }
   
   // 管理者権限チェック

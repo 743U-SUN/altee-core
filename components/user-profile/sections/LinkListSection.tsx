@@ -39,21 +39,11 @@ export function LinkListSection({ section, isEditable }: BaseSectionProps) {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="
-                  group flex items-center justify-between p-4
-                  rounded-lg
-                  hover:bg-theme-bar-bg/50 transition-all duration-300
-                "
+                className="group flex items-center justify-between p-4 rounded-lg hover:bg-theme-bar-bg/50 transition-all duration-300"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   {/* Icon - 円形コンテナ */}
-                  <div
-                    className="
-                      w-10 h-10 shrink-0 flex items-center justify-center
-                      rounded-full bg-theme-bar-bg
-                      text-[var(--theme-accent-color,var(--theme-text-secondary))]
-                    "
-                  >
+                  <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-theme-bar-bg text-[var(--theme-accent-color,var(--theme-text-secondary))]">
                     {item.iconType === 'custom' && item.customIconUrl ? (
                       <Image
                         src={item.customIconUrl}

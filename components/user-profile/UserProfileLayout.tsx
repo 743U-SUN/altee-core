@@ -1,6 +1,7 @@
 'use client'
 
-import { memo, useMemo, Suspense } from 'react'
+import { memo, useMemo } from 'react'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { UserThemeProvider } from '@/components/theme-provider/UserThemeProvider'
 import { ProfileLayout } from '@/components/profile/ProfileLayout'
 import type { ThemeSettings } from '@/types/profile-sections'
@@ -61,7 +62,7 @@ export const UserProfileLayout = memo(function UserProfileLayout({
 
     if (background.type === 'image' && background.imageKey) {
       return {
-        backgroundImage: `url(/api/files/${background.imageKey})`,
+        backgroundImage: `url(${getPublicUrl(background.imageKey)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -78,24 +79,20 @@ export const UserProfileLayout = memo(function UserProfileLayout({
     >
       <ProfileLayout
         header={
-          <Suspense fallback={null}>
-            <ProfileHeader
-              handle={handle}
-              avatarImageUrl={avatarImageUrl}
-              characterName={characterName}
-              visibility={themeSettings.visibility}
-              namecard={themeSettings.namecard}
-              isEditable={isEditable}
-              inDashboard={inDashboard}
-              onImageEdit={onImageEdit}
-              onNotificationClick={onNotificationClick}
-            />
-          </Suspense>
+          <ProfileHeader
+            handle={handle}
+            avatarImageUrl={avatarImageUrl}
+            characterName={characterName}
+            visibility={themeSettings.visibility}
+            namecard={themeSettings.namecard}
+            isEditable={isEditable}
+            inDashboard={inDashboard}
+            onImageEdit={onImageEdit}
+            onNotificationClick={onNotificationClick}
+          />
         }
         bottomNav={
-          <Suspense fallback={null}>
-            <MobileBottomNav handle={handle} inDashboard={inDashboard} />
-          </Suspense>
+          <MobileBottomNav handle={handle} inDashboard={inDashboard} />
         }
         floatingElements={
           <FloatingElements

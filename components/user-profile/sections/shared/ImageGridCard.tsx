@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { ExternalLink, ImageIcon } from 'lucide-react'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { ImageGridItem } from '@/types/profile-sections'
 import { useUserTheme } from '@/components/theme-provider/useUserTheme'
 import { cn } from '@/lib/utils'
@@ -55,7 +56,7 @@ export function ImageGridCard({ item, aspectRatio, cardSize, imageSizes }: Image
     )
   }
 
-  const imageUrl = `/api/files/${item.imageKey}`
+  const imageUrl = getPublicUrl(item.imageKey)
 
   const Content = (
     <div className={cn(

@@ -48,18 +48,7 @@ export const FloatingElements = memo(function FloatingElements({
       {/* PC: Share Button (右下) */}
       {visibility.snsButton && (
         <button
-          className="
-            fixed bottom-6 right-6 z-40
-            w-14 h-14 rounded-full
-            bg-[var(--theme-card-bg)]
-            shadow-[var(--theme-card-shadow)]
-            flex items-center justify-center
-            text-[var(--theme-text-secondary)]
-            hover:text-[var(--theme-text-accent)]
-            hover:scale-110
-            transition-all
-            max-[992px]:hidden
-          "
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[var(--theme-card-bg)] shadow-[var(--theme-card-shadow)] flex items-center justify-center text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-accent)] hover:scale-110 transition-all max-[992px]:hidden"
           aria-label="Share"
         >
           <Share2 className="w-6 h-6" />

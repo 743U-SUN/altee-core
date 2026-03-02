@@ -57,9 +57,9 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
     transition,
     opacity: isDragging ? 0.5 : 1,
     background: 'var(--theme-card-bg, hsl(var(--card)))',
-    borderColor: isDragging
-      ? 'var(--theme-text-accent, hsl(var(--primary)))'
-      : 'var(--theme-card-border, hsl(var(--border)))',
+    border: isDragging
+      ? '1px solid var(--theme-text-accent, hsl(var(--primary)))'
+      : 'var(--theme-card-border, 1px solid hsl(var(--border)))',
     borderRadius: 'var(--theme-card-radius, 0.5rem)',
     boxShadow: 'var(--theme-card-shadow)',
   };

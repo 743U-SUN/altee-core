@@ -15,14 +15,7 @@ export function LongTextSection({ section, isEditable }: BaseSectionProps) {
   return (
     <ThemedCard className="w-full mb-6">
       {section.title && (
-        <span
-          className="
-            inline-block px-3 py-1 rounded-full mb-3
-            text-xs font-bold
-            bg-[var(--theme-accent-bg,rgba(176,125,79,0.1))]
-            text-[var(--theme-text-accent,#b07d4f)]
-          "
-        >
+        <span className="inline-block px-3 py-1 rounded-full mb-3 text-xs font-bold bg-[var(--theme-accent-bg,rgba(176,125,79,0.1))] text-[var(--theme-text-accent,#b07d4f)]">
           {section.title}
         </span>
       )}

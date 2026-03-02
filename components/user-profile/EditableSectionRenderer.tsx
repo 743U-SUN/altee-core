@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useMemo, useCallback } from 'react'
+import { Suspense, useState, useMemo, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type {
@@ -33,6 +33,7 @@ export function EditableSectionRenderer({
   presets = [],
 }: EditableSectionRendererProps) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
   const [deleteTarget, setDeleteTarget] = useState<UserSection | null>(null)
   const [editTarget, setEditTarget] = useState<UserSection | null>(null)
   const [styleTarget, setStyleTarget] = useState<UserSection | null>(null)
@@ -48,11 +49,13 @@ export function EditableSectionRenderer({
   const handleMove = useCallback(async (sectionId: string, direction: 'up' | 'down') => {
     const result = await moveSectionOrder(sectionId, direction)
     if (result.success) {
-      router.refresh()
+      startTransition(() => {
+        router.refresh()
+      })
     } else {
       toast.error(result.error || 'セクションの移動に失敗しました')
     }
-  }, [router])
+  }, [router, startTransition])
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
@@ -61,11 +64,13 @@ export function EditableSectionRenderer({
 
     if (result.success) {
       setDeleteTarget(null)
-      router.refresh()
+      startTransition(() => {
+        router.refresh()
+      })
     } else {
       toast.error(result.error || 'セクションの削除に失敗しました')
     }
-  }, [deleteTarget, router])
+  }, [deleteTarget, router, startTransition])
 
   const handleEditClose = useCallback(() => {
     setEditTarget(null)
@@ -90,8 +95,10 @@ export function EditableSectionRenderer({
       })
     }
     setStyleTarget(null)
-    router.refresh()
-  }, [styleTarget, router])
+    startTransition(() => {
+      router.refresh()
+    })
+  }, [styleTarget, router, startTransition])
 
   return (
     <>

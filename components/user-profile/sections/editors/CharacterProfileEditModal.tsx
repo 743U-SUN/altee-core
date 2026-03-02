@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { updateSection } from '@/app/actions/user/section-actions'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import type { CharacterProfileData } from '@/types/profile-sections'
@@ -254,7 +255,7 @@ export function CharacterProfileEditModal({
             <div className="space-y-2">
               <div className="relative w-32 aspect-[9/16] rounded-lg overflow-hidden border">
                 <Image
-                  src={`/api/files/${currentData.characterImageKey}`}
+                  src={getPublicUrl(currentData.characterImageKey)}
                   alt="現在のキャラクター画像"
                   fill
                   className="object-cover"
@@ -294,7 +295,7 @@ export function CharacterProfileEditModal({
             <div className="space-y-2">
               <div className="relative w-48 h-32 rounded-lg overflow-hidden border">
                 <Image
-                  src={`/api/files/${currentData.characterBackgroundKey}`}
+                  src={getPublicUrl(currentData.characterBackgroundKey)}
                   alt="現在の背景画像"
                   fill
                   className="object-cover"

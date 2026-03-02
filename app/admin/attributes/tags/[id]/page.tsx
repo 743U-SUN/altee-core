@@ -1,4 +1,4 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect, notFound } from "next/navigation"
 import { getTag } from "@/app/actions/content/tag-actions"
 import { TagForm } from "../components/TagForm"
@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 export default async function EditTagPage({ params }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   // 最終権限チェック（Page層）
   if (session?.user?.role !== 'ADMIN') {

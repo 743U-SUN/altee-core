@@ -1,10 +1,10 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { getUserYoutubeSettings, getMyRssFeedVideos } from "@/app/actions/social/youtube-actions"
 import { YouTubeTabContent } from "../components/YouTubeTabContent"
 
 export default async function YouTubePlatformPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   if (!session?.user?.id) {
     redirect("/auth/signin")

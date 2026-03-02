@@ -1,4 +1,4 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { getTags } from "@/app/actions/content/tag-actions"
 import { TagList } from "./components/TagList"
@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function TagsPage({ searchParams }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   if (session?.user?.role !== 'ADMIN') {
     redirect('/unauthorized')

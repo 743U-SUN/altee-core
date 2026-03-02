@@ -5,16 +5,15 @@
  */
 
 import type { ThemePreset, ThemeColorPalette, ThemeDecorations } from '../types'
+import { DEFAULT_DECORATIONS } from '../types'
 
 /**
  * Minimal ベース装飾設定
  */
 const minimalDecorations: ThemeDecorations = {
+  ...DEFAULT_DECORATIONS,
   badge: 'tag',
   divider: 'line',
-  iconContainer: 'rounded',
-  cardHover: 'lift',
-  cornerDecor: 'none',
 }
 
 /**

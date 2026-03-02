@@ -17,6 +17,7 @@ export default function DemoLayout({ children }: { children: ReactNode }) {
       gameButton: false,
       snsButton: false,
       notification: false,
+      newsPage: true,
     },
   }
 

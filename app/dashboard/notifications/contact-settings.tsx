@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateUserContact, deleteUserContact } from "@/app/actions/user/contact-actions"
 import { CONTACT_CONSTRAINTS } from "@/types/contacts"
 import type { UserContact } from "@/types/contacts"
@@ -40,7 +41,7 @@ export function ContactSettings({
         name: initialData.image.originalName,
         originalName: initialData.image.originalName,
         key: initialData.image.storageKey,
-        url: `/api/files/${initialData.image.storageKey}`,
+        url: getPublicUrl(initialData.image.storageKey),
         size: 0,
         type: initialData.image.mimeType,
         uploadedAt: new Date().toISOString(),

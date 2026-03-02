@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -13,17 +13,6 @@ const categorySchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i, '正しいカラーコードを入力してください').optional(),
   order: z.number().int().min(0).optional(),
 })
-
-// 管理者権限チェック
-async function requireAdminAuth() {
-  const session = await auth()
-  
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    throw new Error('管理者権限が必要です')
-  }
-  
-  return session
-}
 
 // スラッグ生成用ヘルパー
 function generateSlug(name: string): string {
@@ -37,7 +26,7 @@ function generateSlug(name: string): string {
 
 // カテゴリ作成
 export async function createCategory(formData: FormData) {
-  await requireAdminAuth()
+  await requireAdmin()
   
   const validatedFields = categorySchema.safeParse({
     name: formData.get('name'),
@@ -84,7 +73,7 @@ export async function createCategory(formData: FormData) {
 
 // カテゴリ更新
 export async function updateCategory(id: string, formData: FormData) {
-  await requireAdminAuth()
+  await requireAdmin()
   
   const validatedFields = categorySchema.safeParse({
     name: formData.get('name'),
@@ -144,7 +133,7 @@ export async function updateCategory(id: string, formData: FormData) {
 
 // カテゴリ削除
 export async function deleteCategory(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const category = await prisma.category.findUnique({
@@ -180,7 +169,7 @@ export async function deleteCategory(id: string) {
 
 // カテゴリ一覧取得
 export async function getCategories(page: number = 1, limit: number = 20) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const offset = (page - 1) * limit
@@ -219,7 +208,7 @@ export async function getCategories(page: number = 1, limit: number = 20) {
 
 // カテゴリ詳細取得
 export async function getCategory(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const category = await prisma.category.findUnique({
@@ -251,6 +240,8 @@ export async function getCategory(id: string) {
 
 // 全カテゴリ取得（記事作成時のセレクタ用）
 export async function getAllCategories() {
+  await requireAdmin()
+
   try {
     const categories = await prisma.category.findMany({
       orderBy: [

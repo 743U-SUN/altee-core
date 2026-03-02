@@ -5,6 +5,7 @@
  */
 
 import type { ThemePreset, ThemeColorPalette, ThemeDecorations } from '../types'
+import { DEFAULT_DECORATIONS } from '../types'
 
 /**
  * 色を明るく/暗くする簡易ユーティリティ（純粋関数）
@@ -25,11 +26,9 @@ function adjustColor(hex: string, percent: number): string {
  * Claymorphic ベース装飾設定
  */
 const claymorphicDecorations: ThemeDecorations = {
-  badge: 'pill',
-  divider: 'none',
+  ...DEFAULT_DECORATIONS,
   iconContainer: 'circle',
   cardHover: 'press',
-  cornerDecor: 'none',
 }
 
 /**

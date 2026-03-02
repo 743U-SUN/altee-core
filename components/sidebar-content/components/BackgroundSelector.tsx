@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateThemeBackground } from '@/app/actions/user/theme-actions'
 import { toast } from 'sonner'
 import type { BackgroundSettings } from '@/types/profile-sections'
@@ -179,7 +180,7 @@ export function BackgroundSelector({
               <p className="text-xs text-muted-foreground">現在の背景画像</p>
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                 <img
-                  src={`/api/files/${currentBackground.imageKey}`}
+                  src={getPublicUrl(currentBackground.imageKey)}
                   alt="現在の背景"
                   className="w-full h-full object-cover"
                 />

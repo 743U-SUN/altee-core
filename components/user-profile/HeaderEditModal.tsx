@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { Trash2, Check, RotateCcw } from 'lucide-react'
 import Image from 'next/image'
 
@@ -309,6 +310,7 @@ export function HeaderEditModal({
                     src={currentAvatarImageUrl}
                     alt="現在のアイコン"
                     fill
+                    sizes="80px"
                     className="object-cover"
                   />
                 </div>
@@ -435,9 +437,10 @@ export function HeaderEditModal({
                             }`}
                           >
                             <Image
-                              src={`/api/files/${img.storageKey}`}
+                              src={getPublicUrl(img.storageKey)}
                               alt={img.altText || img.originalName}
                               fill
+                              sizes="(max-width: 768px) 50vw, 300px"
                               className="object-cover"
                             />
                             {selectedPresetKey === img.storageKey && (
@@ -513,9 +516,10 @@ export function HeaderEditModal({
                         <p className="text-sm text-muted-foreground">現在の画像</p>
                         <div className="relative w-full aspect-[4/1] rounded overflow-hidden bg-muted">
                           <Image
-                            src={`/api/files/${savedNamecard.imageKey}`}
+                            src={getPublicUrl(savedNamecard.imageKey)}
                             alt="現在のネームカード画像"
                             fill
+                            sizes="(max-width: 768px) 100vw, 640px"
                             className="object-cover"
                           />
                         </div>

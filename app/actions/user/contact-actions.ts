@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { UserRole } from "@prisma/client"
@@ -66,10 +67,7 @@ export async function getUserContact(userId?: string) {
 // 連絡方法設定を作成・更新
 export async function updateUserContact(data: z.infer<typeof contactSchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {
@@ -133,10 +131,7 @@ export async function updateUserContact(data: z.infer<typeof contactSchema>) {
 // 連絡方法設定を削除
 export async function deleteUserContact() {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
+    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {

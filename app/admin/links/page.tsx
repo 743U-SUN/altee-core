@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { LinkTypeTable } from './components/LinkTypeTable'
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminLinksPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   // 3層認証アーキテクチャ：Page層での最終権限チェック
   if (!session?.user?.id || session.user.role !== 'ADMIN') {

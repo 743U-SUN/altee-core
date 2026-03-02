@@ -2,12 +2,13 @@
 
 import { memo, useMemo } from 'react'
 import Link from 'next/link'
-import { User, Video, HelpCircle, Package } from 'lucide-react'
+import { User, Video, HelpCircle, Package, Newspaper } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 interface MobileBottomNavProps {
   handle: string
   inDashboard?: boolean
+  visibility?: { newsPage?: boolean }
 }
 
 /**
@@ -15,21 +16,31 @@ interface MobileBottomNavProps {
  */
 export const MobileBottomNav = memo(function MobileBottomNav({
   handle,
-  inDashboard = false
+  inDashboard = false,
+  visibility,
 }: MobileBottomNavProps) {
   const pathname = usePathname()
 
-  const navItems = useMemo(() => inDashboard ? [
-    { label: 'Profile', href: '/dashboard/profile-editor', icon: User },
-    { label: 'Items', href: '/dashboard/items', icon: Package },
-    { label: 'Videos', href: '/dashboard/platforms', icon: Video },
-    { label: 'FAQs', href: '/dashboard/faqs', icon: HelpCircle },
-  ] : [
-    { label: 'Profile', href: `/@${handle}`, icon: User },
-    { label: 'Items', href: `/@${handle}/items`, icon: Package },
-    { label: 'Videos', href: `/@${handle}/videos`, icon: Video },
-    { label: 'FAQs', href: `/@${handle}/faqs`, icon: HelpCircle },
-  ], [handle, inDashboard])
+  const navItems = useMemo(() => {
+    const items = inDashboard ? [
+      { label: 'Profile', href: '/dashboard/profile-editor', icon: User },
+      { label: 'Items', href: '/dashboard/items', icon: Package },
+      { label: 'News', href: '/dashboard/news', icon: Newspaper },
+      { label: 'Videos', href: '/dashboard/platforms', icon: Video },
+      { label: 'FAQs', href: '/dashboard/faqs', icon: HelpCircle },
+    ] : [
+      { label: 'Profile', href: `/@${handle}`, icon: User },
+      { label: 'Items', href: `/@${handle}/items`, icon: Package },
+      { label: 'News', href: `/@${handle}/news`, icon: Newspaper },
+      { label: 'Videos', href: `/@${handle}/videos`, icon: Video },
+      { label: 'FAQs', href: `/@${handle}/faqs`, icon: HelpCircle },
+    ]
+    // 公開ページ側のみ visibility で News を除外（ダッシュボードは常に表示）
+    if (!inDashboard && visibility?.newsPage === false) {
+      return items.filter((item) => item.label !== 'News')
+    }
+    return items
+  }, [handle, inDashboard, visibility?.newsPage])
 
   return (
     <nav
@@ -46,7 +57,7 @@ export const MobileBottomNav = memo(function MobileBottomNav({
               href={item.href}
               className={`
                 flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-lg
-                transition-all min-w-[60px]
+                transition-all min-w-[50px]
                 ${isActive
                   ? 'text-[var(--theme-text-accent)] bg-[var(--theme-accent-bg)]'
                   : 'text-[var(--theme-text-secondary)]'

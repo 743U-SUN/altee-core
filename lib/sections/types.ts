@@ -1,5 +1,5 @@
 import type { ComponentType, LazyExoticComponent } from 'react'
-import type { BaseSectionProps } from '@/types/profile-sections'
+import type { BaseSectionProps, SectionSettings } from '@/types/profile-sections'
 
 /**
  * セクションの読み込み優先度
@@ -38,6 +38,7 @@ export interface SectionDefinition {
   priority: SectionPriority
   component: ComponentType<BaseSectionProps> | LazyExoticComponent<ComponentType<BaseSectionProps>>
   defaultData: unknown
+  defaultSettings?: SectionSettings  // セクション作成時のデフォルト設定
   validate?: (data: unknown) => boolean
 }
 

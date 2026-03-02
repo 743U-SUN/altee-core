@@ -32,6 +32,7 @@ model User {
   gift                   UserGift?     // ギフト設定（1対1）
   // userDevices removed (Device system deleted in Phase 10)
   userItems              UserItem[] // ユーザー所有アイテム
+  userNews               UserNews[] // ユーザーニュース記事
 
   // プラットフォーム管理（YouTube/Twitch等）
   youtubeChannelId       String? // YouTube Channel ID (UC...)
@@ -145,6 +146,8 @@ model MediaFile {
   notificationImages  UserNotification[] @relation("NotificationImage")
   contactImages       UserContact[]  @relation("ContactImage")
   giftImages          UserGift[]     @relation("GiftImage")
+  userNewsThumbnails  UserNews[]     @relation("UserNewsThumbnail")
+  userNewsBodyImages  UserNews[]     @relation("UserNewsBodyImage")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   
@@ -246,6 +249,7 @@ enum MediaType {
   ICON         // カスタムアイコン
   NOTIFICATION // 通知画像
   CONTACT      // 連絡方法画像
+  USER_NEWS    // ユーザーニュース画像
 }
 
 model UserProfile {
@@ -607,4 +611,29 @@ model UserItem {
   @@index([isPublic])
   @@index([sortOrder])
   @@map("user_items")
+}
+
+// ===== User News System =====
+
+model UserNews {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String     // 最大100文字
+  slug        String     // ユーザー単位でユニーク
+  content     String     // Markdown本文（最大10000文字）
+  thumbnailId String?    // サムネイル画像 → MediaFile
+  bodyImageId String?    // 本文内画像（1枚） → MediaFile
+  published   Boolean    @default(false)
+  sortOrder   Int        @default(0)
+  adminHidden Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thumbnail MediaFile? @relation("UserNewsThumbnail", fields: [thumbnailId], references: [id])
+  bodyImage MediaFile? @relation("UserNewsBodyImage", fields: [bodyImageId], references: [id])
+
+  @@unique([userId, slug])
+  @@index([userId, sortOrder])
+  @@map("user_news")
 }

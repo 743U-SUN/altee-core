@@ -1,3 +1,4 @@
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { UserLink } from "@/types/link-type"
 
 /**
@@ -7,12 +8,12 @@ import type { UserLink } from "@/types/link-type"
 export function getLinkIconSrc(link: UserLink): string | null {
   // カスタムアイコンが設定されている場合
   if (link.customIcon) {
-    return `/api/files/${link.customIcon.storageKey}`
+    return getPublicUrl(link.customIcon.storageKey)
   }
 
   // 選択されたプリセットアイコンがある場合
   if (link.selectedLinkTypeIcon) {
-    return `/api/files/${link.selectedLinkTypeIcon.iconKey}`
+    return getPublicUrl(link.selectedLinkTypeIcon.iconKey)
   }
 
   // リンクタイプのアイコンがある場合
@@ -20,10 +21,10 @@ export function getLinkIconSrc(link: UserLink): string | null {
     // デフォルトアイコンを探す
     const defaultIcon = link.linkType.icons.find(icon => icon.isDefault)
     if (defaultIcon) {
-      return `/api/files/${defaultIcon.iconKey}`
+      return getPublicUrl(defaultIcon.iconKey)
     }
     // デフォルトがない場合は最初のアイコンを使用
-    return `/api/files/${link.linkType.icons[0].iconKey}`
+    return getPublicUrl(link.linkType.icons[0].iconKey)
   }
 
   return null

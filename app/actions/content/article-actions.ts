@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -11,20 +11,9 @@ const articleSchema = z.object({
   slug: z.string().min(1, 'スラッグは必須です').max(255, 'スラッグは255文字以内で入力してください'),
   content: z.string().min(1, 'コンテンツは必須です'),
   excerpt: z.string().max(500, '要約は500文字以内で入力してください').optional(),
-  thumbnailId: z.string().optional(),
+  thumbnailId: z.string().nullable().optional(),
   published: z.boolean().default(false),
 })
-
-// 管理者権限チェック
-async function requireAdminAuth() {
-  const session = await auth()
-  
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    throw new Error('管理者権限が必要です')
-  }
-  
-  return session
-}
 
 // スラッグ生成用ヘルパー
 function generateSlug(title: string): string {
@@ -38,17 +27,17 @@ function generateSlug(title: string): string {
 
 // Article作成
 export async function createArticle(formData: FormData) {
-  const session = await requireAdminAuth()
+  const session = await requireAdmin()
   
   const validatedFields = articleSchema.safeParse({
     title: formData.get('title'),
     slug: formData.get('slug') || generateSlug(formData.get('title') as string),
     content: formData.get('content'),
     excerpt: formData.get('excerpt') || undefined,
-    thumbnailId: formData.get('thumbnailId') || undefined,
+    thumbnailId: formData.get('thumbnailId') || null,
     published: formData.get('published') === 'true',
   })
-  
+
   // カテゴリ・タグIDを取得
   const categoryIds = formData.getAll('categoryIds') as string[]
   const tagIds = formData.getAll('tagIds') as string[]
@@ -57,7 +46,7 @@ export async function createArticle(formData: FormData) {
     throw new Error(`バリデーションエラー: ${validatedFields.error.errors.map(e => e.message).join(', ')}`)
   }
 
-  const { title, slug, content, excerpt, thumbnailId, published } = validatedFields.data
+  const { title, slug, content, excerpt, thumbnailId: rawThumbnailId, published } = validatedFields.data
 
   try {
     // スラッグの重複チェック
@@ -67,6 +56,15 @@ export async function createArticle(formData: FormData) {
 
     if (existingArticle) {
       throw new Error('このスラッグは既に使用されています')
+    }
+
+    // thumbnailIdが指定されている場合、MediaFileの存在を確認（削除済みならnullにフォールバック）
+    let thumbnailId = rawThumbnailId
+    if (thumbnailId) {
+      const mediaFile = await prisma.mediaFile.findUnique({ where: { id: thumbnailId }, select: { id: true } })
+      if (!mediaFile) {
+        thumbnailId = null
+      }
     }
 
     // トランザクションで記事とカテゴリ・タグのリレーションを同時作成
@@ -119,14 +117,14 @@ export async function createArticle(formData: FormData) {
 
 // Article更新
 export async function updateArticle(id: string, formData: FormData) {
-  await requireAdminAuth()
+  await requireAdmin()
   
   const validatedFields = articleSchema.safeParse({
     title: formData.get('title'),
     slug: formData.get('slug'),
     content: formData.get('content'),
     excerpt: formData.get('excerpt') || undefined,
-    thumbnailId: formData.get('thumbnailId') || undefined,
+    thumbnailId: formData.get('thumbnailId') || null,
     published: formData.get('published') === 'true',
   })
 
@@ -134,8 +132,8 @@ export async function updateArticle(id: string, formData: FormData) {
     throw new Error(`バリデーションエラー: ${validatedFields.error.errors.map(e => e.message).join(', ')}`)
   }
 
-  const { title, slug, content, excerpt, thumbnailId, published } = validatedFields.data
-  
+  const { title, slug, content, excerpt, thumbnailId: rawThumbnailId, published } = validatedFields.data
+
   // カテゴリ・タグIDを取得
   const categoryIds = formData.getAll('categoryIds') as string[]
   const tagIds = formData.getAll('tagIds') as string[]
@@ -151,7 +149,7 @@ export async function updateArticle(id: string, formData: FormData) {
 
     // スラッグの重複チェック（自分以外）
     const duplicateSlug = await prisma.article.findFirst({
-      where: { 
+      where: {
         slug,
         id: { not: id }
       }
@@ -159,6 +157,15 @@ export async function updateArticle(id: string, formData: FormData) {
 
     if (duplicateSlug) {
       throw new Error('このスラッグは既に使用されています')
+    }
+
+    // thumbnailIdが指定されている場合、MediaFileの存在を確認（削除済みならnullにフォールバック）
+    let thumbnailId = rawThumbnailId
+    if (thumbnailId) {
+      const mediaFile = await prisma.mediaFile.findUnique({ where: { id: thumbnailId }, select: { id: true } })
+      if (!mediaFile) {
+        thumbnailId = null
+      }
     }
 
     const wasUnpublished = !existingArticle.published
@@ -223,7 +230,7 @@ export async function updateArticle(id: string, formData: FormData) {
 
 // Article削除
 export async function deleteArticle(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const article = await prisma.article.findUnique({
@@ -261,7 +268,7 @@ export async function deleteArticle(id: string) {
 
 // Article一覧取得
 export async function getArticles(page: number = 1, limit: number = 10) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const offset = (page - 1) * limit
@@ -314,7 +321,7 @@ export async function getArticles(page: number = 1, limit: number = 10) {
 
 // Article詳細取得
 export async function getArticle(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const article = await prisma.article.findUnique({
@@ -356,7 +363,7 @@ export async function getArticle(id: string) {
 
 // Article公開状態切り替え
 export async function toggleArticlePublished(id: string) {
-  await requireAdminAuth()
+  await requireAdmin()
 
   try {
     const article = await prisma.article.findUnique({

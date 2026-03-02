@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -19,11 +20,13 @@ import { Separator } from '@/components/ui/separator'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { resolveBackgroundStyle } from '@/lib/sections/background-utils'
+import { paddingToPx } from '@/lib/sections/padding-utils'
 import { updateSectionSettings } from '@/app/actions/user/section-actions'
 import type {
   SectionSettings,
   SectionBandBackground,
   SectionPaddingSize,
+  SectionPaddingValue,
   ResponsivePadding,
   SectionBackgroundPreset,
 } from '@/types/profile-sections'
@@ -107,7 +110,7 @@ export function SectionStylePanel({
     (
       direction: 'top' | 'bottom',
       breakpoint: 'mobile' | 'tablet' | 'desktop',
-      value: SectionPaddingSize
+      value: SectionPaddingValue
     ) => {
       const setter = direction === 'top' ? setPaddingTop : setPaddingBottom
       const current = direction === 'top' ? paddingTop : paddingBottom
@@ -338,8 +341,8 @@ function PaddingControl({
   breakpoint,
 }: {
   label: string
-  value: SectionPaddingSize | undefined
-  onChange: (value: SectionPaddingSize) => void
+  value: SectionPaddingValue | undefined
+  onChange: (value: SectionPaddingValue) => void
   allowUnset: boolean
   padding: ResponsivePadding
   breakpoint: 'mobile' | 'tablet' | 'desktop'
@@ -347,6 +350,12 @@ function PaddingControl({
   // 現在のブレークポイントの実効値を取得
   const effectiveValue = getEffectivePadding(padding, breakpoint)
   const isInherited = allowUnset && padding[breakpoint] === undefined
+
+  // カスタム値かどうか判定
+  const isCustom = typeof value === 'number'
+
+  // ToggleGroup の value: プリセットならプリセット値、カスタムなら 'custom'
+  const toggleValue = isCustom ? 'custom' : (typeof value === 'string' ? value : '')
 
   return (
     <div className="space-y-1.5">
@@ -358,11 +367,18 @@ function PaddingControl({
       </div>
       <ToggleGroup
         type="single"
-        value={value ?? ''}
+        value={toggleValue}
         onValueChange={(v) => {
-          if (v) onChange(v as SectionPaddingSize)
+          if (!v) return
+          if (v === 'custom') {
+            // カスタム初期値: 現在の実効値のpx
+            const currentPx = paddingToPx(effectiveValue)
+            onChange(currentPx)
+          } else {
+            onChange(v as SectionPaddingSize)
+          }
         }}
-        className="justify-start"
+        className="justify-start flex-wrap"
       >
         {PADDING_OPTIONS.map((opt) => (
           <ToggleGroupItem
@@ -371,13 +387,40 @@ function PaddingControl({
             size="sm"
             className={cn(
               'text-xs px-2',
-              isInherited && effectiveValue === opt.value && 'border-dashed border-primary/50'
+              isInherited && !isCustom &&
+                typeof effectiveValue === 'string' && effectiveValue === opt.value &&
+                'border-dashed border-primary/50'
             )}
           >
             {opt.label}
           </ToggleGroupItem>
         ))}
+        <ToggleGroupItem
+          value="custom"
+          size="sm"
+          className="text-xs px-2"
+        >
+          カスタム
+        </ToggleGroupItem>
       </ToggleGroup>
+
+      {/* カスタム値入力 */}
+      {isCustom && (
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={0}
+            max={200}
+            value={value}
+            onChange={(e) => {
+              const px = Math.max(0, Math.min(200, Number(e.target.value) || 0))
+              onChange(px)
+            }}
+            className="w-20 h-7 text-xs"
+          />
+          <span className="text-xs text-muted-foreground">px</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -388,7 +431,7 @@ function PaddingControl({
 function getPaddingValue(
   padding: ResponsivePadding,
   breakpoint: 'mobile' | 'tablet' | 'desktop'
-): SectionPaddingSize | undefined {
+): SectionPaddingValue | undefined {
   return padding[breakpoint]
 }
 
@@ -396,7 +439,7 @@ function getPaddingValue(
 function getEffectivePadding(
   padding: ResponsivePadding,
   breakpoint: 'mobile' | 'tablet' | 'desktop'
-): SectionPaddingSize {
+): SectionPaddingValue {
   if (breakpoint === 'mobile') return padding.mobile
   if (breakpoint === 'tablet') return padding.tablet ?? padding.mobile
   // desktop

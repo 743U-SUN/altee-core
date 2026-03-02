@@ -2,7 +2,8 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
+import { requireAdmin } from '@/lib/auth'
 
 export interface CustomIcon {
   id: string
@@ -22,11 +23,7 @@ export async function getCustomIcons(tags?: string[]): Promise<{
   error?: string
 }> {
   try {
-    // 認証チェック（必要に応じて）
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証が必要です' }
-    }
+    await requireAdmin()
 
     const where: {
       containerName: string
@@ -67,7 +64,7 @@ export async function getCustomIcons(tags?: string[]): Promise<{
       id: file.id,
       name: file.fileName.replace(/\.[^.]+$/, ''), // 拡張子を除去
       originalName: file.originalName,
-      url: `/api/files/${file.storageKey}`,
+      url: getPublicUrl(file.storageKey),
       tags: Array.isArray(file.tags) ? file.tags as string[] : [],
       description: file.description || undefined,
     }))
@@ -88,10 +85,7 @@ export async function getIconTags(): Promise<{
   error?: string
 }> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: '認証が必要です' }
-    }
+    await requireAdmin()
 
     // admin-iconsのすべてのタグを取得
     const mediaFiles = await prisma.mediaFile.findMany({
