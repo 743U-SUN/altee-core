@@ -15,7 +15,12 @@ const userNewsSchema = z.object({
   slug: z
     .string()
     .min(1, 'スラッグは必須です')
-    .max(USER_NEWS_LIMITS.SLUG, `スラッグは${USER_NEWS_LIMITS.SLUG}文字以内で入力してください`),
+    .max(USER_NEWS_LIMITS.SLUG, `スラッグは${USER_NEWS_LIMITS.SLUG}文字以内で入力してください`)
+    .regex(/^[a-z0-9-]+$/, '英小文字・数字・ハイフンのみ使用できます'),
+  excerpt: z
+    .string()
+    .max(USER_NEWS_LIMITS.EXCERPT, `要約は${USER_NEWS_LIMITS.EXCERPT}文字以内で入力してください`)
+    .default(''),
   content: z
     .string()
     .max(USER_NEWS_LIMITS.CONTENT, `本文は${USER_NEWS_LIMITS.CONTENT}文字以内で入力してください`)
@@ -25,11 +30,11 @@ const userNewsSchema = z.object({
   published: z.boolean().default(false),
 })
 
-// スラッグ生成ヘルパー
+// スラッグ生成ヘルパー（英数字とハイフンのみ）
 function generateSlug(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
+    .replace(/[^a-z0-9-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .substring(0, USER_NEWS_LIMITS.SLUG)
@@ -114,6 +119,7 @@ export async function createUserNews(formData: FormData) {
   const validatedFields = userNewsSchema.safeParse({
     title: formData.get('title'),
     slug: rawSlug,
+    excerpt: formData.get('excerpt') || '',
     content: formData.get('content') || '',
     thumbnailId: formData.get('thumbnailId') || null,
     bodyImageId: formData.get('bodyImageId') || null,
@@ -126,7 +132,7 @@ export async function createUserNews(formData: FormData) {
     )
   }
 
-  const { title, slug, content, thumbnailId, bodyImageId, published } =
+  const { title, slug, excerpt, content, thumbnailId, bodyImageId, published } =
     validatedFields.data
 
   const uniqueSlug = await ensureUniqueSlug(session.user.id, slug)
@@ -142,6 +148,7 @@ export async function createUserNews(formData: FormData) {
       userId: session.user.id,
       title,
       slug: uniqueSlug,
+      excerpt,
       content,
       thumbnailId: thumbnailId || null,
       bodyImageId: bodyImageId || null,
@@ -173,6 +180,7 @@ export async function updateUserNews(id: string, formData: FormData) {
   const validatedFields = userNewsSchema.safeParse({
     title: formData.get('title'),
     slug: rawSlug,
+    excerpt: formData.get('excerpt') || '',
     content: formData.get('content') || '',
     thumbnailId: formData.get('thumbnailId') || null,
     bodyImageId: formData.get('bodyImageId') || null,
@@ -185,7 +193,7 @@ export async function updateUserNews(id: string, formData: FormData) {
     )
   }
 
-  const { title, slug, content, thumbnailId, bodyImageId, published } =
+  const { title, slug, excerpt, content, thumbnailId, bodyImageId, published } =
     validatedFields.data
 
   const uniqueSlug = await ensureUniqueSlug(session.user.id, slug, id)
@@ -195,6 +203,7 @@ export async function updateUserNews(id: string, formData: FormData) {
     data: {
       title,
       slug: uniqueSlug,
+      excerpt,
       content,
       thumbnailId: thumbnailId || null,
       bodyImageId: bodyImageId || null,

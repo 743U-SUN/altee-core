@@ -22,9 +22,11 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Plus, GripVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Plus, GripVertical, Edit, Trash2, ImageOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertDialog,
@@ -93,18 +95,18 @@ function SortableNewsItem({
       </div>
 
       {/* サムネイル */}
-      <div className="w-16 h-12 rounded overflow-hidden bg-muted flex-shrink-0">
+      <div className="relative w-20 h-14 shrink-0 bg-muted rounded-md overflow-hidden">
         {thumbnailUrl ? (
           <Image
             src={thumbnailUrl}
             alt={item.title}
-            width={64}
-            height={48}
-            className="object-cover w-full h-full"
+            fill
+            className="object-cover"
+            sizes="80px"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-            No Image
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
+            <ImageOff className="h-5 w-5" />
           </div>
         )}
       </div>
@@ -113,9 +115,6 @@ function SortableNewsItem({
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{item.title}</p>
         <div className="flex items-center gap-2 mt-1">
-          <Badge variant={item.published ? 'default' : 'secondary'}>
-            {item.published ? '公開' : '下書き'}
-          </Badge>
           {item.adminHidden && (
             <Badge variant="destructive">管理者非表示</Badge>
           )}
@@ -123,37 +122,53 @@ function SortableNewsItem({
       </div>
 
       {/* アクション */}
-      <div
-        className="flex items-center gap-1"
-        onPointerDown={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onTogglePublished(item.id)}
-          title={item.published ? '下書きに戻す' : '公開する'}
+      <TooltipProvider delayDuration={300}>
+        <div
+          className="flex items-center gap-1 shrink-0"
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         >
-          {item.published ? (
-            <Eye className="h-4 w-4" />
-          ) : (
-            <EyeOff className="h-4 w-4" />
-          )}
-        </Button>
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/news/${item.id}`}>
-            <Pencil className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onDelete(item.id)}
-          className="text-destructive hover:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {item.published ? '公開' : '下書き'}
+                </span>
+                <Switch
+                  checked={item.published}
+                  onCheckedChange={() => onTogglePublished(item.id)}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {item.published ? '非公開にする' : '公開する'}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={`/dashboard/news/${item.id}`}>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>編集</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                onClick={() => onDelete(item.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>削除</TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
     </div>
   )
 }

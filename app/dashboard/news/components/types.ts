@@ -9,7 +9,11 @@ export const userNewsFormSchema = z.object({
   slug: z
     .string()
     .min(1, 'スラッグは必須です')
-    .max(USER_NEWS_LIMITS.SLUG, `スラッグは${USER_NEWS_LIMITS.SLUG}文字以内で入力してください`),
+    .max(USER_NEWS_LIMITS.SLUG, `スラッグは${USER_NEWS_LIMITS.SLUG}文字以内で入力してください`)
+    .regex(/^[a-z0-9-]+$/, '英小文字・数字・ハイフンのみ使用できます'),
+  excerpt: z
+    .string()
+    .max(USER_NEWS_LIMITS.EXCERPT, `要約は${USER_NEWS_LIMITS.EXCERPT}文字以内で入力してください`),
   content: z
     .string()
     .max(USER_NEWS_LIMITS.CONTENT, `本文は${USER_NEWS_LIMITS.CONTENT}文字以内で入力してください`),

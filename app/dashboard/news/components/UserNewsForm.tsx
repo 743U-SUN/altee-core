@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef, useState, useEffect } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { MarkdownToolbar } from '@/components/editor/markdown-toolbar'
-import { MarkdownPreview } from '@/components/editor/markdown-preview'
+import { UserNewsMarkdownPreview } from '@/components/editor/user-news-markdown-preview'
 import { Edit, Eye, ImageIcon, Save, ArrowLeft } from 'lucide-react'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import {
@@ -36,20 +36,10 @@ interface UserNewsFormProps {
   editData?: UserNewsWithImages
 }
 
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 100)
-}
-
 export function UserNewsForm({ editData }: UserNewsFormProps) {
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!editData)
 
   // 画像はフォームの外で独立管理
   const [thumbnail, setThumbnail] = useState<UploadedFile[]>(() => {
@@ -93,18 +83,14 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
     defaultValues: {
       title: editData?.title ?? '',
       slug: editData?.slug ?? '',
+      excerpt: editData?.excerpt ?? '',
       content: editData?.content ?? '',
       published: editData?.published ?? false,
     },
   })
 
-  // タイトル変更時にスラッグを自動生成
-  const watchTitle = form.watch('title')
-  useEffect(() => {
-    if (!slugManuallyEdited && watchTitle) {
-      form.setValue('slug', generateSlug(watchTitle))
-    }
-  }, [watchTitle, slugManuallyEdited, form])
+  // プレビュー用: bodyImageのURL
+  const bodyImageUrl = bodyImage.length > 0 ? bodyImage[0].url : null
 
   const handleMarkdownInsert = (
     text: string,
@@ -150,6 +136,7 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
       const formData = new FormData()
       formData.append('title', values.title)
       formData.append('slug', values.slug)
+      formData.append('excerpt', values.excerpt)
       formData.append('content', values.content)
       formData.append('published', String(values.published))
       if (thumbnail.length > 0) formData.append('thumbnailId', thumbnail[0].id)
@@ -178,7 +165,7 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* ヘッダー */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <Button
             type="button"
             variant="ghost"
@@ -187,27 +174,6 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
             <ArrowLeft className="h-4 w-4 mr-1" />
             戻る
           </Button>
-          <div className="flex items-center gap-4">
-            <FormField
-              control={form.control}
-              name="published"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-2 space-y-0">
-                  <FormLabel className="text-sm">公開</FormLabel>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isSubmitting}>
-              <Save className="h-4 w-4 mr-1" />
-              {isSubmitting ? '保存中...' : '保存'}
-            </Button>
-          </div>
         </div>
 
         {/* 基本情報 */}
@@ -244,14 +210,32 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
                     <Input
                       placeholder="news-slug"
                       {...field}
-                      onChange={(e) => {
-                        field.onChange(e)
-                        setSlugManuallyEdited(true)
-                      }}
                     />
                   </FormControl>
                   <FormDescription>
-                    URLに使用されます。タイトルから自動生成されます。
+                    URLに使用されます。英数字とハイフンのみ使用可能です。
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="excerpt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>要約</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="記事の要約を入力（一覧やOGPで表示されます）"
+                      className="min-h-[80px] resize-none"
+                      maxLength={200}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value.length} / 200文字
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -371,7 +355,10 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
                               </div>
                             }
                           >
-                            <MarkdownPreview content={field.value} />
+                            <UserNewsMarkdownPreview
+                              content={field.value}
+                              bodyImageUrl={bodyImageUrl}
+                            />
                           </Suspense>
                         ) : (
                           <div className="text-muted-foreground text-center py-12">
@@ -387,6 +374,29 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
             />
           </CardContent>
         </Card>
+
+        {/* フッター: 公開トグル + 保存ボタン */}
+        <div className="flex items-center gap-4">
+          <FormField
+            control={form.control}
+            name="published"
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-2 space-y-0">
+                <FormLabel className="text-sm">公開</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <Button type="submit" disabled={isSubmitting}>
+            <Save className="h-4 w-4 mr-1" />
+            {isSubmitting ? '保存中...' : '保存'}
+          </Button>
+        </div>
       </form>
     </FormProvider>
   )

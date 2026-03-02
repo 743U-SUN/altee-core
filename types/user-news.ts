@@ -14,5 +14,6 @@ export const USER_NEWS_LIMITS = {
   MAX_ARTICLES: 3,
   TITLE: 100,
   SLUG: 100,
+  EXCERPT: 200,
   CONTENT: 10000,
 } as const
