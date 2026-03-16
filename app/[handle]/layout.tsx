@@ -1,3 +1,4 @@
+import { resolveAvatarUrl } from '@/lib/avatar-utils'
 import { getUserByHandle } from '@/lib/handle-utils'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { isReservedHandle } from '@/lib/reserved-handles'
@@ -70,11 +71,11 @@ export default async function HandleLayout({
     }
   }
 
-  // アイコン画像を取得（1:1正方形）
-  let avatarImageUrl: string | null = null
-  if (targetUser.profile.avatarImage?.storageKey) {
-    avatarImageUrl = getPublicUrl(targetUser.profile.avatarImage.storageKey)
-  }
+  // アイコン画像を取得（CharacterInfo.iconImageKey → User.image フォールバック）
+  const avatarImageUrl = resolveAvatarUrl(
+    targetUser.characterInfo?.iconImageKey,
+    targetUser.image
+  )
 
   // 背景スタイルを計算
   const backgroundStyle = calculateBackgroundStyle(themeSettings)
@@ -87,7 +88,7 @@ export default async function HandleLayout({
             <ProfileHeader
               handle={handle}
               avatarImageUrl={avatarImageUrl}
-              characterName={targetUser.characterName}
+              characterName={targetUser.characterInfo?.characterName ?? targetUser.name}
               visibility={themeSettings.visibility}
               namecard={themeSettings.namecard}
               isEditable={false}

@@ -15,6 +15,7 @@ import { ArrowLeft, Save, Download } from 'lucide-react'
 import Link from 'next/link'
 import type { UploadedFile } from '@/types/image-upload'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_THUMBNAIL, PRESET_ARTICLE } from '@/lib/image-uploader/image-processing-presets'
 import { downloadMarkdownFile, createExportDataFromForm, createExportDataFromArticle } from '@/lib/markdown-export'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { BasicInfoSection } from './BasicInfoSection'
@@ -204,6 +205,8 @@ export function ArticleForm({ article, initialCategories, initialTags }: Article
                 value={thumbnail}
                 onUpload={setThumbnail}
                 onError={(error) => toast.error(error)}
+                imageProcessingOptions={PRESET_THUMBNAIL}
+                sequentialProcessing
               />
             </CardContent>
           </Card>
@@ -226,6 +229,8 @@ export function ArticleForm({ article, initialCategories, initialTags }: Article
                   setContentImages(prev => prev.filter(f => f.id !== fileId))
                 }}
                 onError={(error) => toast.error(error)}
+                imageProcessingOptions={PRESET_ARTICLE}
+                sequentialProcessing
               />
             </CardContent>
           </Card>

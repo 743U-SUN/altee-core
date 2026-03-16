@@ -17,9 +17,8 @@ function formatZodError(error: z.ZodError): string {
 
 // キャラクター情報を取得（platformAccounts を include）
 export async function getCharacterInfo() {
+  const session = await requireAuth()
   try {
-    const session = await requireAuth()
-
     const characterInfo = await prisma.characterInfo.findUnique({
       where: { userId: session.user.id },
       include: {
@@ -37,8 +36,8 @@ export async function getCharacterInfo() {
 
 // 基本情報の更新
 export async function updateBasicInfo(data: z.infer<typeof basicInfoSchema>) {
+  const session = await requireAuth()
   try {
-    const session = await requireAuth()
     const validated = basicInfoSchema.parse(data)
 
     const updateData = {
@@ -80,8 +79,8 @@ export async function updateBasicInfo(data: z.infer<typeof basicInfoSchema>) {
 
 // 活動情報の更新（platformAccounts の upsert + 配信設定の更新）
 export async function updateActivitySettings(data: z.infer<typeof activitySettingsSchema>) {
+  const session = await requireAuth()
   try {
-    const session = await requireAuth()
     const validated = activitySettingsSchema.parse(data)
 
     await prisma.$transaction(async (tx) => {
@@ -137,8 +136,8 @@ export async function updateActivitySettings(data: z.infer<typeof activitySettin
 
 // ゲーム設定の更新
 export async function updateGameSettings(data: z.infer<typeof gameSettingsSchema>) {
+  const session = await requireAuth()
   try {
-    const session = await requireAuth()
     const validated = gameSettingsSchema.parse(data)
 
     await prisma.characterInfo.upsert({
@@ -168,8 +167,8 @@ export async function updateGameSettings(data: z.infer<typeof gameSettingsSchema
 
 // コラボ設定の更新
 export async function updateCollabSettings(data: z.infer<typeof collabSettingsSchema>) {
+  const session = await requireAuth()
   try {
-    const session = await requireAuth()
     const validated = collabSettingsSchema.parse(data)
 
     await prisma.characterInfo.upsert({

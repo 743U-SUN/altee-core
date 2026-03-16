@@ -1,10 +1,12 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { FAQ_LIMITS, type FaqActionResult } from "@/types/faq"
+import type { SectionSettings } from "@/types/profile-sections"
 
 // Zodスキーマ定義
 const createFaqCategorySchema = z.object({
@@ -419,6 +421,47 @@ export async function deleteFaqQuestion(questionId: string): Promise<FaqActionRe
   } catch (error) {
     console.error("FAQ質問削除エラー:", error)
     return { success: false, error: "FAQ質問の削除に失敗しました" }
+  }
+}
+
+// FAQカテゴリースタイル設定更新
+export async function updateFaqCategorySettings(
+  categoryId: string,
+  settings: SectionSettings | null
+): Promise<FaqActionResult> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, error: "認証が必要です" }
+    }
+
+    // 所有者確認
+    const existingCategory = await prisma.faqCategory.findFirst({
+      where: {
+        id: categoryId,
+        userId: session.user.id,
+      },
+    })
+
+    if (!existingCategory) {
+      return { success: false, error: "カテゴリーが見つからないか、編集権限がありません" }
+    }
+
+    const updatedCategory = await prisma.faqCategory.update({
+      where: { id: categoryId },
+      data: { settings: settings === null ? Prisma.JsonNull : (settings as Prisma.InputJsonValue) },
+      include: {
+        questions: {
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    })
+
+    revalidatePath("/dashboard/faqs")
+    return { success: true, data: updatedCategory }
+  } catch (error) {
+    console.error("FAQカテゴリースタイル更新エラー:", error)
+    return { success: false, error: 'スタイルの更新に失敗しました' }
   }
 }
 

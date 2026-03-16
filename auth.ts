@@ -84,7 +84,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             isActive: true,
             image: true,
             handle: true,
-            characterName: true,
+            characterInfo: {
+              select: { characterName: true }
+            },
           }
         })
 
@@ -118,7 +120,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           isActive: dbUser.isActive,
           image: dbUser.image,
           handle: dbUser.handle,
-          characterName: dbUser.characterName,
+          characterName: dbUser.characterInfo?.characterName ?? null,
         }
 
         return session

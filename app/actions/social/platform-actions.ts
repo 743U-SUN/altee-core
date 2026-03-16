@@ -18,11 +18,12 @@ export async function getUserByHandle(handle: string) {
         id: true,
         handle: true,
         name: true,
-        characterName: true,
         email: true,
         image: true,
-        customImageKey: true,
         createdAt: true,
+        characterInfo: {
+          select: { characterName: true, iconImageKey: true },
+        },
       },
     })
 

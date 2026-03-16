@@ -1,5 +1,5 @@
 import { cachedAuth } from '@/lib/auth'
-import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
+import { resolveAvatarUrl } from '@/lib/avatar-utils'
 import { prisma } from '@/lib/prisma'
 
 export interface UserNavData {
@@ -14,11 +14,12 @@ export interface UserNavData {
 
 /**
  * ナビゲーション用のユーザー情報を取得
- * プロフィール画像の優先順位: カスタム画像 > OAuth画像
+ * 表示名: CharacterInfo.characterName → User.name フォールバック
+ * アイコン: CharacterInfo.iconImageKey → User.image フォールバック
  */
 export async function getUserNavData(): Promise<UserNavData | null> {
   const session = await cachedAuth()
-  
+
   if (!session?.user?.id) {
     return null
   }
@@ -26,10 +27,8 @@ export async function getUserNavData(): Promise<UserNavData | null> {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
-      profile: {
-        include: {
-          avatarImage: true // アイコン画像（ヘッダー・ネームカード用）
-        }
+      characterInfo: {
+        select: { characterName: true, iconImageKey: true }
       }
     }
   })
@@ -38,23 +37,14 @@ export async function getUserNavData(): Promise<UserNavData | null> {
     return null
   }
 
-  // アイコン画像の優先順位
-  let avatar: string | null = null
-
-  // 1. カスタムアイコン画像（MediaFile）
-  if (user.profile?.avatarImage?.storageKey) {
-    avatar = getPublicUrl(user.profile.avatarImage.storageKey)
-  }
-  // 2. OAuth提供者の画像
-  else if (user.image) {
-    avatar = user.image
-  }
+  // アイコン画像: CharacterInfo.iconImageKey → User.image（OAuthフォールバック）
+  const avatar = resolveAvatarUrl(user.characterInfo?.iconImageKey, user.image)
 
   return {
     id: user.id,
     name: user.name,
     email: user.email,
-    characterName: user.characterName,
+    characterName: user.characterInfo?.characterName ?? null,
     handle: user.handle,
     avatar,
     role: user.role

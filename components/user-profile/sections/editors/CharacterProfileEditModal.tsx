@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_PORTRAIT } from '@/lib/image-uploader/image-processing-presets'
 import { updateSection } from '@/app/actions/user/section-actions'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { toast } from 'sonner'
@@ -281,6 +282,7 @@ export function CharacterProfileEditModal({
             previewSize="medium"
             value={uploadedCharacterImages}
             onUpload={setUploadedCharacterImages}
+            imageProcessingOptions={PRESET_PORTRAIT}
           />
         </div>
 

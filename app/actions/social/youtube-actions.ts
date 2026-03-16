@@ -47,6 +47,8 @@ export async function extractChannelIdFromUrl(url: string): Promise<{
   error?: string
 }> {
   try {
+    await requireAuth()
+
     // すでにChannel IDの形式ならそのまま返す
     if (YOUTUBE_CHANNEL_ID_PATTERN.test(url)) {
       return { success: true, channelId: url }
@@ -397,6 +399,98 @@ export async function getUserYoutubeSettings() {
   } catch (error) {
     console.error("YouTube設定取得エラー:", error)
     return { success: false, error: "YouTube設定の取得に失敗しました" }
+  }
+}
+
+/**
+ * YouTube最新動画セクションの設定を更新（PubSubHubbub自動管理付き）
+ */
+export async function updateYouTubeLatestSection(
+  sectionId: string,
+  newData: { channelId: string; rssFeedLimit: number }
+) {
+  try {
+    const session = await requireAuth()
+
+    // バリデーション
+    const validated = youtubeChannelSchema.parse(newData)
+
+    // セクション取得 + 所有権チェック
+    const section = await prisma.userSection.findUnique({
+      where: { id: sectionId },
+      select: { userId: true, data: true, sectionType: true },
+    })
+
+    if (!section || section.userId !== session.user.id) {
+      return { success: false, error: '権限がありません' }
+    }
+
+    if (section.sectionType !== 'youtube-latest') {
+      return { success: false, error: '無効なセクションタイプです' }
+    }
+
+    // 旧 channelId を取得
+    const oldData = section.data as Record<string, unknown> | null
+    const oldChannelId = (oldData?.channelId as string) || ''
+    const channelChanged = oldChannelId !== validated.channelId
+
+    // セクションデータ更新
+    await prisma.userSection.update({
+      where: { id: sectionId },
+      data: {
+        data: {
+          channelId: validated.channelId,
+          rssFeedLimit: validated.rssFeedLimit,
+        },
+      },
+    })
+
+    // PubSubHubbub管理（channelId変更時のみ）
+    if (channelChanged && validated.channelId) {
+      if (oldChannelId) {
+        await unsubscribeFromYoutubePush(oldChannelId).catch((e) =>
+          console.error('PubSubHubbub unsubscribe error:', e)
+        )
+      }
+      await subscribeToYoutubePush(validated.channelId).catch((e) =>
+        console.error('PubSubHubbub subscribe error:', e)
+      )
+    }
+
+    revalidatePath('/dashboard/videos')
+    revalidatePath(`/[handle]`, 'page')
+
+    return { success: true }
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0].message }
+    }
+    console.error('YouTube Latest Section更新エラー:', error)
+    return { success: false, error: 'セクションの更新に失敗しました' }
+  }
+}
+
+/**
+ * 公開用: YouTube RSS Feedを取得（認証不要）
+ */
+export async function fetchPublicYoutubeRss(channelId: string, limit: number) {
+  try {
+    if (!channelId || limit <= 0) {
+      return { success: true as const, data: [] }
+    }
+
+    // channelId のバリデーション
+    if (!YOUTUBE_CHANNEL_ID_PATTERN.test(channelId)) {
+      return { success: false as const, error: '無効なChannel IDです' }
+    }
+
+    // limit をクランプ
+    const clampedLimit = Math.min(Math.max(1, limit), MAX_RSS_FEED_LIMIT)
+
+    return await fetchYoutubeRssFeed(channelId, clampedLimit)
+  } catch (error) {
+    console.error('公開RSS Feed取得エラー:', error)
+    return { success: false as const, error: 'RSS Feedの取得に失敗しました' }
   }
 }
 

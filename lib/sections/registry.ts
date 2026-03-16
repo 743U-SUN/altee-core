@@ -307,6 +307,63 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     component: lazy(() => import('@/components/user-profile/sections/VideoGallerySection').then(m => ({ default: m.VideoGallerySection }))),
     defaultData: { items: [] },
   },
+  'videos-profile': {
+    type: 'videos-profile',
+    label: '動画ページプロフィール',
+    icon: 'Film',
+    description: '動画ページのタイトルと説明',
+    category: 'main',
+    priority: 'high',
+    maxInstances: 1,
+    page: 'videos',
+    component: lazy(() => import('@/components/user-profile/sections/VideosProfileSection').then(m => ({ default: m.VideosProfileSection }))),
+    defaultData: {
+      title: '動画',
+      description: '',
+    },
+  },
+  'youtube-latest': {
+    type: 'youtube-latest',
+    label: 'YouTube最新動画',
+    icon: 'Rss',
+    description: 'チャンネルの最新動画を自動表示',
+    category: 'video',
+    priority: 'medium',
+    maxInstances: 1,
+    page: 'videos',
+    component: lazy(() => import('@/components/user-profile/sections/YouTubeLatestSection').then(m => ({ default: m.YouTubeLatestSection }))),
+    defaultData: {
+      channelId: '',
+      rssFeedLimit: 6,
+    },
+  },
+  'youtube-recommended': {
+    type: 'youtube-recommended',
+    label: 'YouTubeおすすめ動画',
+    icon: 'ThumbsUp',
+    description: 'おすすめのYouTube動画を表示',
+    category: 'video',
+    priority: 'medium',
+    maxInstances: 1,
+    page: 'videos',
+    component: lazy(() => import('@/components/user-profile/sections/YouTubeRecommendedSection').then(m => ({ default: m.YouTubeRecommendedSection }))),
+    defaultData: {
+      items: [],
+    },
+  },
+  'niconico-recommended': {
+    type: 'niconico-recommended',
+    label: 'ニコニコおすすめ動画',
+    icon: 'Tv2',
+    description: 'おすすめのニコニコ動画を表示',
+    category: 'video',
+    priority: 'medium',
+    page: 'videos',
+    component: lazy(() => import('@/components/user-profile/sections/NiconicoRecommendedSection').then(m => ({ default: m.NiconicoRecommendedSection }))),
+    defaultData: {
+      items: [],
+    },
+  },
 }
 
 /**
@@ -367,4 +424,19 @@ export function getAllCategories(): Array<{
  */
 export async function preloadHighPrioritySections(): Promise<void> {
   return Promise.resolve()
+}
+
+/**
+ * ページ別にセクション定義を取得
+ */
+export function getSectionsByPage(page: 'profile' | 'videos'): SectionDefinition[] {
+  if (page === 'videos') {
+    return Object.values(SECTION_REGISTRY).filter(
+      (section) => section.page === 'videos'
+    )
+  }
+  // profile: page未指定（undefined）またはpage='profile'
+  return Object.values(SECTION_REGISTRY).filter(
+    (section) => !section.page || section.page === 'profile'
+  )
 }

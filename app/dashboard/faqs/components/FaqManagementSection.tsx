@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useMemo, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
-import { NestedSortableList } from '@/components/sortable-list'
-import type {
-  NestedSortableListConfig,
-  EditableField
-} from '@/components/sortable-list'
+import { arrayMove } from '@dnd-kit/sortable'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { FaqCategoryCard } from './FaqCategoryCard'
 import {
   getFaqCategories,
   createFaqCategory,
@@ -18,17 +17,10 @@ import {
   updateFaqQuestion,
   deleteFaqQuestion,
   reorderFaqQuestions,
+  updateFaqCategorySettings,
 } from '@/app/actions/content/faq-actions'
 import { FAQ_LIMITS } from '@/types/faq'
-
-interface FaqCategory {
-  id: string
-  name: string
-  description?: string
-  questions?: FaqQuestion[]
-  sortOrder: number
-  isVisible?: boolean
-}
+import type { SectionSettings, SectionBackgroundPreset } from '@/types/profile-sections'
 
 interface FaqQuestion {
   id: string
@@ -36,78 +28,26 @@ interface FaqQuestion {
   answer: string
   sortOrder: number
   categoryId: string
-  parentId: string // SortableChildItemインターフェースで必要
-  isVisible?: boolean
+  parentId?: string
+  isVisible: boolean
+}
+
+interface FaqCategory {
+  id: string
+  name: string
+  description: string | null
+  questions?: FaqQuestion[]
+  sortOrder: number
+  isVisible: boolean
+  settings: SectionSettings | null
 }
 
 interface FaqManagementSectionProps {
   initialFaqCategories: unknown[]
+  presets: SectionBackgroundPreset[]
 }
 
-// カテゴリー用の編集可能フィールド（静的コンフィグはコンポーネント外に配置）
-const CATEGORY_FIELDS: EditableField[] = [
-  {
-    key: 'name',
-    label: 'カテゴリ名',
-    type: 'text',
-    placeholder: 'カテゴリ名を入力してください',
-    maxLength: FAQ_LIMITS.CATEGORY.NAME_MAX_LENGTH,
-    validation: (value: string) => {
-      if (!value.trim()) return 'カテゴリ名は必須です'
-      if (value.length > FAQ_LIMITS.CATEGORY.NAME_MAX_LENGTH) {
-        return `カテゴリ名は${FAQ_LIMITS.CATEGORY.NAME_MAX_LENGTH}文字以内で入力してください`
-      }
-      return null
-    }
-  },
-  {
-    key: 'description',
-    label: '説明',
-    type: 'textarea',
-    placeholder: 'カテゴリの説明を入力してください（オプション）',
-    maxLength: FAQ_LIMITS.CATEGORY.DESCRIPTION_MAX_LENGTH,
-    validation: (value: string) => {
-      if (value && value.length > FAQ_LIMITS.CATEGORY.DESCRIPTION_MAX_LENGTH) {
-        return `説明は${FAQ_LIMITS.CATEGORY.DESCRIPTION_MAX_LENGTH}文字以内で入力してください`
-      }
-      return null
-    }
-  }
-]
-
-// 質問用の編集可能フィールド
-const QUESTION_FIELDS: EditableField[] = [
-  {
-    key: 'question',
-    label: '質問',
-    type: 'text',
-    placeholder: '質問を入力してください',
-    maxLength: FAQ_LIMITS.QUESTION.QUESTION_MAX_LENGTH,
-    validation: (value: string) => {
-      if (!value.trim()) return '質問は必須です'
-      if (value.length > FAQ_LIMITS.QUESTION.QUESTION_MAX_LENGTH) {
-        return `質問は${FAQ_LIMITS.QUESTION.QUESTION_MAX_LENGTH}文字以内で入力してください`
-      }
-      return null
-    }
-  },
-  {
-    key: 'answer',
-    label: '回答',
-    type: 'textarea',
-    placeholder: '回答を入力してください',
-    maxLength: FAQ_LIMITS.QUESTION.ANSWER_MAX_LENGTH,
-    validation: (value: string) => {
-      if (!value.trim()) return '回答は必須です'
-      if (value.length > FAQ_LIMITS.QUESTION.ANSWER_MAX_LENGTH) {
-        return `回答は${FAQ_LIMITS.QUESTION.ANSWER_MAX_LENGTH}文字以内で入力してください`
-      }
-      return null
-    }
-  }
-]
-
-export function FaqManagementSection({ initialFaqCategories }: FaqManagementSectionProps) {
+export function FaqManagementSection({ initialFaqCategories, presets }: FaqManagementSectionProps) {
   // SWRでデータ管理
   const { data: faqCategories = initialFaqCategories as FaqCategory[], mutate } = useSWR(
     'faq-categories',
@@ -124,258 +64,239 @@ export function FaqManagementSection({ initialFaqCategories }: FaqManagementSect
     }
   )
 
-  // カテゴリーのイベントハンドラー
+  // ===== カテゴリー操作 =====
+
   const handleCategoryReorder = useCallback(async (reorderedCategories: FaqCategory[]) => {
-    const categoryIds = reorderedCategories.map((cat: FaqCategory) => cat.id)
-
+    const categoryIds = reorderedCategories.map((cat) => cat.id)
     try {
-      // 楽観的更新 (ドラッグ&ドロップの応答性のため)
       await mutate(reorderedCategories, false)
-
       const result = await reorderFaqCategories({ categoryIds })
-      if (!result.success) {
-        throw new Error(result.error)
-        // エラー時は自動でSWRが元データに戻すのでロールバック不要
-      }
-
+      if (!result.success) throw new Error(result.error)
       toast.success('カテゴリーの順序を更新しました')
     } catch (error) {
-      // SWRが自動でリフェッチするためロールバック不要
       toast.error(error instanceof Error ? error.message : 'カテゴリーの並び替えに失敗しました')
     }
   }, [mutate])
+
+  const handleCategoryMoveUp = useCallback(async (categoryId: string) => {
+    const index = faqCategories.findIndex((c) => c.id === categoryId)
+    if (index <= 0) return
+    await handleCategoryReorder(arrayMove(faqCategories, index, index - 1))
+  }, [faqCategories, handleCategoryReorder])
+
+  const handleCategoryMoveDown = useCallback(async (categoryId: string) => {
+    const index = faqCategories.findIndex((c) => c.id === categoryId)
+    if (index < 0 || index >= faqCategories.length - 1) return
+    await handleCategoryReorder(arrayMove(faqCategories, index, index + 1))
+  }, [faqCategories, handleCategoryReorder])
 
   const handleCategoryAdd = useCallback(async () => {
     try {
       const result = await createFaqCategory({
         name: `新しいカテゴリー`,
-        description: '新しいカテゴリーの説明'
+        description: '',
       })
-
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      // 楽観的更新: 最新データを追加
+      if (!result.success) throw new Error(result.error)
       await mutate((current) => {
         if (!current) return current
         return [...current, result.data as FaqCategory]
       }, false)
-
       toast.success('カテゴリーを作成しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの作成に失敗しました')
     }
   }, [mutate])
 
-  const handleCategoryEdit = useCallback(async (itemId: string, updates: Partial<FaqCategory>) => {
+  const handleCategoryEdit = useCallback(async (categoryId: string, updates: Partial<FaqCategory>) => {
     try {
-      // InlineEditの編集時は全体ローディングを表示しない（InlineEdit自体のisSavingのみ表示）
-      const result = await updateFaqCategory(itemId, {
+      const result = await updateFaqCategory(categoryId, {
         name: updates.name,
-        description: updates.description,
-        isVisible: updates.isVisible
+        description: updates.description ?? undefined,
+        isVisible: updates.isVisible,
       })
-
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      // Server Action成功後に更新
+      if (!result.success) throw new Error(result.error)
       await mutate((current) => {
         if (!current) return current
-        return current.map(cat =>
-          cat.id === itemId ? { ...cat, ...updates } : cat
-        )
+        return current.map((cat) => cat.id === categoryId ? { ...cat, ...updates } : cat)
       }, false)
-
       toast.success('保存しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの更新に失敗しました')
-      throw error // InlineEditがエラーハンドリングするためにthrow
+      throw error
     }
   }, [mutate])
 
-  const handleCategoryDelete = useCallback(async (itemId: string) => {
+  const handleCategoryDelete = useCallback(async (categoryId: string) => {
     try {
-      const result = await deleteFaqCategory(itemId)
-
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      // Server Action成功後に削除
+      const result = await deleteFaqCategory(categoryId)
+      if (!result.success) throw new Error(result.error)
       await mutate((current) => {
         if (!current) return current
-        return current.filter(cat => cat.id !== itemId)
+        return current.filter((cat) => cat.id !== categoryId)
       }, false)
-
       toast.success('カテゴリーを削除しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの削除に失敗しました')
     }
   }, [mutate])
 
-  // 質問のイベントハンドラー
-  const handleQuestionReorder = useCallback(async (categoryId: string, reorderedQuestions: FaqQuestion[]) => {
-    const questionIds = reorderedQuestions.map(q => q.id)
+  const handleStyleSave = useCallback(async (categoryId: string, settings: SectionSettings | null) => {
+    const result = await updateFaqCategorySettings(categoryId, settings)
+    if (!result.success) throw new Error(result.error)
+    await mutate((current) => {
+      if (!current) return current
+      return current.map((cat) => cat.id === categoryId ? { ...cat, settings } : cat)
+    }, false)
+  }, [mutate])
 
+  // ===== 質問操作 =====
+
+  const handleQuestionReorder = useCallback(async (categoryId: string, reorderedQuestions: FaqQuestion[]) => {
+    const questionIds = reorderedQuestions.map((q) => q.id)
     try {
-      // 楽観的更新 (ドラッグ&ドロップの応答性のため)
       await mutate((current) => {
         if (!current) return current
-        return current.map(cat => {
-          if (cat.id === categoryId) {
-            return { ...cat, questions: reorderedQuestions }
-          }
-          return cat
-        })
+        return current.map((cat) =>
+          cat.id === categoryId ? { ...cat, questions: reorderedQuestions } : cat
+        )
       }, false)
-
       const result = await reorderFaqQuestions(categoryId, { questionIds })
-
-      if (!result.success) {
-        throw new Error(result.error)
-        // エラー時は自動でSWRが元データに戻すのでロールバック不要
-      }
-
+      if (!result.success) throw new Error(result.error)
       toast.success('質問の順序を更新しました')
     } catch (error) {
-      // SWRが自動でリフェッチするためロールバック不要
       toast.error(error instanceof Error ? error.message : '質問の並び替えに失敗しました')
     }
   }, [mutate])
+
+  const handleQuestionMoveUp = useCallback(async (categoryId: string, questionId: string) => {
+    const questions = faqCategories.find((c) => c.id === categoryId)?.questions ?? []
+    const index = questions.findIndex((q) => q.id === questionId)
+    if (index <= 0) return
+    await handleQuestionReorder(categoryId, arrayMove(questions, index, index - 1))
+  }, [faqCategories, handleQuestionReorder])
+
+  const handleQuestionMoveDown = useCallback(async (categoryId: string, questionId: string) => {
+    const questions = faqCategories.find((c) => c.id === categoryId)?.questions ?? []
+    const index = questions.findIndex((q) => q.id === questionId)
+    if (index < 0 || index >= questions.length - 1) return
+    await handleQuestionReorder(categoryId, arrayMove(questions, index, index + 1))
+  }, [faqCategories, handleQuestionReorder])
 
   const handleQuestionAdd = useCallback(async (categoryId: string) => {
     try {
       const result = await createFaqQuestion(categoryId, {
         question: '新しい質問',
-        answer: '新しい回答'
+        answer: '新しい回答',
       })
-
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      // Server Action成功後にカテゴリの質問リストに追加
+      if (!result.success) throw new Error(result.error)
       await mutate((current) => {
         if (!current) return current
-        return current.map(cat => {
+        return current.map((cat) => {
           if (cat.id === categoryId) {
             const newQuestion = {
               ...(result.data as FaqQuestion),
-              parentId: categoryId
+              parentId: categoryId,
             }
             return { ...cat, questions: [...(cat.questions || []), newQuestion] }
           }
           return cat
         })
       }, false)
-
       toast.success('質問を作成しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の作成に失敗しました')
     }
   }, [mutate])
 
-  const handleQuestionEdit = useCallback(async (categoryId: string, itemId: string, updates: Partial<FaqQuestion>) => {
+  const handleQuestionEdit = useCallback(async (categoryId: string, questionId: string, updates: Partial<FaqQuestion>) => {
     try {
-      // InlineEditの編集時は全体ローディングを表示しない（InlineEdit自体のisSavingのみ表示）
-      const result = await updateFaqQuestion(itemId, {
+      const result = await updateFaqQuestion(questionId, {
         question: updates.question,
         answer: updates.answer,
-        isVisible: updates.isVisible
+        isVisible: updates.isVisible,
       })
-
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      // Server Action成功後に更新
+      if (!result.success) throw new Error(result.error)
       await mutate((current) => {
         if (!current) return current
-        return current.map(cat => {
+        return current.map((cat) => {
           if (cat.id === categoryId) {
-            const updatedQuestions = (cat.questions || []).map(q =>
-              q.id === itemId ? { ...q, ...updates } : q
+            const updatedQuestions = (cat.questions || []).map((q) =>
+              q.id === questionId ? { ...q, ...updates } : q
             )
             return { ...cat, questions: updatedQuestions }
           }
           return cat
         })
       }, false)
-
       toast.success('保存しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の更新に失敗しました')
-      throw error // InlineEditがエラーハンドリングするためにthrow
+      throw error
     }
   }, [mutate])
 
-  const handleQuestionDelete = useCallback(async (categoryId: string, itemId: string) => {
+  const handleQuestionDelete = useCallback(async (categoryId: string, questionId: string) => {
     try {
-      const result = await deleteFaqQuestion(itemId)
-
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      // Server Action成功後に削除
+      const result = await deleteFaqQuestion(questionId)
+      if (!result.success) throw new Error(result.error)
       await mutate((current) => {
         if (!current) return current
-        return current.map(cat => {
+        return current.map((cat) => {
           if (cat.id === categoryId) {
-            const updatedQuestions = (cat.questions || []).filter(q => q.id !== itemId)
+            const updatedQuestions = (cat.questions || []).filter((q) => q.id !== questionId)
             return { ...cat, questions: updatedQuestions }
           }
           return cat
         })
       }, false)
-
       toast.success('質問を削除しました')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の削除に失敗しました')
     }
   }, [mutate])
 
-  // ネストしたリストの設定
-  const nestedConfig: NestedSortableListConfig<FaqCategory, FaqQuestion> = {
-    parentItems: faqCategories,
-    // getChildItemsをインライン化して循環依存を回避
-    getChildItems: (categoryId: string): FaqQuestion[] => {
-      const category = faqCategories?.find((cat: FaqCategory) => cat.id === categoryId)
-      return category?.questions || []
-    },
-    parentConfig: {
-      editableFields: CATEGORY_FIELDS,
-      itemDisplayName: (item) => item.name || '新しいカテゴリー',
-      onReorder: handleCategoryReorder,
-      onAdd: handleCategoryAdd,
-      onEdit: handleCategoryEdit,
-      onDelete: handleCategoryDelete,
-      maxItems: FAQ_LIMITS.CATEGORY.MAX_COUNT,
-      addButtonText: '新しいカテゴリーを追加',
-      emptyStateText: 'カテゴリーがありません',
-      emptyStateDescription: '上のボタンからカテゴリーを追加してください',
-    },
-    childConfig: {
-      editableFields: QUESTION_FIELDS,
-      itemDisplayName: (item) => item.question || '新しい質問',
-      onReorder: handleQuestionReorder,
-      onAdd: handleQuestionAdd,
-      onEdit: handleQuestionEdit,
-      onDelete: handleQuestionDelete,
-      maxItems: FAQ_LIMITS.QUESTION.MAX_COUNT_PER_CATEGORY,
-      addButtonText: 'Q&Aを追加',
-      emptyStateText: 'Q&Aがありません',
-      emptyStateDescription: '上のボタンからQ&Aを追加してください',
-      childListLabel: (parentItem, childCount) => `Q&A管理 (${childCount}個)`,
-    },
-  }
-
   return (
-    <NestedSortableList<FaqCategory, FaqQuestion>
-      config={nestedConfig}
-    />
+    <div>
+      {/* カテゴリーカード一覧（SectionBandで全幅表示） */}
+      {faqCategories.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">カテゴリーがありません</p>
+          <p className="text-xs mt-1">下のボタンからカテゴリーを追加してください</p>
+        </div>
+      ) : (
+        faqCategories.map((category, index) => (
+          <FaqCategoryCard
+            key={category.id}
+            category={category}
+            index={index}
+            totalCount={faqCategories.length}
+            presets={presets}
+            onMoveUp={handleCategoryMoveUp}
+            onMoveDown={handleCategoryMoveDown}
+            onEdit={handleCategoryEdit}
+            onDelete={handleCategoryDelete}
+            onQuestionMoveUp={handleQuestionMoveUp}
+            onQuestionMoveDown={handleQuestionMoveDown}
+            onQuestionAdd={handleQuestionAdd}
+            onQuestionEdit={handleQuestionEdit}
+            onQuestionDelete={handleQuestionDelete}
+            onStyleSave={handleStyleSave}
+          />
+        ))
+      )}
+
+      {/* カテゴリー追加ボタン（中央寄せ） */}
+      {faqCategories.length < FAQ_LIMITS.CATEGORY.MAX_COUNT && (
+        <div className="py-4 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={handleCategoryAdd}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            新しいカテゴリーを追加
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }

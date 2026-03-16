@@ -2,7 +2,10 @@
 
 import { ChevronDown } from 'lucide-react'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
+import { SectionBand } from '@/components/profile/SectionBand'
+import { resolvePreset } from '@/lib/sections/background-utils'
 import type { FaqCategoryWithQuestions } from '../page'
+import type { SectionBackgroundPreset } from '@/types/profile-sections'
 
 interface FAQAccordionProps {
   question: string
@@ -30,9 +33,10 @@ function FAQAccordion({ question, answer }: FAQAccordionProps) {
 
 interface FAQPublicContentProps {
   categories: FaqCategoryWithQuestions[]
+  presets: SectionBackgroundPreset[]
 }
 
-export function FAQPublicContent({ categories }: FAQPublicContentProps) {
+export function FAQPublicContent({ categories, presets }: FAQPublicContentProps) {
   if (categories.length === 0) {
     return (
       <ThemedCard>
@@ -44,39 +48,46 @@ export function FAQPublicContent({ categories }: FAQPublicContentProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {categories.map((category) => (
-        <ThemedCard key={category.id} className="p-0 overflow-hidden">
-          {/* カテゴリヘッダー */}
-          <div className="px-6 py-4 border-b border-[var(--theme-accent-border)]">
-            <h2 className="text-base font-bold text-[var(--theme-text-primary)]">
-              {category.name}
-            </h2>
-            {category.description && (
-              <p className="text-sm text-[var(--theme-text-secondary)] mt-1">
-                {category.description}
-              </p>
-            )}
-          </div>
+    <div className="space-y-0">
+      {categories.map((category) => {
+        const preset = resolvePreset(category.settings?.background, presets)
+        return (
+          <SectionBand key={category.id} settings={category.settings} preset={preset} fullBleed>
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-4">
+              <ThemedCard className="p-0 overflow-hidden">
+                {/* カテゴリヘッダー */}
+                <div className="px-6 py-4 border-b border-[var(--theme-accent-border)]">
+                  <h2 className="text-base font-bold text-[var(--theme-text-primary)]">
+                    {category.name}
+                  </h2>
+                  {category.description && (
+                    <p className="text-sm text-[var(--theme-text-secondary)] mt-1">
+                      {category.description}
+                    </p>
+                  )}
+                </div>
 
-          {/* 質問リスト */}
-          <div className="px-4">
-            {category.questions.length === 0 ? (
-              <p className="py-4 text-sm text-[var(--theme-text-secondary)] text-center">
-                質問はまだありません。
-              </p>
-            ) : (
-              category.questions.map((q) => (
-                <FAQAccordion
-                  key={q.id}
-                  question={q.question}
-                  answer={q.answer}
-                />
-              ))
-            )}
-          </div>
-        </ThemedCard>
-      ))}
+                {/* 質問リスト */}
+                <div className="px-4">
+                  {category.questions.length === 0 ? (
+                    <p className="py-4 text-sm text-[var(--theme-text-secondary)] text-center">
+                      質問はまだありません。
+                    </p>
+                  ) : (
+                    category.questions.map((q) => (
+                      <FAQAccordion
+                        key={q.id}
+                        question={q.question}
+                        answer={q.answer}
+                      />
+                    ))
+                  )}
+                </div>
+              </ThemedCard>
+            </div>
+          </SectionBand>
+        )
+      })}
     </div>
   )
 }

@@ -25,6 +25,10 @@ import type {
   IconLinksData,
   LinkListData,
   ImageSectionData,
+  VideosProfileData,
+  YouTubeLatestData,
+  YouTubeRecommendedData,
+  NiconicoRecommendedData,
 } from '@/types/profile-sections'
 
 /**
@@ -204,6 +208,30 @@ export function isLinkListData(data: unknown): data is LinkListData {
 export function isImageSectionData(data: unknown): data is ImageSectionData {
   // ImageSectionData は全てoptionalなので最低限のobjectチェックのみ
   return isRecord(data)
+}
+
+// VideosProfileData の型ガード
+export function isVideosProfileData(data: unknown): data is VideosProfileData {
+  if (!isRecord(data)) return false
+  return hasStringProp(data, 'title')
+}
+
+// YouTubeLatestData の型ガード
+export function isYouTubeLatestData(data: unknown): data is YouTubeLatestData {
+  if (!isRecord(data)) return false
+  return hasStringProp(data, 'channelId') && hasNumberProp(data, 'rssFeedLimit')
+}
+
+// YouTubeRecommendedData の型ガード
+export function isYouTubeRecommendedData(data: unknown): data is YouTubeRecommendedData {
+  if (!isRecord(data)) return false
+  return Array.isArray(data.items)
+}
+
+// NiconicoRecommendedData の型ガード
+export function isNiconicoRecommendedData(data: unknown): data is NiconicoRecommendedData {
+  if (!isRecord(data)) return false
+  return Array.isArray(data.items)
 }
 
 /**

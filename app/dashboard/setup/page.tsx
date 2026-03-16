@@ -19,10 +19,10 @@ export default async function SetupPage() {
   // 既にセットアップ完了している場合はdashboardにリダイレクト
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { 
-      handle: true, 
-      characterName: true, 
-      role: true 
+    select: {
+      handle: true,
+      role: true,
+      characterInfo: { select: { characterName: true } },
     },
   });
 
@@ -30,8 +30,10 @@ export default async function SetupPage() {
     redirect('/auth/signin');
   }
 
+  const characterName = user.characterInfo?.characterName ?? null;
+
   // USER/ADMIN Role でハンドルが設定済みの場合、または GUEST でキャラクター名が設定済みの場合
-  if (((user.role === 'USER' || user.role === 'ADMIN') && user.handle) || (user.role === 'GUEST' && user.characterName)) {
+  if (((user.role === 'USER' || user.role === 'ADMIN') && user.handle) || (user.role === 'GUEST' && characterName)) {
     redirect('/dashboard');
   }
 
@@ -46,9 +48,9 @@ export default async function SetupPage() {
             アカウントの設定を完了してください
           </p>
         </div>
-        
-        <SetupForm 
-          initialCharacterName={user.characterName || ''}
+
+        <SetupForm
+          initialCharacterName={characterName || ''}
           initialRole={user.role}
         />
       </div>

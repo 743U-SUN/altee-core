@@ -46,10 +46,11 @@ const PADDING_OPTIONS: { value: SectionPaddingSize; label: string }[] = [
 interface SectionStylePanelProps {
   isOpen: boolean
   onClose: () => void
-  sectionId: string
+  sectionId?: string
   currentSettings: SectionSettings | null
   presets: SectionBackgroundPreset[]
   onSettingsChange: (settings: SectionSettings) => void
+  onSave?: (settings: SectionSettings) => Promise<void>
 }
 
 /**
@@ -63,6 +64,7 @@ export function SectionStylePanel({
   currentSettings,
   presets,
   onSettingsChange,
+  onSave,
 }: SectionStylePanelProps) {
   const [isPending, startTransition] = useTransition()
 
@@ -136,6 +138,18 @@ export function SectionStylePanel({
         paddingBottom,
       }
 
+      if (onSave) {
+        try {
+          await onSave(settings)
+          toast.success('スタイルを更新しました')
+          onClose()
+        } catch {
+          toast.error('スタイルの更新に失敗しました')
+        }
+        return
+      }
+
+      if (!sectionId) return
       const result = await updateSectionSettings(sectionId, settings)
 
       if (result.success) {
@@ -145,7 +159,7 @@ export function SectionStylePanel({
         toast.error(result.error || 'スタイルの更新に失敗しました')
       }
     })
-  }, [sectionId, background, paddingTop, paddingBottom, onClose])
+  }, [sectionId, background, paddingTop, paddingBottom, onClose, onSave])
 
   // プリセットをカテゴリ別に分類
   const solidPresets = presets.filter((p) => p.category === 'solid')

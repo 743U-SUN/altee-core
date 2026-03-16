@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_THUMBNAIL, PRESET_ARTICLE } from '@/lib/image-uploader/image-processing-presets'
 import { MarkdownToolbar } from '@/components/editor/markdown-toolbar'
 import { UserNewsMarkdownPreview } from '@/components/editor/user-news-markdown-preview'
 import { Edit, Eye, ImageIcon, Save, ArrowLeft } from 'lucide-react'
@@ -261,6 +262,7 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
                 onUpload={setThumbnail}
                 onDelete={() => setThumbnail([])}
                 onError={(error) => toast.error(error)}
+                imageProcessingOptions={PRESET_THUMBNAIL}
               />
             </div>
 
@@ -277,6 +279,7 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
                 onUpload={setBodyImage}
                 onDelete={() => setBodyImage([])}
                 onError={(error) => toast.error(error)}
+                imageProcessingOptions={PRESET_ARTICLE}
               />
             </div>
           </CardContent>

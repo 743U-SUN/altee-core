@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation"
-import { prisma } from "@/lib/prisma"
-import Link from "next/link"
-import Image from "next/image"
-import { fetchYoutubeRssFeed } from "@/services/youtube/youtube-api"
+import { notFound } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import { SectionRenderer } from '@/components/profile/SectionRenderer'
+import { getActivePresets } from '@/lib/sections/preset-queries'
+import Link from 'next/link'
+import type { UserSection } from '@/types/profile-sections'
 
 interface VideosPageProps {
   params: Promise<{
@@ -13,43 +14,30 @@ interface VideosPageProps {
 export default async function VideosPage({ params }: VideosPageProps) {
   const { handle } = await params
 
-  // ユーザー情報を取得
-  const user = await prisma.user.findUnique({
-    where: { handle },
-    select: {
-      id: true,
-      characterName: true,
-      youtubeChannelId: true,
-      youtubeRssFeedLimit: true,
-      youtubeRecommendedVideos: {
-        where: { isVisible: true },
-        orderBy: { sortOrder: "asc" },
-        select: {
-          videoId: true,
-          title: true,
-          thumbnail: true,
+  const [user, presets] = await Promise.all([
+    prisma.user.findUnique({
+      where: { handle },
+      select: {
+        id: true,
+        characterInfo: {
+          select: { characterName: true },
+        },
+        userSections: {
+          where: { isVisible: true, page: 'videos' },
+          orderBy: { sortOrder: 'asc' },
         },
       },
-    },
-  })
+    }),
+    getActivePresets(),
+  ])
 
   if (!user) {
     notFound()
   }
 
-  // RSS Feed動画を取得
-  let rssFeedVideos: Array<{ videoId: string; title: string; thumbnail?: string }> = []
-  if (user.youtubeChannelId && user.youtubeRssFeedLimit > 0) {
-    const rssResult = await fetchYoutubeRssFeed(user.youtubeChannelId, user.youtubeRssFeedLimit)
-    if (rssResult.success && rssResult.data) {
-      rssFeedVideos = rssResult.data
-    }
-  }
+  const sections = user.userSections as UserSection[]
 
-  const hasRecommendedVideos = user.youtubeRecommendedVideos.length > 0
-  const hasRssFeedVideos = rssFeedVideos.length > 0
-
-  if (!hasRecommendedVideos && !hasRssFeedVideos) {
+  if (sections.length === 0) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-5xl mx-auto">
@@ -72,101 +60,8 @@ export default async function VideosPage({ params }: VideosPageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-5xl mx-auto space-y-12">
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">{user.characterName || handle} の動画</h1>
-          <Link
-            href={`/@${handle}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            プロフィールに戻る
-          </Link>
-        </div>
-
-        {/* おすすめ動画セクション */}
-        {hasRecommendedVideos && (
-          <section>
-            <h2 className="text-2xl font-semibold mb-6">おすすめ動画</h2>
-            <div
-              className={
-                user.youtubeRecommendedVideos.length === 1
-                  ? "grid grid-cols-1 gap-6"
-                  : "grid grid-cols-1 md:grid-cols-2 gap-6"
-              }
-            >
-              {user.youtubeRecommendedVideos.map((video) => (
-                <Link
-                  key={video.videoId}
-                  href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <div className="aspect-video bg-muted relative">
-                    {video.thumbnail && (
-                      <Image
-                        src={video.thumbnail}
-                        alt={video.title || video.videoId}
-                        fill
-                        className="object-cover group-hover:opacity-90 transition-opacity"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <p className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                      {video.title || video.videoId}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 最新動画セクション (RSS Feed) */}
-        {hasRssFeedVideos && (
-          <section>
-            <h2 className="text-2xl font-semibold mb-6">最新動画</h2>
-            <div
-              className={
-                rssFeedVideos.length === 1
-                  ? "grid grid-cols-1 gap-6"
-                  : "grid grid-cols-1 md:grid-cols-2 gap-6"
-              }
-            >
-              {rssFeedVideos.map((video) => (
-                <Link
-                  key={video.videoId}
-                  href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <div className="aspect-video bg-muted relative">
-                    {video.thumbnail && (
-                      <Image
-                        src={video.thumbnail}
-                        alt={video.title}
-                        fill
-                        className="object-cover group-hover:opacity-90 transition-opacity"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <p className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                      {video.title}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+    <div className="w-full">
+      <SectionRenderer sections={sections} presets={presets} />
     </div>
   )
 }

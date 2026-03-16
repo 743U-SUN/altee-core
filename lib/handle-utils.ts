@@ -114,8 +114,10 @@ export const getUserByHandle = cache(async (handle: string) => {
         profile: {
           include: {
             characterImage: true, // キャラクター画像（9:16縦長）
-            avatarImage: true,    // アイコン画像（1:1正方形）
           },
+        },
+        characterInfo: {
+          select: { characterName: true, iconImageKey: true },
         },
         faqCategories: {
           include: {
@@ -128,7 +130,7 @@ export const getUserByHandle = cache(async (handle: string) => {
           orderBy: { sortOrder: 'asc' },
         },
         userSections: {
-          where: { isVisible: true },
+          where: { isVisible: true, page: 'profile' },
           orderBy: { sortOrder: 'asc' },
         },
         userNews: {

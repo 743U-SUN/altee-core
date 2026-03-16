@@ -306,7 +306,11 @@ export async function getPublicNewsArticle(handle: string, slug: string) {
 
   const user = await prisma.user.findUnique({
     where: { handle: normalizedHandle },
-    select: { id: true, isActive: true, characterName: true },
+    select: {
+      id: true,
+      isActive: true,
+      characterInfo: { select: { characterName: true } },
+    },
   })
 
   if (!user || !user.isActive) return null
@@ -324,5 +328,5 @@ export async function getPublicNewsArticle(handle: string, slug: string) {
     },
   })
 
-  return news ? { ...news, characterName: user.characterName } : null
+  return news ? { ...news, characterName: user.characterInfo?.characterName ?? null } : null
 }

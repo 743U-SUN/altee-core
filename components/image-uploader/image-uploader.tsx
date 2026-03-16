@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { ImageUploaderProps, UploadedFile } from '@/types/image-upload'
 import { validateImageFiles } from '@/lib/image-uploader/image-validator'
-import { processImage, processArticleImage } from '@/lib/image-uploader/image-processor'
+import { processImage } from '@/lib/image-uploader/image-processor'
 import { uploadImageAction, deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { DropZone } from './drop-zone'
 import { ImagePreview } from './image-preview'
@@ -27,7 +27,9 @@ export function ImageUploader({
   onUpload,
   onDelete,
   onError,
-  showPreview = true
+  showPreview = true,
+  imageProcessingOptions,
+  sequentialProcessing = false
 }: ImageUploaderProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(value)
   const [errors, setErrors] = useState<string[]>([])
@@ -92,12 +94,18 @@ export function ImageUploader({
 
     if (mode === 'immediate') {
       setIsUploading(true)
+      const processingOpts = imageProcessingOptions ?? {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.8,
+        format: 'webp' as const,
+      }
       try {
-        if (folder === 'article-images' || folder === 'article-thumbnails') {
-          // 記事画像の場合は順次処理（メモリ節約）
+        if (sequentialProcessing) {
+          // 順次処理（メモリ節約）
           for (const file of validFiles) {
             try {
-              const processResult = await processArticleImage(file)
+              const processResult = await processImage(file, processingOpts)
               if (!processResult.success) {
                 throw new Error(processResult.error)
               }
@@ -121,15 +129,10 @@ export function ImageUploader({
             }
           }
         } else {
-          // その他は並列処理（Promise.allSettled で個別エラーハンドリング）
+          // 並列処理（Promise.allSettled で個別エラーハンドリング）
           const results = await Promise.allSettled(
             validFiles.map(async (file) => {
-              const processResult = await processImage(file, {
-                maxWidth: 1920,
-                maxHeight: 1080,
-                quality: 0.8,
-                format: 'webp'
-              })
+              const processResult = await processImage(file, processingOpts)
               if (!processResult.success) {
                 throw new Error(processResult.error)
               }
@@ -184,7 +187,7 @@ export function ImageUploader({
       updateFiles(newFiles)
       onUpload?.(newFiles)
     }
-  }, [disabled, isUploading, maxFiles, maxSize, mode, addError, onUpload, folder, updateFiles])
+  }, [disabled, isUploading, maxFiles, maxSize, mode, addError, onUpload, folder, updateFiles, imageProcessingOptions, sequentialProcessing])
 
   // ファイル削除
   const handleDelete = useCallback(async (fileId: string) => {

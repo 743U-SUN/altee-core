@@ -1,4 +1,5 @@
 import { SortableParentItem, SortableChildItem } from '@/components/sortable-list/types'
+import type { SectionSettings } from '@/types/profile-sections'
 
 // Prismaから生成される基本型
 export interface FaqCategoryBase {
@@ -8,6 +9,7 @@ export interface FaqCategoryBase {
   description: string | null
   sortOrder: number
   isVisible: boolean
+  settings: SectionSettings | null
   createdAt: Date
   updatedAt: Date
 }
@@ -29,6 +31,7 @@ export interface FaqCategory extends SortableParentItem {
   name: string
   description: string | null
   isVisible: boolean
+  settings: SectionSettings | null
   createdAt: Date
   updatedAt: Date
 }

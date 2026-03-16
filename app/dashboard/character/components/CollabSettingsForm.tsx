@@ -71,6 +71,7 @@ export function CollabSettingsForm({ initialData }: CollabSettingsFormProps) {
                     <RadioGroup
                       value={field.value ?? ""}
                       onValueChange={field.onChange}
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-2"
                     >
                       {COLLAB_STATUS_OPTIONS.map((opt) => (
                         <div key={opt.value} className="flex items-center gap-2">

@@ -8,16 +8,30 @@ import { nanoid } from 'nanoid'
 import { SECTION_REGISTRY } from '@/lib/sections'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { sectionSettingsSchema } from '@/lib/validations/section-settings'
+import { unsubscribeFromYoutubePush } from '@/services/youtube/youtube-pubsubhubbub'
+
+const VALID_PAGES = ['profile', 'videos'] as const
+type SectionPage = (typeof VALID_PAGES)[number]
+
+function isValidPage(page: string): page is SectionPage {
+  return (VALID_PAGES as readonly string[]).includes(page)
+}
 
 /**
- * ユーザーの全セクションを取得
+ * ユーザーのセクションを取得（ページ別フィルタ対応）
  */
 export async function getUserSections(
-  userId: string
+  userId: string,
+  page: string = 'profile'
 ): Promise<UserSection[] | null> {
   try {
+    if (!isValidPage(page)) {
+      console.error(`[getUserSections] 無効なページ: ${page}`)
+      return null
+    }
+
     const sections = await prisma.userSection.findMany({
-      where: { userId },
+      where: { userId, page },
       orderBy: { sortOrder: 'asc' },
     })
 
@@ -183,7 +197,8 @@ function generateSampleData(sectionType: string, providedData: unknown): unknown
 export async function createSection(
   userId: string,
   sectionType: string,
-  data: unknown = {}
+  data: unknown = {},
+  page: string = 'profile'
 ): Promise<{ success: boolean; error?: string; section?: UserSection }> {
   try {
     const session = await requireAuth()
@@ -191,15 +206,27 @@ export async function createSection(
       return { success: false, error: '権限がありません' }
     }
 
+    // page バリデーション
+    if (!isValidPage(page)) {
+      return { success: false, error: '無効なページです' }
+    }
+
     // sectionType ホワイトリスト検証
-    if (!SECTION_REGISTRY[sectionType]) {
+    const definition = SECTION_REGISTRY[sectionType]
+    if (!definition) {
       console.error(`[createSection] 無効なセクションタイプ: ${sectionType}`)
       return { success: false, error: '無効なセクションタイプです' }
     }
 
-    // 現在の最大sortOrderを取得
+    // sectionType と page の整合性チェック
+    const expectedPage = definition.page ?? 'profile'
+    if (expectedPage !== page) {
+      return { success: false, error: 'セクションタイプとページが一致しません' }
+    }
+
+    // 同一ページ内での最大sortOrderを取得
     const maxSortOrder = await prisma.userSection.findFirst({
-      where: { userId },
+      where: { userId, page },
       orderBy: { sortOrder: 'desc' },
       select: { sortOrder: true },
     })
@@ -209,11 +236,11 @@ export async function createSection(
     // サンプルデータを生成
     const sectionData = generateSampleData(sectionType, data)
 
-    const definition = SECTION_REGISTRY[sectionType]
     const section = await prisma.userSection.create({
       data: {
         userId,
         sectionType,
+        page,
         sortOrder,
         data: sectionData as never,
         settings: definition?.defaultSettings
@@ -244,7 +271,7 @@ export async function updateSection(
     // セクションの所有者確認
     const section = await prisma.userSection.findUnique({
       where: { id: sectionId },
-      select: { userId: true },
+      select: { userId: true, page: true },
     })
 
     if (!section || section.userId !== session.user.id) {
@@ -261,6 +288,9 @@ export async function updateSection(
     })
 
     revalidatePath(`/@${session.user.handle}`)
+    if (section.page === 'videos') {
+      revalidatePath('/dashboard/videos')
+    }
 
     return { success: true }
   } catch (error) {
@@ -292,6 +322,17 @@ export async function deleteSection(
     const imageKeys = extractImageKeys(section.sectionType, section.data)
     if (imageKeys.length > 0) {
       await Promise.allSettled(imageKeys.map((key) => deleteImageAction(key)))
+    }
+
+    // youtube-latest セクション削除時に PubSubHubbub の unsubscribe を実行
+    if (section.sectionType === 'youtube-latest') {
+      const sectionData = section.data as Record<string, unknown> | null
+      const channelId = sectionData?.channelId as string | undefined
+      if (channelId) {
+        await unsubscribeFromYoutubePush(channelId).catch((e) =>
+          console.error('PubSubHubbub unsubscribe error on delete:', e)
+        )
+      }
     }
 
     await prisma.userSection.delete({
@@ -403,16 +444,16 @@ export async function moveSectionOrder(
     // セクションの所有者確認と現在の情報を取得
     const section = await prisma.userSection.findUnique({
       where: { id: sectionId },
-      select: { userId: true, sortOrder: true },
+      select: { userId: true, sortOrder: true, page: true },
     })
 
     if (!section || section.userId !== session.user.id) {
       return { success: false, error: '権限がありません' }
     }
 
-    // 同じユーザーの全セクションを取得
+    // 同一ページ内のセクションのみ取得
     const allSections = await prisma.userSection.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, page: section.page },
       orderBy: { sortOrder: 'asc' },
       select: { id: true, sortOrder: true },
     })

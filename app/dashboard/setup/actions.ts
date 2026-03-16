@@ -61,7 +61,6 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
         where: { id: session.user.id },
         data: {
           role: currentUser?.role === 'ADMIN' ? 'ADMIN' : validatedData.role,
-          characterName: validatedData.characterName,
           handle: validatedData.role === 'USER' ? validatedData.handle : null,
         },
       });
@@ -69,10 +68,20 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
       // UserProfileが存在しない場合は作成
       await tx.userProfile.upsert({
         where: { userId: session.user.id },
-        update: {}, // 既存の場合は何もしない
+        update: {},
         create: {
           userId: session.user.id,
           bio: null,
+        },
+      });
+
+      // CharacterInfoを作成/更新（表示名を保存）
+      await tx.characterInfo.upsert({
+        where: { userId: session.user.id },
+        update: { characterName: validatedData.characterName },
+        create: {
+          userId: session.user.id,
+          characterName: validatedData.characterName,
         },
       });
     });

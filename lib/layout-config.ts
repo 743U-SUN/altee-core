@@ -224,9 +224,9 @@ const dashboardNavItems: NavItem[] = [
     isActive: false,
   },
   {
-    title: "プラットフォーム",
-    url: "/dashboard/platforms",
-    icon: Tv,
+    title: "動画管理",
+    url: "/dashboard/videos",
+    icon: Video,
     isActive: false,
   },
   {

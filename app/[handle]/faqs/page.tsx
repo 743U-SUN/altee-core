@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { getPublicFaqByHandle } from '@/app/actions/content/faq-actions'
+import { getActivePresets } from '@/lib/sections/preset-queries'
 import { FAQPublicContent } from './components/FAQPublicContent'
 import type { FaqCategoryBase, FaqQuestionBase } from '@/types/faq'
 
@@ -19,13 +20,9 @@ const getCachedFaq = cache(async (handle: string) => {
 export async function generateMetadata({ params }: FAQsPageProps) {
   const { handle } = await params
 
-  // ユーザーの存在確認や動的メタデータ生成に再利用可能
-  // const result = await getCachedFaq(handle)
-
   return {
     title: `@${handle} のFAQ`,
     description: `@${handle} のよくある質問をまとめたページです。`,
-    // OpenGraph などの追加も容易
     openGraph: {
       title: `@${handle} のFAQ`,
       description: `@${handle} のよくある質問をまとめたページです。`,
@@ -36,12 +33,15 @@ export async function generateMetadata({ params }: FAQsPageProps) {
 export default async function FAQsPage({ params }: FAQsPageProps) {
   const { handle } = await params
 
-  const result = await getCachedFaq(handle)
+  const [result, presets] = await Promise.all([
+    getCachedFaq(handle),
+    getActivePresets(),
+  ])
   const categories = (result.success ? result.data : []) as FaqCategoryWithQuestions[]
 
   return (
     <div className="space-y-6 w-full">
-      <FAQPublicContent categories={categories} />
+      <FAQPublicContent categories={categories} presets={presets} />
     </div>
   )
 }

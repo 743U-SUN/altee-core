@@ -12,7 +12,7 @@ const updateProfileSchema = z.object({
   characterName: z.string().min(1, 'キャラクター名を入力してください').max(30, 'キャラクター名は30文字以下で入力してください').optional(),
   bio: z.string().max(500).optional(),
   characterImageId: z.string().nullable().optional(), // キャラクター画像（9:16縦長）- nullで削除
-  avatarImageId: z.string().nullable().optional(),    // アイコン画像（1:1正方形）- nullで削除
+  iconImageKey: z.string().nullable().optional(),      // アイコン画像（R2 key）→ CharacterInfo.iconImageKey
   backgroundImageKey: z.string().nullable().optional(),
   bannerImageKey: z.string().nullable().optional(),   // バナー画像（3:1横長）- nullで削除
   characterBackgroundKey: z.string().nullable().optional(), // CharacterColumn専用背景 - nullで削除
@@ -29,13 +29,21 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
     // バリデーション
     const validatedData = updateProfileSchema.parse(data)
 
-    // トランザクションでユーザーとプロフィールを更新
+    // トランザクションでプロフィールを更新
     const result = await prisma.$transaction(async (tx) => {
-      // characterNameが指定されている場合はUserテーブルを更新
-      if (validatedData.characterName !== undefined) {
-        await tx.user.update({
-          where: { id: session.user.id },
-          data: { characterName: validatedData.characterName },
+      // characterName / iconImageKey → CharacterInfo に保存
+      if (validatedData.characterName !== undefined || validatedData.iconImageKey !== undefined) {
+        await tx.characterInfo.upsert({
+          where: { userId: session.user.id },
+          update: {
+            ...(validatedData.characterName !== undefined && { characterName: validatedData.characterName }),
+            ...(validatedData.iconImageKey !== undefined && { iconImageKey: validatedData.iconImageKey }),
+          },
+          create: {
+            userId: session.user.id,
+            characterName: validatedData.characterName ?? null,
+            iconImageKey: validatedData.iconImageKey ?? null,
+          },
         })
       }
 
@@ -47,7 +55,6 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
         update: {
           bio: validatedData.bio,
           characterImageId: validatedData.characterImageId,
-          avatarImageId: validatedData.avatarImageId,
           backgroundImageKey: validatedData.backgroundImageKey,
           bannerImageKey: validatedData.bannerImageKey,
           characterBackgroundKey: validatedData.characterBackgroundKey,
@@ -56,7 +63,6 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
           userId: session.user.id,
           bio: validatedData.bio,
           characterImageId: validatedData.characterImageId,
-          avatarImageId: validatedData.avatarImageId,
           backgroundImageKey: validatedData.backgroundImageKey,
           bannerImageKey: validatedData.bannerImageKey,
           characterBackgroundKey: validatedData.characterBackgroundKey,
@@ -72,10 +78,10 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
     return { success: true, data: result }
   } catch (error) {
     console.error("プロフィール更新エラー:", error)
-    
+
     if (error instanceof z.ZodError) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: "入力データが無効です: " + error.errors.map(e => e.message).join(", ")
       }
     }
@@ -100,12 +106,13 @@ export async function getUserProfile(userId?: string) {
       },
       include: {
         characterImage: true, // キャラクター画像
-        avatarImage: true,    // アイコン画像
         user: {
           select: {
             name: true,
             email: true,
-            characterName: true,
+            characterInfo: {
+              select: { characterName: true, iconImageKey: true }
+            },
           },
         },
       },

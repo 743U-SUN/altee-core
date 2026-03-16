@@ -57,6 +57,17 @@ const nextConfig: NextConfig = {
         destination: '/@:handle/items/:path*',
         permanent: true,
       },
+      // Platforms → Videos migration redirect
+      {
+        source: '/dashboard/platforms',
+        destination: '/dashboard/videos',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/platforms/:path*',
+        destination: '/dashboard/videos',
+        permanent: true,
+      },
     ]
   },
   images: {
@@ -76,6 +87,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'img.youtube.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'placehold.co',
         pathname: '/**',
       },
@@ -86,6 +102,21 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'cdn.altee.me',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nicovideo.cdn.nimg.jp',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tn.smilevideo.jp',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.cdn.nimg.jp',
+        pathname: '/**',
       },
     ],
     minimumCacheTTL: 86400, // 24時間キャッシュ

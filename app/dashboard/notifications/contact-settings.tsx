@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import { PRESET_AVATAR } from "@/lib/image-uploader/image-processing-presets"
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateUserContact, deleteUserContact } from "@/app/actions/user/contact-actions"
 import { CONTACT_CONSTRAINTS } from "@/types/contacts"
@@ -372,6 +373,7 @@ export function ContactSettings({
                 value={uploadedFiles}
                 onUpload={handleImageUpload}
                 showPreview={true}
+                imageProcessingOptions={PRESET_AVATAR}
               />
               <p className="text-sm text-muted-foreground">
                 最大1000px（幅・高さ）の画像をアップロードできます

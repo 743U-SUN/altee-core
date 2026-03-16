@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_PORTRAIT } from '@/lib/image-uploader/image-processing-presets'
 import { updateUserProfile } from '@/app/actions/user/profile-actions'
 import { toast } from 'sonner'
 import { EditModal } from './EditModal'
@@ -223,6 +224,7 @@ export function CharacterImageModal({
                 rounded={false}
                 value={uploadedFiles}
                 onUpload={setUploadedFiles}
+                imageProcessingOptions={PRESET_PORTRAIT}
               />
             </div>
 

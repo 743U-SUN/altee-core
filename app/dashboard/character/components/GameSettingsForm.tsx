@@ -1,6 +1,6 @@
 "use client"
 
-import { useForm, FormProvider, Controller } from "react-hook-form"
+import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -64,7 +64,7 @@ export function GameSettingsForm({ initialData }: GameSettingsFormProps) {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* 所有ゲームハード */}
-            <Controller
+            <FormField
               control={form.control}
               name="gamePlatforms"
               render={({ field }) => (
@@ -99,7 +99,7 @@ export function GameSettingsForm({ initialData }: GameSettingsFormProps) {
             />
 
             {/* 好きなジャンル */}
-            <Controller
+            <FormField
               control={form.control}
               name="gameGenres"
               render={({ field }) => (

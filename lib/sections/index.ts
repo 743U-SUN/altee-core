@@ -19,6 +19,7 @@ export {
   getSectionsByCategory,
   getCategoryDefinition,
   getAllCategories,
+  getSectionsByPage,
   preloadHighPrioritySections,
 } from './registry'
 

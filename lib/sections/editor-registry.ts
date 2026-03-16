@@ -153,6 +153,38 @@ export const EDITOR_REGISTRY: Record<string, EditorDefinition> = {
     ),
     needsTitle: false,
   },
+  'videos-profile': {
+    component: lazy(() =>
+      import('@/components/user-profile/sections/editors/VideosProfileEditModal').then(
+        (m) => ({ default: m.VideosProfileEditModal })
+      )
+    ),
+    needsTitle: false,
+  },
+  'youtube-latest': {
+    component: lazy(() =>
+      import('@/components/user-profile/sections/editors/YouTubeLatestEditModal').then(
+        (m) => ({ default: m.YouTubeLatestEditModal })
+      )
+    ),
+    needsTitle: false,
+  },
+  'youtube-recommended': {
+    component: lazy(() =>
+      import('@/components/user-profile/sections/editors/YouTubeRecommendedEditModal').then(
+        (m) => ({ default: m.YouTubeRecommendedEditModal })
+      )
+    ),
+    needsTitle: false,
+  },
+  'niconico-recommended': {
+    component: lazy(() =>
+      import('@/components/user-profile/sections/editors/NiconicoRecommendedEditModal').then(
+        (m) => ({ default: m.NiconicoRecommendedEditModal })
+      )
+    ),
+    needsTitle: false,
+  },
 }
 
 /**

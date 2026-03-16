@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import type { ImageHeroData, ImageGridItem, SpeechBubbleItem } from '@/types/profile-sections'
 import type { UploadedFile } from '@/types/image-upload'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_MOBILE_BG, PRESET_PORTRAIT } from '@/lib/image-uploader/image-processing-presets'
 import { nanoid } from 'nanoid'
 import { ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
 
@@ -251,6 +252,7 @@ export function ImageHeroEditModal({
               value={mobileUploadValue}
               onUpload={handleMobileUpload}
               onDelete={handleMobileDelete}
+              imageProcessingOptions={PRESET_MOBILE_BG}
             />
             <p className="text-xs text-muted-foreground">
               推奨サイズ: 3:4（例: 810x1080px）。未設定の場合はPC画像を使用します。
@@ -268,6 +270,7 @@ export function ImageHeroEditModal({
               value={characterUploadValue}
               onUpload={handleCharacterUpload}
               onDelete={handleCharacterDelete}
+              imageProcessingOptions={PRESET_PORTRAIT}
             />
             <p className="text-xs text-muted-foreground">
               推奨サイズ: 9:16（例: 720x1280px）。背景画像の中央下に配置されます。

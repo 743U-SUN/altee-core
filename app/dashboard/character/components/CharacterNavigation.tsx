@@ -19,20 +19,18 @@ export function CharacterNavigation() {
             : pathname.startsWith(tab.href)
 
           return (
-            <div key={tab.key} className="flex-shrink-0">
-              <Link href={tab.href}>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 text-sm",
-                    isActive && "bg-muted text-muted-foreground font-medium"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </Button>
-              </Link>
-            </div>
+            <Link key={tab.key} href={tab.href} className="flex-shrink-0">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 text-sm",
+                  isActive && "bg-accent text-accent-foreground font-medium"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </Button>
+            </Link>
           )
         })}
       </nav>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useForm, FormProvider, Controller } from "react-hook-form"
+import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import { PRESET_ICON } from "@/lib/image-uploader/image-processing-presets"
 import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import { updateBasicInfo } from "@/app/actions/user/character-actions"
 import {
@@ -99,19 +100,22 @@ export function BasicInfoForm({ initialData }: BasicInfoFormProps) {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* アイコン */}
-            <div className="space-y-2">
+            <FormItem>
               <FormLabel>アイコン</FormLabel>
-              <ImageUploader
-                mode="immediate"
-                previewSize="small"
-                maxFiles={1}
-                folder="user-character-icons"
-                value={uploadedFiles}
-                onUpload={handleImageUpload}
-                showPreview={true}
-                rounded={true}
-              />
-            </div>
+              <FormControl>
+                <ImageUploader
+                  mode="immediate"
+                  previewSize="small"
+                  maxFiles={1}
+                  folder="user-character-icons"
+                  value={uploadedFiles}
+                  onUpload={handleImageUpload}
+                  showPreview={true}
+                  rounded={true}
+                  imageProcessingOptions={PRESET_ICON}
+                />
+              </FormControl>
+            </FormItem>
 
             {/* キャラクターネーム */}
             <FormField
@@ -183,53 +187,63 @@ export function BasicInfoForm({ initialData }: BasicInfoFormProps) {
             />
 
             {/* 誕生日 */}
-            <div className="space-y-2">
+            <FormItem>
               <FormLabel>誕生日</FormLabel>
               <div className="flex gap-2 items-center">
-                <Controller
+                <FormField
                   control={form.control}
                   name="birthdayMonth"
                   render={({ field }) => (
-                    <Select
-                      value={field.value?.toString() ?? ""}
-                      onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                    >
-                      <SelectTrigger className="w-24">
-                        <SelectValue placeholder="月" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MONTHS.map((m) => (
-                          <SelectItem key={m} value={m.toString()}>
-                            {m}月
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormItem>
+                      <FormControl>
+                        <Select
+                          value={field.value?.toString() ?? ""}
+                          onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue placeholder="月" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MONTHS.map((m) => (
+                              <SelectItem key={m} value={m.toString()}>
+                                {m}月
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
                 />
-                <Controller
+                <FormField
                   control={form.control}
                   name="birthdayDay"
                   render={({ field }) => (
-                    <Select
-                      value={field.value?.toString() ?? ""}
-                      onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                    >
-                      <SelectTrigger className="w-24">
-                        <SelectValue placeholder="日" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DAYS.map((d) => (
-                          <SelectItem key={d} value={d.toString()}>
-                            {d}日
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormItem>
+                      <FormControl>
+                        <Select
+                          value={field.value?.toString() ?? ""}
+                          onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue placeholder="日" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DAYS.map((d) => (
+                              <SelectItem key={d} value={d.toString()}>
+                                {d}日
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
                 />
               </div>
-            </div>
+            </FormItem>
 
             {/* 種族 */}
             <FormField

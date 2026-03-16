@@ -18,6 +18,29 @@ export interface UserListPagination {
   limit: number
 }
 
+/**
+ * フィルターから Prisma WHERE 句を構築（getUserList / getUsersForCsvExport で共用）
+ */
+function buildUserWhereClause(filters: UserListFilters) {
+  return {
+    ...(filters.search && {
+      OR: [
+        { name: { contains: filters.search, mode: "insensitive" as const } },
+        { email: { contains: filters.search, mode: "insensitive" as const } },
+        { handle: { contains: filters.search, mode: "insensitive" as const } },
+        { characterInfo: { characterName: { contains: filters.search, mode: "insensitive" as const } } },
+      ],
+    }),
+    ...(filters.role && { role: filters.role }),
+    ...(filters.isActive !== undefined && { isActive: filters.isActive }),
+    ...((filters.createdFrom || filters.createdTo) && {
+      createdAt: {
+        ...(filters.createdFrom && { gte: new Date(filters.createdFrom) }),
+        ...(filters.createdTo && { lte: new Date(filters.createdTo) }),
+      },
+    }),
+  }
+}
 
 /**
  * ユーザー一覧を取得（フィルター・ページネーション対応）
@@ -29,22 +52,7 @@ export async function getUserList(
   await requireAdmin()
 
   try {
-    const where = {
-      ...(filters.search && {
-        OR: [
-          { name: { contains: filters.search, mode: "insensitive" as const } },
-          { email: { contains: filters.search, mode: "insensitive" as const } },
-        ],
-      }),
-      ...(filters.role && { role: filters.role }),
-      ...(filters.isActive !== undefined && { isActive: filters.isActive }),
-      ...(filters.createdFrom && {
-        createdAt: { gte: new Date(filters.createdFrom) },
-      }),
-      ...(filters.createdTo && {
-        createdAt: { lte: new Date(filters.createdTo) },
-      }),
-    }
+    const where = buildUserWhereClause(filters)
 
     const [users, totalCount] = await Promise.all([
       prisma.user.findMany({
@@ -58,6 +66,9 @@ export async function getUserList(
           image: true,
           createdAt: true,
           updatedAt: true,
+          characterInfo: {
+            select: { characterName: true, iconImageKey: true },
+          },
           _count: {
             select: {
               sessions: true,
@@ -99,6 +110,9 @@ export async function getUserDetail(userId: string) {
             provider: true,
             providerAccountId: true,
           },
+        },
+        characterInfo: {
+          select: { characterName: true, iconImageKey: true },
         },
         sessions: {
           select: {
@@ -322,65 +336,34 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
   await requireAdmin()
 
   try {
-    const where = {
-      ...(filters.search && {
-        OR: [
-          { name: { contains: filters.search, mode: "insensitive" as const } },
-          { email: { contains: filters.search, mode: "insensitive" as const } },
-        ],
-      }),
-      ...(filters.role && { role: filters.role }),
-      ...(filters.isActive !== undefined && { isActive: filters.isActive }),
-      ...(filters.createdFrom && {
-        createdAt: { gte: new Date(filters.createdFrom) },
-      }),
-      ...(filters.createdTo && {
-        createdAt: { lte: new Date(filters.createdTo) },
-      }),
-    }
+    const where = buildUserWhereClause(filters)
 
-    // First, get the total count for memory estimation
     const totalCount = await prisma.user.count({ where })
 
-    // For large datasets (>10k records), consider implementing pagination
     const BATCH_SIZE = 5000
     const shouldUseBatching = totalCount > BATCH_SIZE
 
-    let users
-    if (shouldUseBatching) {
-      // Process in batches to avoid memory issues
-      users = await prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        handle: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        characterInfo: {
+          select: { characterName: true },
         },
-        orderBy: { createdAt: "desc" },
-        take: BATCH_SIZE, // Limit to prevent memory issues
-      })
-    } else {
-      users = await prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      })
-    }
+      },
+      orderBy: { createdAt: "desc" },
+      ...(shouldUseBatching && { take: BATCH_SIZE }),
+    })
 
-    // CSV形式に変換（メモリ効率を考慮）
-    const csvHeader = "ID,名前,ロール,状態,登録日"
+    const csvHeader = "ID,名前,キャラクター名,ハンドル,ロール,状態,登録日"
     const csvRows = users.map(user =>
-      `"${user.id}","${user.name || ""}","${user.role}","${user.isActive ? "アクティブ" : "非アクティブ"}","${new Date(user.createdAt).toLocaleDateString("ja-JP")}"`
+      `"${user.id}","${user.name || ""}","${user.characterInfo?.characterName || ""}","${user.handle || ""}","${user.role}","${user.isActive ? "アクティブ" : "非アクティブ"}","${new Date(user.createdAt).toLocaleDateString("ja-JP")}"`
     )
 
     const csvContent = [csvHeader, ...csvRows].join("\n")
@@ -388,7 +371,7 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
     return {
       csvContent,
       userCount: users.length,
-      totalCount, // Return both actual exported count and total available
+      totalCount,
       filename: `users_export_${new Date().toISOString().split('T')[0]}.csv`,
       isTruncated: shouldUseBatching && users.length === BATCH_SIZE
     }

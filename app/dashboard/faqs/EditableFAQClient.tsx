@@ -2,7 +2,7 @@
 
 import { UserProfileLayout } from '@/components/user-profile'
 import { FaqManagementSection } from './components/FaqManagementSection'
-import type { ThemeSettings } from '@/types/profile-sections'
+import type { ThemeSettings, SectionBackgroundPreset } from '@/types/profile-sections'
 
 interface EditableFAQClientProps {
   handle: string
@@ -13,6 +13,7 @@ interface EditableFAQClientProps {
   bannerImageKey: string | null
   characterBackgroundKey: string | null
   initialFaqCategories: unknown[]
+  presets: SectionBackgroundPreset[]
 }
 
 /**
@@ -28,6 +29,7 @@ export function EditableFAQClient({
   bannerImageKey,
   characterBackgroundKey,
   initialFaqCategories,
+  presets,
 }: EditableFAQClientProps) {
   return (
     <UserProfileLayout
@@ -42,7 +44,7 @@ export function EditableFAQClient({
       inDashboard={true}
     >
       <div className="space-y-6 w-full">
-        <FaqManagementSection initialFaqCategories={initialFaqCategories} />
+        <FaqManagementSection initialFaqCategories={initialFaqCategories} presets={presets} />
       </div>
     </UserProfileLayout>
   )

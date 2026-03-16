@@ -28,7 +28,8 @@ interface User {
   email: string
   role: UserRole
   isActive: boolean
-  image: string | null
+  characterName: string | null
+  iconImageUrl: string | null
   createdAt: string
   _count: {
     accounts: number
@@ -134,13 +135,13 @@ export function UserListClient({
               </TableCell>
               <TableCell className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarImage src={user.iconImageUrl ?? undefined} alt={user.characterName || user.name || "User"} />
                   <AvatarFallback>
-                    {user.name ? user.name.slice(0, 2).toUpperCase() : "U"}
+                    {(user.characterName || user.name) ? (user.characterName || user.name)!.slice(0, 2).toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{user.name || "名前未設定"}</div>
+                  <div className="font-medium">{user.characterName || user.name || "名前未設定"}</div>
                   <div className="text-sm text-muted-foreground">ID: {user.id}</div>
                 </div>
               </TableCell>

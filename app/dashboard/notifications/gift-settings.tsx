@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import { PRESET_AVATAR } from "@/lib/image-uploader/image-processing-presets"
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateUserGift, deleteUserGift } from "@/app/actions/user/gift-actions"
 import type { UserGift } from "@/types/gift"
@@ -186,6 +187,7 @@ export function GiftSettings({ initialData, compact = false }: GiftSettingsProps
               value={uploadedFiles}
               onUpload={handleImageUpload}
               showPreview={true}
+              imageProcessingOptions={PRESET_AVATAR}
             />
             <p className="text-sm text-muted-foreground">
               ギフトページで表示する画像をアップロードできます

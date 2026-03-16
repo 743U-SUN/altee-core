@@ -1,4 +1,5 @@
 import { getUserList } from "@/app/actions/admin/user-management"
+import { resolveAvatarUrl } from "@/lib/avatar-utils"
 import { UserListClient } from "./UserListClient"
 import { UserRole } from "@prisma/client"
 
@@ -35,6 +36,9 @@ export async function UserList({
 
     const users = rawUsers.map(u => ({
       ...u,
+      // CharacterInfo の表示名・アイコンを展開してクライアントに渡す
+      characterName: u.characterInfo?.characterName ?? null,
+      iconImageUrl: resolveAvatarUrl(u.characterInfo?.iconImageKey, u.image),
       createdAt: u.createdAt.toISOString(),
     }))
 

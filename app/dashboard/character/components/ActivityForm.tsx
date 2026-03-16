@@ -130,7 +130,7 @@ export function ActivityForm({ initialData }: ActivityFormProps) {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* 配信スタイル */}
-            <Controller
+            <FormField
               control={form.control}
               name="streamingStyles"
               render={({ field }) => (
@@ -165,7 +165,7 @@ export function ActivityForm({ initialData }: ActivityFormProps) {
             />
 
             {/* 活動時間帯 */}
-            <Controller
+            <FormField
               control={form.control}
               name="streamingTimezones"
               render={({ field }) => (
@@ -210,6 +210,7 @@ export function ActivityForm({ initialData }: ActivityFormProps) {
                     <RadioGroup
                       value={field.value ?? ""}
                       onValueChange={field.onChange}
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-2"
                     >
                       {STREAMING_FREQUENCY_OPTIONS.map((opt) => (
                         <div key={opt.value} className="flex items-center gap-2">
@@ -230,7 +231,7 @@ export function ActivityForm({ initialData }: ActivityFormProps) {
             />
 
             {/* 使用言語 */}
-            <Controller
+            <FormField
               control={form.control}
               name="languages"
               render={({ field }) => (
@@ -275,6 +276,7 @@ export function ActivityForm({ initialData }: ActivityFormProps) {
                     <RadioGroup
                       value={field.value ?? ""}
                       onValueChange={field.onChange}
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-2"
                     >
                       {ACTIVITY_STATUS_OPTIONS.map((opt) => (
                         <div key={opt.value} className="flex items-center gap-2">

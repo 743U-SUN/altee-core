@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_AVATAR } from '@/lib/image-uploader/image-processing-presets'
 import { updateSection } from '@/app/actions/user/section-actions'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
@@ -223,6 +224,7 @@ export function WeeklyScheduleEditModal({
             rounded={false}
             value={uploadedFiles}
             onUpload={setUploadedFiles}
+            imageProcessingOptions={PRESET_AVATAR}
           />
         </div>
       </div>

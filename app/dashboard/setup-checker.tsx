@@ -15,17 +15,17 @@ export async function SetupChecker({ children }: SetupCheckerProps) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { 
-      handle: true, 
-      characterName: true, 
-      role: true 
+    select: {
+      handle: true,
+      role: true,
+      characterInfo: { select: { characterName: true } },
     },
   });
 
   if (user) {
     // セットアップ未完了の場合はsetupページにリダイレクト
-    const isSetupIncomplete = 
-      !user.characterName || 
+    const isSetupIncomplete =
+      !user.characterInfo?.characterName ||
       ((user.role === 'USER' || user.role === 'ADMIN') && !user.handle);
       
     if (isSetupIncomplete) {

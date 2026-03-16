@@ -35,6 +35,7 @@ export interface SectionDefinition {
   category: SectionCategory
   fullBleed?: boolean // true: バンド幅いっぱいにレンダリング（max-widthコンテナなし）
   maxInstances?: number // 最大インスタンス数（未指定 = 無制限）
+  page?: 'profile' | 'videos' // 未指定 = 'profile'
   priority: SectionPriority
   component: ComponentType<BaseSectionProps> | LazyExoticComponent<ComponentType<BaseSectionProps>>
   defaultData: unknown

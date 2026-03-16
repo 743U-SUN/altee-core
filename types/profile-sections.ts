@@ -4,6 +4,7 @@ export interface UserSection {
   userId: string
   sectionType: string
   title: string | null
+  page: string
   sortOrder: number
   isVisible: boolean
   data: unknown // セクション固有データ（型ガードで絞り込み: lib/sections/type-guards.ts）
@@ -318,6 +319,40 @@ export interface CharacterProfileData {
   }[]
 }
 
+// videos-profile セクションのdata構造
+export interface VideosProfileData {
+  title: string
+  description?: string
+}
+
+// youtube-latest セクションのdata構造
+export interface YouTubeLatestData {
+  channelId: string
+  rssFeedLimit: number
+}
+
+// youtube-recommended セクションのdata構造
+export interface YouTubeRecommendedData {
+  items: {
+    id: string
+    videoId: string
+    title: string
+    thumbnail: string
+    sortOrder: number
+  }[]
+}
+
+// niconico-recommended セクションのdata構造
+export interface NiconicoRecommendedData {
+  items: {
+    id: string
+    videoId: string
+    title: string
+    thumbnail: string
+    sortOrder: number
+  }[]
+}
+
 // themeSettings JSON構造
 export interface ThemeSettings {
   // テーマプリセット
@@ -409,3 +444,7 @@ export type ImageHeroEditModalProps = BaseSectionEditorProps<ImageHeroData>
 export type ImageGrid2EditModalProps = BaseSectionEditorProps<ImageGrid2Data>
 export type ImageGrid3EditModalProps = BaseSectionEditorProps<ImageGrid3Data>
 export type CharacterProfileEditModalProps = BaseSectionEditorProps<CharacterProfileData>
+export type VideosProfileEditModalProps = BaseSectionEditorProps<VideosProfileData>
+export type YouTubeLatestEditModalProps = BaseSectionEditorProps<YouTubeLatestData>
+export type YouTubeRecommendedEditModalProps = BaseSectionEditorProps<YouTubeRecommendedData>
+export type NiconicoRecommendedEditModalProps = BaseSectionEditorProps<NiconicoRecommendedData>

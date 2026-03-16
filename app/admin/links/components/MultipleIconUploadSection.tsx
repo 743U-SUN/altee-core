@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import { PRESET_ICON } from "@/lib/image-uploader/image-processing-presets"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -185,6 +186,7 @@ export function MultipleIconUploadSection({
             onUpload={handleIconUpload}
             showPreview={false}
             className="min-h-[80px]"
+            imageProcessingOptions={PRESET_ICON}
           />
           <div className="text-xs text-muted-foreground mt-2 space-y-1">
             <p>• 最大5個まで同時にアップロード可能</p>

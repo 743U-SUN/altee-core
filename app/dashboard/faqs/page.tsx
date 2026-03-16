@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { prisma } from '@/lib/prisma'
 import { getFaqCategories } from '@/app/actions/content/faq-actions'
+import { getActivePresets } from '@/lib/sections/preset-queries'
 import { EditableFAQClient } from './EditableFAQClient'
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default async function DashboardFaqsPage() {
   }
 
   // 並行してデータフェッチを行うことでウォーターフォールを解消
-  const [user, faqResult] = await Promise.all([
+  const [user, faqResult, presets] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -32,9 +33,13 @@ export default async function DashboardFaqsPage() {
             characterImage: true,
           },
         },
+        characterInfo: {
+          select: { characterName: true },
+        },
       },
     }),
-    getFaqCategories()
+    getFaqCategories(),
+    getActivePresets(),
   ])
 
   if (!user || !user.profile) {
@@ -66,10 +71,11 @@ export default async function DashboardFaqsPage() {
         themePreset={themePreset}
         themeSettings={themeSettings}
         characterImageUrl={characterImageUrl}
-        characterName={user.characterName}
+        characterName={user.characterInfo?.characterName ?? null}
         bannerImageKey={user.profile.bannerImageKey}
         characterBackgroundKey={user.profile.characterBackgroundKey}
         initialFaqCategories={initialFaqCategories}
+        presets={presets}
       />
     </div>
   )

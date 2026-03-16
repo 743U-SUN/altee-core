@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
+import { PRESET_MEDIUM_SQUARE } from '@/lib/image-uploader/image-processing-presets'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   Accordion,
@@ -63,6 +64,7 @@ export function ImageGrid3EditModal({
                   value={getUploadValue(item)}
                   onUpload={(files) => handleUpload(item.id, files)}
                   onDelete={() => handleDelete(item.id)}
+                  imageProcessingOptions={PRESET_MEDIUM_SQUARE}
                 />
               </div>
 

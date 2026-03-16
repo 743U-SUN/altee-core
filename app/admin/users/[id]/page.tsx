@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { UserActions } from "./components/UserActions"
 import { HandleEditor } from "./components/HandleEditor"
 import { UserNewsAdmin } from "./components/UserNewsAdmin"
+import { resolveAvatarUrl } from "@/lib/avatar-utils"
 import { ArrowLeft, Calendar, Shield, User, Mail, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -49,15 +50,17 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarImage
+                    src={resolveAvatarUrl(user.characterInfo?.iconImageKey, user.image) ?? undefined}
+                    alt={user.characterInfo?.characterName || user.name || "User"}
+                  />
                   <AvatarFallback className="text-lg">
-                    {user.name ? user.name.slice(0, 2).toUpperCase() : "U"}
+                    {(user.characterInfo?.characterName || user.name) ? (user.characterInfo?.characterName || user.name)!.slice(0, 2).toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
-                  {/* Primary display: characterName if exists, fallback to OAuth name */}
                   <h3 className="text-lg font-semibold">
-                    {user.characterName || user.name || "名前未設定"}
+                    {user.characterInfo?.characterName || user.name || "名前未設定"}
                   </h3>
 
                   {/* Handle name - only show if set */}

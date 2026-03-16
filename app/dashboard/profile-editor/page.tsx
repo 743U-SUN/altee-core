@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { resolveAvatarUrl } from '@/lib/avatar-utils'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { prisma } from '@/lib/prisma'
 import { getActivePresets } from '@/lib/sections/preset-queries'
@@ -31,10 +32,13 @@ export default async function ProfileEditorPage() {
       profile: {
         include: {
           characterImage: true, // キャラクター画像（9:16縦長）
-          avatarImage: { select: { storageKey: true } }, // アイコン画像（1:1正方形）
         },
       },
+      characterInfo: {
+        select: { characterName: true, iconImageKey: true },
+      },
       userSections: {
+        where: { page: 'profile' },
         orderBy: { sortOrder: 'asc' },
       },
     },
@@ -53,9 +57,7 @@ export default async function ProfileEditorPage() {
   const characterImageUrl = user.profile.characterImage?.storageKey
     ? getPublicUrl(user.profile.characterImage.storageKey)
     : null
-  const avatarImageUrl = user.profile.avatarImage?.storageKey
-    ? getPublicUrl(user.profile.avatarImage.storageKey)
-    : null
+  const avatarImageUrl = resolveAvatarUrl(user.characterInfo?.iconImageKey, user.image)
 
   return (
     <div className="flex flex-1 flex-col">
@@ -66,7 +68,7 @@ export default async function ProfileEditorPage() {
         characterImageUrl={characterImageUrl}
         characterImageId={user.profile.characterImageId}
         avatarImageUrl={avatarImageUrl}
-        characterName={user.characterName}
+        characterName={user.characterInfo?.characterName ?? null}
         bannerImageKey={user.profile.bannerImageKey}
         characterBackgroundKey={user.profile.characterBackgroundKey}
         sections={user.userSections as UserSection[]}

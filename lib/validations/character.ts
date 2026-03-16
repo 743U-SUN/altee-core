@@ -86,7 +86,9 @@ export const basicInfoSchema = z.object({
   iconImageKey: z.string().optional().nullable(),
   characterName: z.string().max(50, "キャラクターネームは50文字以内で入力してください").optional().nullable(),
   nameReading: z.string().max(50, "読み方は50文字以内で入力してください").optional().nullable(),
-  gender: z.string().optional().nullable(),
+  gender: z.enum(["male", "female", "unknown", "other"]).optional().nullable(),
+  // VTuber の誕生日は架空設定（2/30、13月生まれなど）が存在するため、
+  // 月と日の組み合わせの整合性チェックは意図的に行わない。
   birthdayMonth: z.number().int().min(1).max(12).optional().nullable(),
   birthdayDay: z.number().int().min(1).max(31).optional().nullable(),
   species: z.string().max(30, "種族は30文字以内で入力してください").optional().nullable(),
@@ -96,32 +98,32 @@ export const basicInfoSchema = z.object({
   fanMark: z.string().max(10, "推しマークは10文字以内で入力してください").optional().nullable(),
   illustrator: z.string().max(50, "ママは50文字以内で入力してください").optional().nullable(),
   modeler: z.string().max(50, "パパは50文字以内で入力してください").optional().nullable(),
-  affiliationType: z.string().optional().nullable(),
+  affiliationType: z.enum(["individual", "agency"]).optional().nullable(),
   affiliation: z.string().max(50, "所属名は50文字以内で入力してください").optional().nullable(),
 })
 
 export type BasicInfoInput = z.infer<typeof basicInfoSchema>
 
 const platformAccountSchema = z.object({
-  platform: z.string(),
-  url: z.string().optional().nullable(),
+  platform: z.enum(PLATFORM_OPTIONS.map((o) => o.value) as [string, ...string[]]),
+  url: z.string().url("URLの形式が正しくありません").optional().nullable().or(z.literal("")),
   isActive: z.boolean(),
 })
 
 export const activitySettingsSchema = z.object({
-  platformAccounts: z.array(platformAccountSchema),
-  streamingStyles: z.array(z.string()),
-  streamingTimezones: z.array(z.string()),
+  platformAccounts: z.array(platformAccountSchema).max(11),
+  streamingStyles: z.array(z.string()).max(20),
+  streamingTimezones: z.array(z.string()).max(10),
   streamingFrequency: z.string().optional().nullable(),
-  languages: z.array(z.string()),
+  languages: z.array(z.string()).max(10),
   activityStatus: z.string().optional().nullable(),
 })
 
 export type ActivitySettingsInput = z.infer<typeof activitySettingsSchema>
 
 export const gameSettingsSchema = z.object({
-  gamePlatforms: z.array(z.string()),
-  gameGenres: z.array(z.string()),
+  gamePlatforms: z.array(z.string()).max(10),
+  gameGenres: z.array(z.string()).max(20),
   nowPlaying: z.string().max(100, "今プレイ中のゲームは100文字以内で入力してください").optional().nullable(),
 })
 
@@ -161,7 +163,7 @@ export function toBasicInfoDefaults(data: {
     iconImageKey: data?.iconImageKey ?? null,
     characterName: data?.characterName ?? null,
     nameReading: data?.nameReading ?? null,
-    gender: data?.gender ?? null,
+    gender: (data?.gender ?? null) as BasicInfoInput["gender"],
     birthdayMonth: data?.birthdayMonth ?? null,
     birthdayDay: data?.birthdayDay ?? null,
     species: data?.species ?? null,
@@ -173,7 +175,7 @@ export function toBasicInfoDefaults(data: {
     fanMark: data?.fanMark ?? null,
     illustrator: data?.illustrator ?? null,
     modeler: data?.modeler ?? null,
-    affiliationType: data?.affiliationType ?? null,
+    affiliationType: (data?.affiliationType ?? null) as BasicInfoInput["affiliationType"],
     affiliation: data?.affiliation ?? null,
   }
 }

@@ -34,7 +34,6 @@ async function main() {
       data: {
         email: 'test@example.com',
         handle: 'testhandle',
-        characterName: 'テストキャラクター',
         profile: {
           create: {
             themePreset: 'claymorphic',
@@ -48,6 +47,11 @@ async function main() {
                 newsPage: true,
               },
             },
+          },
+        },
+        characterInfo: {
+          create: {
+            characterName: 'テストキャラクター',
           },
         },
       },

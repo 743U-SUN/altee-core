@@ -7,6 +7,9 @@ import type { BaseSectionProps, VideoGallerySectionData } from '@/types/profile-
 import { cn } from '@/lib/utils'
 import { PlaySquare, Youtube, Loader2 } from 'lucide-react'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
+import { getSectionData, isVideoGallerySectionData } from '@/lib/sections/type-guards'
+
+const DEFAULT_DATA: VideoGallerySectionData = { items: [] }
 
 // YouTubeEmbed を遅延読み込み（編集モードでは不要）
 const YouTubeEmbed = dynamic(
@@ -28,7 +31,7 @@ const YouTubeEmbed = dynamic(
  * - 2本目以降をグリッドでサムネイル表示
  */
 export function VideoGallerySection({ section, isEditable }: BaseSectionProps) {
-  const data = section.data as VideoGallerySectionData
+  const data = getSectionData('video-gallery', section.data, isVideoGallerySectionData, DEFAULT_DATA)
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   // sortOrder順にソート
