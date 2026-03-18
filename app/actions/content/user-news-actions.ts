@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { cachedAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { USER_NEWS_LIMITS } from '@/types/user-news'
@@ -68,8 +68,7 @@ async function ensureUniqueSlug(
 
 /** 自分の全記事を取得（下書き含む） */
 export async function getUserNews() {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  const session = await requireAuth()
 
   const news = await prisma.userNews.findMany({
     where: { userId: session.user.id },
@@ -85,8 +84,7 @@ export async function getUserNews() {
 
 /** 編集画面用: IDで記事取得 */
 export async function getUserNewsById(id: string) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  const session = await requireAuth()
 
   const news = await prisma.userNews.findFirst({
     where: { id, userId: session.user.id },
@@ -102,16 +100,7 @@ export async function getUserNewsById(id: string) {
 
 /** 記事作成 */
 export async function createUserNews(formData: FormData) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
-
-  // 3記事制限チェック
-  const count = await prisma.userNews.count({
-    where: { userId: session.user.id },
-  })
-  if (count >= USER_NEWS_LIMITS.MAX_ARTICLES) {
-    throw new Error(`記事は最大${USER_NEWS_LIMITS.MAX_ARTICLES}つまでです`)
-  }
+  const session = await requireAuth()
 
   const rawSlug =
     (formData.get('slug') as string) ||
@@ -138,24 +127,33 @@ export async function createUserNews(formData: FormData) {
 
   const uniqueSlug = await ensureUniqueSlug(session.user.id, slug)
 
-  // 次の sortOrder を取得
-  const maxOrder = await prisma.userNews.aggregate({
-    where: { userId: session.user.id },
-    _max: { sortOrder: true },
-  })
+  // count+create をトランザクションで実行
+  const news = await prisma.$transaction(async (tx) => {
+    const count = await tx.userNews.count({
+      where: { userId: session.user.id },
+    })
+    if (count >= USER_NEWS_LIMITS.MAX_ARTICLES) {
+      throw new Error(`記事は最大${USER_NEWS_LIMITS.MAX_ARTICLES}つまでです`)
+    }
 
-  const news = await prisma.userNews.create({
-    data: {
-      userId: session.user.id,
-      title,
-      slug: uniqueSlug,
-      excerpt,
-      content,
-      thumbnailId: thumbnailId || null,
-      bodyImageId: bodyImageId || null,
-      published,
-      sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
-    },
+    const maxOrder = await tx.userNews.aggregate({
+      where: { userId: session.user.id },
+      _max: { sortOrder: true },
+    })
+
+    return tx.userNews.create({
+      data: {
+        userId: session.user.id,
+        title,
+        slug: uniqueSlug,
+        excerpt,
+        content,
+        thumbnailId: thumbnailId || null,
+        bodyImageId: bodyImageId || null,
+        published,
+        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+      },
+    })
   })
 
   revalidatePath('/dashboard/news')
@@ -164,8 +162,7 @@ export async function createUserNews(formData: FormData) {
 
 /** 記事更新 */
 export async function updateUserNews(id: string, formData: FormData) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  const session = await requireAuth()
 
   // 所有者チェック
   const existing = await prisma.userNews.findFirst({
@@ -218,8 +215,7 @@ export async function updateUserNews(id: string, formData: FormData) {
 
 /** 記事削除 */
 export async function deleteUserNews(id: string) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  const session = await requireAuth()
 
   const existing = await prisma.userNews.findFirst({
     where: { id, userId: session.user.id },
@@ -235,8 +231,7 @@ export async function deleteUserNews(id: string) {
 
 /** 並べ替え */
 export async function reorderUserNews(ids: string[]) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  const session = await requireAuth()
 
   const reorderSchema = z.array(z.string().cuid()).min(1).max(100)
   const validatedIds = reorderSchema.parse(ids)
@@ -256,8 +251,7 @@ export async function reorderUserNews(ids: string[]) {
 
 /** 公開/下書きトグル */
 export async function toggleUserNewsPublished(id: string) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  const session = await requireAuth()
 
   const existing = await prisma.userNews.findFirst({
     where: { id, userId: session.user.id },
@@ -288,9 +282,9 @@ export async function updateNewsListSettings(
   sectionId: string,
   settings: SectionSettings | null
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await requireAuth()
+
   try {
-    const session = await cachedAuth()
-    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     const section = await prisma.userSection.findUnique({
       where: { id: sectionId },

@@ -242,20 +242,17 @@ export async function deleteArticle(id: string) {
       throw new Error('記事が見つかりません')
     }
 
-    // サムネイル削除（物理削除）
-    if (article.thumbnail) {
-      // TODO: OpenStack Swiftからの物理削除を実装
-      // const [containerName, ...keyParts] = article.thumbnail.storageKey.split('/');
-      // const objectKey = keyParts.join('/');
-      // await deleteFromSwiftContainer(containerName, objectKey);
-      
-      await prisma.mediaFile.delete({
-        where: { id: article.thumbnail.id }
-      })
-    }
+    // サムネイルと記事をトランザクションで削除
+    await prisma.$transaction(async (tx) => {
+      if (article.thumbnail) {
+        await tx.mediaFile.delete({
+          where: { id: article.thumbnail.id }
+        })
+      }
 
-    await prisma.article.delete({
-      where: { id }
+      await tx.article.delete({
+        where: { id }
+      })
     })
 
     revalidatePath('/admin/articles')

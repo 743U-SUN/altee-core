@@ -188,6 +188,7 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
                   >
                     <div className="aspect-video bg-muted relative">
                       {video.thumbnail && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={video.thumbnail}
                           alt={video.title}

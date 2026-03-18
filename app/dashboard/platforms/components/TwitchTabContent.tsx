@@ -103,7 +103,7 @@ export function TwitchTabContent({ initialData }: TwitchTabContentProps) {
 
     setIsCreatingWebhook(true)
     try {
-      const result = await createTwitchEventSubSubscription(twitchUserId)
+      const result = await createTwitchEventSubSubscription()
 
       if (result.success) {
         toast.success("Webhook登録に成功しました")

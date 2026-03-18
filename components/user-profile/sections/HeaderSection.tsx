@@ -9,7 +9,7 @@ import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
  * h2: ThemedCard + CornerDecor
  * h3/h4: 軽量スタイル維持
  */
-export function HeaderSection({ section, isEditable }: BaseSectionProps) {
+export function HeaderSection({ section, isEditable: _isEditable }: BaseSectionProps) {
   const data = section.data as HeaderData
 
   const HeadingTag = data.level || 'h2'

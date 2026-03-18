@@ -39,6 +39,7 @@ export async function UserList({
       // CharacterInfo の表示名・アイコンを展開してクライアントに渡す
       characterName: u.characterInfo?.characterName ?? null,
       iconImageUrl: resolveAvatarUrl(u.characterInfo?.iconImageKey, u.image),
+      accountType: u.accountType,
       createdAt: u.createdAt.toISOString(),
     }))
 

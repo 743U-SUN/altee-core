@@ -148,6 +148,7 @@ export default async function PostsPage() {
                                 {/* サムネイル画像 */}
                                 <div className="relative aspect-video overflow-hidden bg-muted">
                                     {post.thumbnail ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
                                         <img
                                             src={post.thumbnail}
                                             alt={post.title}

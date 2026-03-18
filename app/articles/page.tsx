@@ -137,6 +137,7 @@ export default async function ArticlesPage() {
                                 {/* サムネイル画像 */}
                                 <div className="relative aspect-video overflow-hidden bg-muted">
                                     {article.thumbnail ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
                                         <img
                                             src={article.thumbnail}
                                             alt={article.title}

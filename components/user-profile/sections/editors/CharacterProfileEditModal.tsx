@@ -41,7 +41,7 @@ export function CharacterProfileEditModal({
   const [editBadgeRight, setEditBadgeRight] = useState(currentData.badgeRight || '')
   const [editPosition, setEditPosition] = useState<'left' | 'right'>(currentData.characterPosition || 'left')
   const [editShowSocialLinks, setEditShowSocialLinks] = useState(currentData.showSocialLinks || false)
-  const [editSocialLinks, setEditSocialLinks] = useState(currentData.socialLinks || [])
+  const [editSocialLinks] = useState(currentData.socialLinks || [])
 
   const [uploadedCharacterImages, setUploadedCharacterImages] = useState<UploadedFile[]>([])
   const [uploadedBackgroundImages, setUploadedBackgroundImages] = useState<UploadedFile[]>([])

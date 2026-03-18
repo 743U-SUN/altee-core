@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Share2, ChevronDown, ChevronUp, MessageCircle, HelpCircle, FileText, Settings, User, CreditCard } from "lucide-react";
+import { Share2, ChevronDown, HelpCircle, Settings } from "lucide-react";
 
 export const runtime = "edge";
 

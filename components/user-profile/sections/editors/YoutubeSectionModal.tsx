@@ -54,7 +54,7 @@ export function YoutubeSectionModal({
             } else {
                 toast.error(result.error || "動画情報の取得に失敗しました")
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("エラーが発生しました")
         } finally {
             setIsLoadingMetadata(false)

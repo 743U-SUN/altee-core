@@ -3,7 +3,7 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { requireAdmin } from '@/lib/auth'
 import type { MediaType } from '@prisma/client'
 import { sanitizeSVGFile } from '@/lib/image-uploader/svg-sanitizer'
 import { TYPE_TO_FOLDER } from '@/lib/image-uploader/upload-type-map'
@@ -34,11 +34,9 @@ export async function uploadMediaFileAction(
   formData: FormData,
   metadata: MediaUploadData
 ): Promise<{ success: boolean; file?: UploadedFileData; error?: string }> {
+  const session = await requireAdmin()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== 'ADMIN') {
-      return { success: false, error: '管理者権限が必要です' }
-    }
 
     const file = formData.get('file') as File
     if (!file) {

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { auth } from "@/auth"
+import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { FAQ_LIMITS, type FaqActionResult } from "@/types/faq"
@@ -62,11 +62,9 @@ const reorderQuestionsSchema = z.object({
 
 // FAQカテゴリー一覧取得
 export async function getFaqCategories(): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     const categories = await prisma.faqCategory.findMany({
       where: { userId: session.user.id },
@@ -87,45 +85,43 @@ export async function getFaqCategories(): Promise<FaqActionResult> {
 
 // FAQカテゴリー作成
 export async function createFaqCategory(data: z.infer<typeof createFaqCategorySchema>): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = createFaqCategorySchema.parse(data)
 
-    // カテゴリー数制限チェック
-    const existingCategoriesCount = await prisma.faqCategory.count({
-      where: { userId: session.user.id }
-    })
+    // count+create をトランザクションで実行（TOCTOU防止）
+    const category = await prisma.$transaction(async (tx) => {
+      const existingCategoriesCount = await tx.faqCategory.count({
+        where: { userId: session.user.id }
+      })
 
-    if (existingCategoriesCount >= FAQ_LIMITS.CATEGORY.MAX_COUNT) {
-      return { success: false, error: `カテゴリーは最大${FAQ_LIMITS.CATEGORY.MAX_COUNT}個まで作成できます` }
-    }
-
-    // 最大sortOrderを取得
-    const maxSortOrder = await prisma.faqCategory.aggregate({
-      where: { userId: session.user.id },
-      _max: { sortOrder: true }
-    })
-
-    const newSortOrder = (maxSortOrder._max.sortOrder || 0) + 1
-
-    // カテゴリー作成
-    const category = await prisma.faqCategory.create({
-      data: {
-        userId: session.user.id,
-        name: validatedData.name,
-        description: validatedData.description || null,
-        sortOrder: newSortOrder,
-      },
-      include: {
-        questions: {
-          orderBy: { sortOrder: "asc" }
-        }
+      if (existingCategoriesCount >= FAQ_LIMITS.CATEGORY.MAX_COUNT) {
+        throw new Error(`カテゴリーは最大${FAQ_LIMITS.CATEGORY.MAX_COUNT}個まで作成できます`)
       }
+
+      const maxSortOrder = await tx.faqCategory.aggregate({
+        where: { userId: session.user.id },
+        _max: { sortOrder: true }
+      })
+
+      const newSortOrder = (maxSortOrder._max.sortOrder || 0) + 1
+
+      return tx.faqCategory.create({
+        data: {
+          userId: session.user.id,
+          name: validatedData.name,
+          description: validatedData.description || null,
+          sortOrder: newSortOrder,
+        },
+        include: {
+          questions: {
+            orderBy: { sortOrder: "asc" }
+          }
+        }
+      })
     })
 
     revalidatePath("/dashboard/faq")
@@ -141,11 +137,9 @@ export async function createFaqCategory(data: z.infer<typeof createFaqCategorySc
 
 // FAQカテゴリー更新
 export async function updateFaqCategory(categoryId: string, data: z.infer<typeof updateFaqCategorySchema>): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = updateFaqCategorySchema.parse(data)
@@ -186,11 +180,9 @@ export async function updateFaqCategory(categoryId: string, data: z.infer<typeof
 
 // FAQカテゴリー削除
 export async function deleteFaqCategory(categoryId: string): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // 所有者確認
     const existingCategory = await prisma.faqCategory.findFirst({
@@ -219,11 +211,9 @@ export async function deleteFaqCategory(categoryId: string): Promise<FaqActionRe
 
 // FAQカテゴリー並び替え
 export async function reorderFaqCategories(data: z.infer<typeof reorderCategoriesSchema>): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = reorderCategoriesSchema.parse(data)
@@ -262,52 +252,49 @@ export async function reorderFaqCategories(data: z.infer<typeof reorderCategorie
 
 // FAQ質問作成
 export async function createFaqQuestion(categoryId: string, data: z.infer<typeof createFaqQuestionSchema>): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = createFaqQuestionSchema.parse(data)
 
-    // カテゴリー所有者確認
-    const category = await prisma.faqCategory.findFirst({
-      where: { 
-        id: categoryId,
-        userId: session.user.id 
+    // count+create をトランザクションで実行（TOCTOU防止）
+    const question = await prisma.$transaction(async (tx) => {
+      const category = await tx.faqCategory.findFirst({
+        where: {
+          id: categoryId,
+          userId: session.user.id
+        }
+      })
+
+      if (!category) {
+        throw new Error("カテゴリーが見つからないか、編集権限がありません")
       }
-    })
 
-    if (!category) {
-      return { success: false, error: "カテゴリーが見つからないか、編集権限がありません" }
-    }
+      const existingQuestionsCount = await tx.faqQuestion.count({
+        where: { categoryId }
+      })
 
-    // 質問数制限チェック
-    const existingQuestionsCount = await prisma.faqQuestion.count({
-      where: { categoryId }
-    })
-
-    if (existingQuestionsCount >= FAQ_LIMITS.QUESTION.MAX_COUNT_PER_CATEGORY) {
-      return { success: false, error: `1つのカテゴリーにつき質問は最大${FAQ_LIMITS.QUESTION.MAX_COUNT_PER_CATEGORY}個まで作成できます` }
-    }
-
-    // 最大sortOrderを取得
-    const maxSortOrder = await prisma.faqQuestion.aggregate({
-      where: { categoryId },
-      _max: { sortOrder: true }
-    })
-
-    const newSortOrder = (maxSortOrder._max.sortOrder || 0) + 1
-
-    // 質問作成
-    const question = await prisma.faqQuestion.create({
-      data: {
-        categoryId,
-        question: validatedData.question,
-        answer: validatedData.answer,
-        sortOrder: newSortOrder,
+      if (existingQuestionsCount >= FAQ_LIMITS.QUESTION.MAX_COUNT_PER_CATEGORY) {
+        throw new Error(`1つのカテゴリーにつき質問は最大${FAQ_LIMITS.QUESTION.MAX_COUNT_PER_CATEGORY}個まで作成できます`)
       }
+
+      const maxSortOrder = await tx.faqQuestion.aggregate({
+        where: { categoryId },
+        _max: { sortOrder: true }
+      })
+
+      const newSortOrder = (maxSortOrder._max.sortOrder || 0) + 1
+
+      return tx.faqQuestion.create({
+        data: {
+          categoryId,
+          question: validatedData.question,
+          answer: validatedData.answer,
+          sortOrder: newSortOrder,
+        }
+      })
     })
 
     revalidatePath("/dashboard/faq")
@@ -323,11 +310,9 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
 
 // FAQ質問更新
 export async function updateFaqQuestion(questionId: string, data: z.infer<typeof updateFaqQuestionSchema>): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = updateFaqQuestionSchema.parse(data)
@@ -363,11 +348,9 @@ export async function updateFaqQuestion(questionId: string, data: z.infer<typeof
 
 // FAQ質問削除
 export async function deleteFaqQuestion(questionId: string): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // 所有者確認（カテゴリー経由）
     const existingQuestion = await prisma.faqQuestion.findFirst({
@@ -399,11 +382,9 @@ export async function updateFaqCategorySettings(
   categoryId: string,
   settings: SectionSettings | null
 ): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // 所有者確認
     const existingCategory = await prisma.faqCategory.findFirst({
@@ -437,11 +418,9 @@ export async function updateFaqCategorySettings(
 
 // FAQ質問並び替え
 export async function reorderFaqQuestions(categoryId: string, data: z.infer<typeof reorderQuestionsSchema>): Promise<FaqActionResult> {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = reorderQuestionsSchema.parse(data)

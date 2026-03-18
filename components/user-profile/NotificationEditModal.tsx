@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { EditModal } from './EditModal'
 import { NotificationSettings } from '@/app/dashboard/notifications/notification-settings'
@@ -34,13 +34,7 @@ export function NotificationEditModal({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (isOpen) {
-      loadData()
-    }
-  }, [isOpen, type])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setError(null)
     setIsLoading(true)
     try {
@@ -76,7 +70,13 @@ export function NotificationEditModal({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [type])
+
+  useEffect(() => {
+    if (isOpen) {
+      loadData()
+    }
+  }, [isOpen, loadData])
 
   const getTitle = () => {
     switch (type) {

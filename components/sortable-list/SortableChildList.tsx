@@ -113,7 +113,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     }
 
     prevChildItemsCountRef.current = currentCount;
-  }, [childItems.length, parentId, onUpdateChildState, childState.accordionOpen]);
+  }, [childItems, parentId, onUpdateChildState, childState.accordionOpen]);
 
   // 子アイテムを追加
   const handleAddChildItem = async () => {

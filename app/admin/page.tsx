@@ -22,7 +22,12 @@ export default function AdminPage() {
           <p className="text-sm text-muted-foreground">SNSリンクタイプとアイコンの管理</p>
         </Link>
 
-        <Link href="/admin/devices" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+        <Link href="/admin/managed-profiles" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+          <h3 className="font-semibold mb-2">公式プロフィール管理</h3>
+          <p className="text-sm text-muted-foreground">MANAGED VTuberプロフィールの作成と管理</p>
+        </Link>
+
+        <Link href="/admin/items" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
           <h3 className="font-semibold mb-2">デバイス管理</h3>
           <p className="text-sm text-muted-foreground">登録デバイスの管理と編集</p>
         </Link>

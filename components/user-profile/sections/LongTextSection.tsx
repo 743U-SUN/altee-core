@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm'
  * 長文セクション
  * マークダウン対応の詳細テキスト表示
  */
-export function LongTextSection({ section, isEditable }: BaseSectionProps) {
+export function LongTextSection({ section, isEditable: _isEditable }: BaseSectionProps) {
   const data = section.data as LongTextData
 
   return (
@@ -53,16 +53,19 @@ export function LongTextSection({ section, isEditable }: BaseSectionProps) {
                 {children}
               </ol>
             ),
-            a: ({ children, href }) => (
-              <a
-                href={href}
-                className="text-[var(--theme-text-accent)] hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {children}
-              </a>
-            ),
+            a: ({ children, href }) => {
+              const safeHref = href && /^https?:\/\//.test(href) ? href : undefined
+              return (
+                <a
+                  href={safeHref}
+                  className="text-[var(--theme-text-accent)] hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {children}
+                </a>
+              )
+            },
           }}
         >
           {data.content || '内容がありません'}

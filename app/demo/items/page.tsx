@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Star, Shield, Zap, Info, Share2, Search, ShoppingBag, Monitor, HardDrive, Cpu, MemoryStick, Package, Keyboard, Headphones, Mouse } from "lucide-react";
+import { Star, Share2, Monitor, HardDrive, Cpu, MemoryStick, Package, Keyboard, Headphones, Mouse } from "lucide-react";
 
 // export const metadata = {
 //     title: "Items - Claymorphic Profile",

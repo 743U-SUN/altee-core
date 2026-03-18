@@ -9,6 +9,27 @@ import { sanitizeSVGFile } from '@/lib/image-uploader/svg-sanitizer'
 import { FOLDER_TO_TYPE, DATE_HIERARCHY_FOLDERS } from '@/lib/image-uploader/upload-type-map'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 
+/** サーバーサイドMIMEホワイトリスト */
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+])
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+/** MIMEタイプから安全な拡張子を導出 */
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+}
+
+/** フォルダ名ホワイトリスト検証 */
+function isValidFolder(folder: string): boolean {
+  return folder in FOLDER_TO_TYPE && !folder.includes('..')
+}
+
 /**
  * 画像ファイルをアップロード
  */
@@ -19,18 +40,34 @@ export async function uploadImageAction(
   try {
     const session = await requireAuth()
 
-    const file = formData.get('file') as File
-    if (!file) {
+    const rawFile = formData.get('file')
+    if (!rawFile || !(rawFile instanceof File)) {
       return { success: false, error: 'ファイルが選択されていません' }
+    }
+    const file = rawFile
+
+    // フォルダパス・トラバーサル防止
+    if (!isValidFolder(folder)) {
+      return { success: false, error: '無効なアップロード先です' }
     }
 
     const fileName = file.name
     const fileType = file.type
 
-    // ユニークなファイル名を生成
+    // サーバーサイドMIMEバリデーション
+    if (!ALLOWED_MIME_TYPES.has(fileType)) {
+      return { success: false, error: 'サポートされていないファイル形式です' }
+    }
+
+    // サーバーサイドサイズ制限
+    if (file.size > MAX_FILE_SIZE) {
+      return { success: false, error: 'ファイルサイズが10MBを超えています' }
+    }
+
+    // MIMEタイプから安全な拡張子を導出（ユーザー提供のファイル名を使わない）
+    const extension = MIME_TO_EXT[fileType] || 'bin'
     const timestamp = Date.now()
     const randomString = crypto.randomUUID().slice(0, 8)
-    const extension = fileName.split('.').pop() || ''
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
 
     const bucket = STORAGE_BUCKET
@@ -64,6 +101,7 @@ export async function uploadImageAction(
       Body: buffer,
       ContentType: processedFile.type,
       ContentLength: processedFile.size,
+      CacheControl: 'public, max-age=31536000, immutable',
     }))
 
     const storageKey = `${bucket}/${key}`
@@ -106,13 +144,24 @@ export async function uploadImagesAction(
   files: File[],
   folder: string = 'images'
 ): Promise<{ success: boolean; files?: UploadedFile[]; errors?: string[] }> {
-  const uploadPromises = files.map(async (file) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return uploadImageAction(formData, folder)
-  })
+  if (files.length > 10) {
+    return { success: false, errors: ['一度にアップロードできるファイルは最大10個です'] }
+  }
 
-  const results = await Promise.all(uploadPromises)
+  // 並列度3に制限
+  const CONCURRENCY = 3
+  const results: Awaited<ReturnType<typeof uploadImageAction>>[] = []
+  for (let i = 0; i < files.length; i += CONCURRENCY) {
+    const batch = files.slice(i, i + CONCURRENCY)
+    const batchResults = await Promise.all(
+      batch.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return uploadImageAction(formData, folder)
+      })
+    )
+    results.push(...batchResults)
+  }
 
   const successfulFiles: UploadedFile[] = []
   const errors: string[] = []
@@ -155,12 +204,13 @@ export async function deleteImageAction(
     }
 
     // storageKeyの形式: "altee-images/folder/path/file.ext"
-    const storageKeyParts = fileKey.split('/')
-    const bucket = storageKeyParts[0]
-    const objectKey = storageKeyParts.slice(1).join('/')
+    // バケット名はサーバー側の固定値を使用（クライアント提供値を信頼しない）
+    const objectKey = fileKey.startsWith(STORAGE_BUCKET + '/')
+      ? fileKey.slice(STORAGE_BUCKET.length + 1)
+      : fileKey
 
     await storageClient.send(new DeleteObjectCommand({
-      Bucket: bucket,
+      Bucket: STORAGE_BUCKET,
       Key: objectKey,
     }))
 
@@ -210,12 +260,14 @@ export async function listImagesAction(
   folder: string = 'images'
 ): Promise<{ success: boolean; files?: UploadedFile[]; error?: string }> {
   try {
-    await requireAuth()
+    const session = await requireAuth()
 
     const mediaFiles = await prisma.mediaFile.findMany({
       where: {
         containerName: folder,
         deletedAt: null,
+        // 非管理者は自分がアップロードしたファイルのみ
+        ...(session.user.role !== 'ADMIN' && { uploaderId: session.user.id }),
       },
       orderBy: { createdAt: 'desc' },
     })

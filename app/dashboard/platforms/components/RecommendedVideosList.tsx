@@ -192,6 +192,7 @@ function VideoItemCard({ video, onDelete, isDragging, dragHandleProps }: VideoIt
       </button>
 
       <div className="flex-1 min-w-0 flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`https://img.youtube.com/vi/${video.videoId}/default.jpg`}
           alt="サムネイル"

@@ -49,7 +49,7 @@ export function ImageSectionModal({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [altText, setAltText] = useState(currentData.altText || '')
   const [aspectRatio, setAspectRatio] = useState<string>(currentData.aspectRatio || '16:9')
-  const [objectFit, setObjectFit] = useState<string>(currentData.objectFit || 'cover')
+  const [objectFit] = useState<string>(currentData.objectFit || 'cover')
   const [borderRadius, setBorderRadius] = useState<string>(currentData.borderRadius || 'md')
 
   // 背景設定

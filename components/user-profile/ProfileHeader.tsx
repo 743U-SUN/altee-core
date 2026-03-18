@@ -28,6 +28,7 @@ interface ProfileHeaderProps {
   namecard?: ThemeSettings['namecard']
   isEditable?: boolean
   inDashboard?: boolean // ダッシュボード内の場合はtop-17、公開ページの場合はtop-0
+  isManaged?: boolean // MANAGEDプロフィールの場合に公式バッジ表示
   onImageEdit?: (type: 'banner' | 'character' | 'profile') => void
   onNotificationClick?: (type: 'gift' | 'mail' | 'bell') => void
 }
@@ -44,6 +45,7 @@ export const ProfileHeader = memo(function ProfileHeader({
   namecard,
   isEditable = false,
   inDashboard = false,
+  isManaged = false,
   onImageEdit,
   onNotificationClick,
 }: ProfileHeaderProps) {
@@ -137,7 +139,7 @@ export const ProfileHeader = memo(function ProfileHeader({
             </div>
             {/* Name Card */}
             <div
-              className="h-14 w-56 px-4 flex items-center bg-[var(--theme-card-bg)]/90 backdrop-blur-sm rounded-r-none rounded-l-none shadow-[4px_4px_8px_rgba(0,0,0,0.05)] border border-l-0 border-white/30"
+              className="h-14 w-56 px-4 flex items-center gap-2 bg-[var(--theme-card-bg)]/90 backdrop-blur-sm rounded-r-none rounded-l-none shadow-[4px_4px_8px_rgba(0,0,0,0.05)] border border-l-0 border-white/30"
               style={namecardStyle}
             >
               <span
@@ -146,6 +148,11 @@ export const ProfileHeader = memo(function ProfileHeader({
               >
                 {characterName || 'User'}
               </span>
+              {isManaged && (
+                <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                  公式
+                </span>
+              )}
             </div>
             {/* 編集時ホバーオーバーレイ */}
             {isEditable && (

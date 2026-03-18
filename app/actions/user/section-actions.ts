@@ -9,6 +9,7 @@ import { SECTION_REGISTRY } from '@/lib/sections'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { sectionSettingsSchema } from '@/lib/validations/section-settings'
 import { unsubscribeFromYoutubePush } from '@/services/youtube/youtube-pubsubhubbub'
+import { cuidArraySchema } from '@/lib/validations/shared'
 
 const VALID_PAGES = ['profile', 'videos'] as const
 type SectionPage = (typeof VALID_PAGES)[number]
@@ -30,8 +31,17 @@ export async function getUserSections(
       return null
     }
 
+    // 認証状態を確認し、非オーナーには isVisible: true のみ返す
+    const { auth } = await import('@/auth')
+    const session = await auth()
+    const isOwner = session?.user?.id === userId
+
     const sections = await prisma.userSection.findMany({
-      where: { userId, page },
+      where: {
+        userId,
+        page,
+        ...(!isOwner && { isVisible: true }),
+      },
       orderBy: { sortOrder: 'asc' },
     })
 
@@ -354,17 +364,18 @@ export async function deleteSection(
 export async function reorderSections(
   sectionIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
+  const validatedIds = cuidArraySchema.parse(sectionIds)
 
+  try {
     // 全セクションの所有者確認
     const sections = await prisma.userSection.findMany({
-      where: { id: { in: sectionIds } },
+      where: { id: { in: validatedIds } },
       select: { id: true, userId: true },
     })
 
     if (
-      sections.length !== sectionIds.length ||
+      sections.length !== validatedIds.length ||
       sections.some((s) => s.userId !== session.user.id)
     ) {
       return { success: false, error: '権限がありません' }
@@ -372,7 +383,7 @@ export async function reorderSections(
 
     // トランザクションで一括更新
     await prisma.$transaction(
-      sectionIds.map((id, index) =>
+      validatedIds.map((id, index) =>
         prisma.userSection.update({
           where: { id },
           data: { sortOrder: index },

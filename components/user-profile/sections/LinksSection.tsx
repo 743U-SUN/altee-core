@@ -9,7 +9,7 @@ import { Badge } from '@/components/decorations'
  * リンクセクション
  * SNS・Webサイトリンクを表示
  */
-export function LinksSection({ section, isEditable }: BaseSectionProps) {
+export function LinksSection({ section, isEditable: _isEditable }: BaseSectionProps) {
   const data = section.data as LinksData
 
   if (!data.items || data.items.length === 0) {

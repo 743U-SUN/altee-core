@@ -1,5 +1,4 @@
-// ブラウザ専用モジュール: Canvas API (document.createElement('canvas')) を使用するため、
-// サーバーサイドでは使用不可。クライアントコンポーネントからのみインポートすること。
+import 'client-only'
 import type { ImageProcessingOptions, ProcessingResult } from '@/types/image-upload'
 
 // デフォルトの処理オプション

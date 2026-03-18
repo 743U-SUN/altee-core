@@ -65,8 +65,6 @@ export async function getUserGift(userId?: string) {
 // ギフト設定を作成・更新
 export async function updateUserGift(data: z.infer<typeof giftSchema>) {
   try {
-    console.log('[updateUserGift] 受信データ:', JSON.stringify(data, null, 2))
-
     const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
@@ -75,9 +73,7 @@ export async function updateUserGift(data: z.infer<typeof giftSchema>) {
     }
 
     // バリデーション
-    console.log('[updateUserGift] バリデーション前')
     const validatedData = giftSchema.parse(data)
-    console.log('[updateUserGift] バリデーション成功:', JSON.stringify(validatedData, null, 2))
 
     // 画像IDが指定されている場合、自分がアップロードした画像かチェック
     if (validatedData.imageId) {
@@ -116,22 +112,19 @@ export async function updateUserGift(data: z.infer<typeof giftSchema>) {
 
     // キャッシュ再検証
     revalidatePath("/dashboard/notifications")
-    revalidatePath(`/${session.user.handle}`) // プロフィールページも更新
+    revalidatePath(`/@${session.user.handle}`) // プロフィールページも更新
 
     return { success: true, data: gift }
 
   } catch (error) {
-    console.error('[updateUserGift] エラー発生:', error)
-
     if (error instanceof z.ZodError) {
-      console.error('[updateUserGift] Zodバリデーションエラー:', error.errors)
       return {
         success: false,
         error: "入力データが無効です: " + error.errors.map(e => e.message).join(", ")
       }
     }
 
-    console.error('[updateUserGift] 予期しないエラー:', error)
+    console.error('ギフト設定更新エラー:', error)
     return { success: false, error: "ギフト設定の更新に失敗しました" }
   }
 }
@@ -146,6 +139,14 @@ export async function deleteUserGift() {
       return { success: false, error: "権限がありません" }
     }
 
+    // 存在確認
+    const existing = await prisma.userGift.findUnique({
+      where: { userId: session.user.id }
+    })
+    if (!existing) {
+      return { success: false, error: "ギフト設定が見つかりません" }
+    }
+
     // 削除
     await prisma.userGift.delete({
       where: { userId: session.user.id }
@@ -153,7 +154,7 @@ export async function deleteUserGift() {
 
     // キャッシュ再検証
     revalidatePath("/dashboard/notifications")
-    revalidatePath(`/${session.user.handle}`) // プロフィールページも更新
+    revalidatePath(`/@${session.user.handle}`) // プロフィールページも更新
 
     return { success: true }
 

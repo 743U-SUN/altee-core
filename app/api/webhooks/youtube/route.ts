@@ -2,6 +2,33 @@ import { NextRequest, NextResponse } from "next/server"
 import { XMLParser } from "fast-xml-parser"
 import { revalidateTag } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { createHmac, timingSafeEqual } from "crypto"
+
+/**
+ * YouTube PubSubHubbub HMAC署名検証
+ */
+function verifyYoutubeSignature(request: NextRequest, body: string): boolean {
+  const secret = process.env.YOUTUBE_WEBHOOK_SECRET
+  if (!secret) {
+    // シークレット未設定の場合は検証をスキップ（後方互換性）
+    return true
+  }
+
+  const signature = request.headers.get('x-hub-signature')
+  if (!signature) return false
+
+  const [algo, hash] = signature.split('=')
+  if (algo !== 'sha1' || !hash) return false
+
+  const hmac = createHmac('sha1', secret)
+  hmac.update(body)
+  const expectedHash = hmac.digest('hex')
+
+  const sigBuf = Buffer.from(hash)
+  const expectedBuf = Buffer.from(expectedHash)
+  if (sigBuf.length !== expectedBuf.length) return false
+  return timingSafeEqual(sigBuf, expectedBuf)
+}
 
 // GET: YouTube PubSubHubbub Hub verification (challenge response)
 export async function GET(request: NextRequest) {
@@ -44,7 +71,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
 
-    console.log("[YouTube Webhook] Received notification")
+    // HMAC署名検証
+    if (!verifyYoutubeSignature(request, body)) {
+      console.error("[YouTube Webhook] Signature verification failed")
+      return new NextResponse("Forbidden", { status: 403 })
+    }
 
     // Parse Atom XML feed
     const parser = new XMLParser({ ignoreAttributes: false })

@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { Share2, Star, Heart, Zap, Coffee } from "lucide-react";
+import { Star, Heart, Zap, Coffee } from "lucide-react";
 
 export const runtime = "edge";
 

@@ -2,13 +2,17 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
-import { UserRole } from "@prisma/client"
+import { UserRole, AccountType } from "@prisma/client"
+import { cuidArraySchema } from "@/lib/validations/shared"
+import { handleSchema } from "@/lib/validations/user-setup"
+import { isReservedHandle } from "@/lib/reserved-handles"
 
 // ユーザー一覧取得のフィルター・ページネーション型定義
 export interface UserListFilters {
   search?: string
   role?: UserRole
   isActive?: boolean
+  accountType?: AccountType
   createdFrom?: string
   createdTo?: string
 }
@@ -33,6 +37,7 @@ function buildUserWhereClause(filters: UserListFilters) {
     }),
     ...(filters.role && { role: filters.role }),
     ...(filters.isActive !== undefined && { isActive: filters.isActive }),
+    ...(filters.accountType && { accountType: filters.accountType }),
     ...((filters.createdFrom || filters.createdTo) && {
       createdAt: {
         ...(filters.createdFrom && { gte: new Date(filters.createdFrom) }),
@@ -64,6 +69,7 @@ export async function getUserList(
           role: true,
           isActive: true,
           image: true,
+          accountType: true,
           createdAt: true,
           updatedAt: true,
           characterInfo: {
@@ -234,7 +240,7 @@ export async function deleteUser(userId: string, reason: string) {
     })
 
     // 削除ログを記録（将来的に実装）
-    console.log(`User deleted: ${user.email} (${user.name}) - Reason: ${reason}`)
+    console.log(`User deleted: ${userId} - Reason: ${reason}`)
 
     return { success: true, deletedUser: user }
   } catch (error) {
@@ -281,9 +287,7 @@ export async function forceLogout(userId: string) {
 export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
   await requireAdmin()
 
-  if (!userIds.length) {
-    throw new Error("変更するユーザーが選択されていません")
-  }
+  const validatedIds = cuidArraySchema.parse(userIds)
 
   if (!["USER", "ADMIN", "GUEST"].includes(newRole)) {
     throw new Error("無効なロールです")
@@ -292,7 +296,7 @@ export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
   try {
     await prisma.user.updateMany({
       where: {
-        id: { in: userIds }
+        id: { in: validatedIds }
       },
       data: {
         role: newRole
@@ -310,14 +314,12 @@ export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
 export async function bulkToggleUserActive(userIds: string[], isActive: boolean) {
   await requireAdmin()
 
-  if (!userIds.length) {
-    throw new Error("変更するユーザーが選択されていません")
-  }
+  const validatedIds = cuidArraySchema.parse(userIds)
 
   try {
     await prisma.user.updateMany({
       where: {
-        id: { in: userIds }
+        id: { in: validatedIds }
       },
       data: {
         isActive
@@ -327,6 +329,15 @@ export async function bulkToggleUserActive(userIds: string[], isActive: boolean)
     console.error("Bulk active toggle error:", error)
     throw new Error("一括状態変更に失敗しました")
   }
+}
+
+/**
+ * CSV値をエスケープ（インジェクション対策）
+ */
+function escapeCsvValue(val: string): string {
+  const escaped = val.replace(/"/g, '""')
+  if (/^[=+\-@\t\r]/.test(escaped)) return `"'${escaped}"`
+  return `"${escaped}"`
 }
 
 /**
@@ -363,7 +374,15 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
 
     const csvHeader = "ID,名前,キャラクター名,ハンドル,ロール,状態,登録日"
     const csvRows = users.map(user =>
-      `"${user.id}","${user.name || ""}","${user.characterInfo?.characterName || ""}","${user.handle || ""}","${user.role}","${user.isActive ? "アクティブ" : "非アクティブ"}","${new Date(user.createdAt).toLocaleDateString("ja-JP")}"`
+      [
+        escapeCsvValue(user.id),
+        escapeCsvValue(user.name || ""),
+        escapeCsvValue(user.characterInfo?.characterName || ""),
+        escapeCsvValue(user.handle || ""),
+        escapeCsvValue(user.role),
+        escapeCsvValue(user.isActive ? "アクティブ" : "非アクティブ"),
+        escapeCsvValue(new Date(user.createdAt).toLocaleDateString("ja-JP")),
+      ].join(",")
     )
 
     const csvContent = [csvHeader, ...csvRows].join("\n")
@@ -397,10 +416,6 @@ export async function updateUserHandle(
   }
 
   try {
-    // 新しいハンドルのバリデーション
-    const { handleSchema } = await import("@/lib/validations/user-setup")
-    const { isReservedHandle } = await import("@/lib/reserved-handles")
-
     const validation = handleSchema.safeParse(newHandle)
     if (!validation.success) {
       throw new Error(validation.error.errors[0]?.message || "ハンドルの形式が正しくありません")
@@ -447,7 +462,7 @@ export async function updateUserHandle(
 
     // 監査ログ出力（将来的にデータベースに記録可能）
     console.log(
-      `Handle updated by admin: ${currentUser.email} - ` +
+      `Handle updated by admin: ${userId} - ` +
       `Old: ${currentUser.handle || "null"} -> New: ${normalizedHandle} - ` +
       `Reason: ${reason.trim()}`
     )

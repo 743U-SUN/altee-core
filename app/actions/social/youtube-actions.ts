@@ -142,6 +142,11 @@ export async function addRecommendedVideo(videoUrl: string) {
   try {
     const session = await requireAuth()
 
+    // URL長さ制限
+    if (!videoUrl || videoUrl.length > 500) {
+      return { success: false, error: "URLが無効です（500文字以内）" }
+    }
+
     // URLから Video ID を抽出
     let videoId = videoUrl
     const patterns = [
@@ -248,24 +253,24 @@ export async function deleteRecommendedVideo(id: string) {
       return { success: false, error: "動画が見つかりません" }
     }
 
-    await prisma.youTubeRecommendedVideo.delete({
-      where: { id },
-    })
+    // 削除 + sortOrder再採番をトランザクションで実行
+    await prisma.$transaction(async (tx) => {
+      await tx.youTubeRecommendedVideo.delete({
+        where: { id },
+      })
 
-    // sortOrderの再採番
-    const remainingVideos = await prisma.youTubeRecommendedVideo.findMany({
-      where: { userId: session.user.id },
-      orderBy: { sortOrder: "asc" }
-    })
+      const remainingVideos = await tx.youTubeRecommendedVideo.findMany({
+        where: { userId: session.user.id },
+        orderBy: { sortOrder: "asc" }
+      })
 
-    await Promise.all(
-      remainingVideos.map((video, index) =>
-        prisma.youTubeRecommendedVideo.update({
-          where: { id: video.id },
-          data: { sortOrder: index }
+      for (let i = 0; i < remainingVideos.length; i++) {
+        await tx.youTubeRecommendedVideo.update({
+          where: { id: remainingVideos[i].id },
+          data: { sortOrder: i }
         })
-      )
-    )
+      }
+    })
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/[handle]`, "page")
@@ -298,8 +303,8 @@ export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideo
       return { success: false, error: "動画が見つかりません" }
     }
 
-    // 並び替え実行
-    await Promise.all(
+    // 並び替え実行（トランザクション）
+    await prisma.$transaction(
       validatedData.videoIds.map((id, index) =>
         prisma.youTubeRecommendedVideo.update({
           where: { id },
@@ -500,6 +505,10 @@ export async function fetchPublicYoutubeRss(channelId: string, limit: number) {
 export async function getYouTubeMetadata(url: string) {
   try {
     await requireAuth()
+
+    if (!url || url.length > 500) {
+      return { success: false, error: "URLが無効です（500文字以内）" }
+    }
 
     // URLから Video ID を抽出
     let videoId = url

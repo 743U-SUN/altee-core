@@ -212,21 +212,9 @@ const adminNavItems: NavItem[] = [
 
 const dashboardNavItems: NavItem[] = [
   {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Settings,
-    isActive: true,
-  },
-  {
     title: "プロフィールエディター",
     url: "/dashboard/profile-editor",
     icon: UserCircle,
-    isActive: false,
-  },
-  {
-    title: "動画管理",
-    url: "/dashboard/videos",
-    icon: Video,
     isActive: false,
   },
   {
@@ -235,22 +223,6 @@ const dashboardNavItems: NavItem[] = [
     icon: Sparkles,
     isActive: false,
   },
-  {
-    title: "通知設定",
-    url: "/dashboard/notifications",
-    icon: Bell,
-    isActive: false,
-  },
-  {
-    title: "Home",
-    url: "/",
-    icon: Home,
-    isActive: false,
-  }
-  // Phase 3: プロフィールとセクションを /dashboard/profile-editor に統合済み
-  // 旧UI removed in Phase 2:
-  // - SNSリンク (/dashboard/links) → backups/legacy-dashboard/
-  // - FAQ管理 (/dashboard/faq) → backups/legacy-dashboard/
 ]
 
 // バリアント設定の定義

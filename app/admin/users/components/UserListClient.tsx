@@ -19,7 +19,7 @@ import dynamic from "next/dynamic"
 const BulkActionsBar = dynamic(() => import("./BulkActionsBar").then(mod => ({ default: mod.BulkActionsBar })), {
   loading: () => <div className="h-16 bg-blue-50 rounded-lg animate-pulse" />
 })
-import { UserRole } from "@prisma/client"
+import { UserRole, AccountType } from "@prisma/client"
 import Link from "next/link"
 
 interface User {
@@ -28,6 +28,7 @@ interface User {
   email: string
   role: UserRole
   isActive: boolean
+  accountType: AccountType
   characterName: string | null
   iconImageUrl: string | null
   createdAt: string
@@ -146,9 +147,16 @@ export function UserListClient({
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant={user.role === "ADMIN" ? "destructive" : user.role === "USER" ? "default" : "secondary"}>
-                  {user.role}
-                </Badge>
+                <div className="flex items-center gap-1">
+                  <Badge variant={user.role === "ADMIN" ? "destructive" : user.role === "USER" ? "default" : "secondary"}>
+                    {user.role}
+                  </Badge>
+                  {user.accountType === "MANAGED" && (
+                    <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">
+                      MANAGED
+                    </Badge>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant={user.isActive ? "default" : "secondary"}>

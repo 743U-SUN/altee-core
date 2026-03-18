@@ -30,7 +30,7 @@ export const itemCategorySchema = z.object({
   sortOrder: z.number().int().nonnegative(),
   itemType: z.enum(ITEM_TYPES),
   requiresCompatibilityCheck: z.boolean(),
-  description: z.string().optional().nullable(),
+  description: z.string().max(2000, '説明は2000文字以内にしてください').optional().nullable(),
   icon: z.string().optional().nullable(),
   parentId: z.string().optional().nullable(),
 })
@@ -53,7 +53,7 @@ export const itemSchema = z.object({
     .string()
     .min(1, 'アイテム名は必須です')
     .max(200, 'アイテム名は200文字以内にしてください'),
-  description: z.string().optional().nullable(),
+  description: z.string().max(2000, '説明は2000文字以内にしてください').optional().nullable(),
   categoryId: z.string().min(1, 'カテゴリは必須です'),
   brandId: z.string().optional().nullable(),
 
@@ -64,7 +64,7 @@ export const itemSchema = z.object({
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),
-  amazonImageUrl: z.string().url().optional().nullable(),
+  amazonImageUrl: z.string().url().optional().nullable().or(z.literal('')).transform((val) => (val === '' ? undefined : val)),
   customImageUrl: z
     .string()
     .url('正しいURLを入力してください')

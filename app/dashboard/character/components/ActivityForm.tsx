@@ -47,9 +47,9 @@ export function ActivityForm({ initialData }: ActivityFormProps) {
       }),
       streamingStyles: initialData?.streamingStyles ?? [],
       streamingTimezones: initialData?.streamingTimezones ?? [],
-      streamingFrequency: initialData?.streamingFrequency ?? "",
+      streamingFrequency: (initialData?.streamingFrequency ?? null) as ActivitySettingsInput["streamingFrequency"],
       languages: initialData?.languages ?? [],
-      activityStatus: initialData?.activityStatus ?? "",
+      activityStatus: (initialData?.activityStatus ?? null) as ActivitySettingsInput["activityStatus"],
     },
   })
 

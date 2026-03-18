@@ -159,13 +159,8 @@ export async function updateUserThemeSettings(settings: {
       },
     })
 
-    // ユーザーのhandleを取得してrevalidate
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { handle: true },
-    })
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}`)
+    if (session.user.handle) {
+      revalidatePath(`/@${session.user.handle}`)
     }
     revalidatePath('/dashboard/profile-editor')
 
@@ -246,13 +241,8 @@ export async function updateThemeBackground(
       },
     })
 
-    // ユーザーのhandleを取得してrevalidate
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { handle: true },
-    })
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}`)
+    if (session.user.handle) {
+      revalidatePath(`/@${session.user.handle}`)
     }
     revalidatePath('/dashboard/profile-editor')
 

@@ -8,7 +8,7 @@ import { Badge } from '@/components/decorations'
  * 横棒グラフセクション
  * スキルセットや数値データの視覚化に使用
  */
-export function BarGraphSection({ section, isEditable }: BaseSectionProps) {
+export function BarGraphSection({ section, isEditable: _isEditable }: BaseSectionProps) {
   const data = section.data as BarGraphData
 
   if (!data.items || data.items.length === 0) {

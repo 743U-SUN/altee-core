@@ -1,9 +1,10 @@
 import { z } from 'zod'
+import { cuidSchema } from './shared'
+
+// Re-export for backward compatibility
+export { cuidSchema }
 
 // ===== 共通 =====
-
-/** CUID フォーマット検証 */
-export const cuidSchema = z.string().regex(/^c[a-z0-9]{24,}$/, '無効なIDフォーマットです')
 
 /** HEX カラーコード検証 */
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/)

@@ -1,6 +1,6 @@
 import type React from "react";
 import Image from "next/image";
-import { Star, Shield, Zap, Search, Bell, Menu, Heart, MapPin, Coffee, Sun, Home, Mail, Gamepad2, Sword, Crown, Settings, User, Image as ImageIcon, Backpack, MessageCircle, Gift, Mouse, Share2 } from "lucide-react";
+import { Star, Shield, Zap, Bell, Menu, Heart, MapPin, Coffee, Sun, Mail, Gamepad2, Sword, Crown, Settings, User, Image as ImageIcon, Gift, Mouse, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = {

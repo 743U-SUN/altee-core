@@ -113,7 +113,7 @@ export async function updateUserContact(data: z.infer<typeof contactSchema>) {
     })
 
     revalidatePath("/dashboard/notifications")
-    revalidatePath(`/${session.user.handle}`) // プロフィールページも更新
+    revalidatePath(`/@${session.user.handle}`) // プロフィールページも更新
     return { success: true, data: contact }
 
   } catch (error) {
@@ -153,7 +153,7 @@ export async function deleteUserContact() {
     })
 
     revalidatePath("/dashboard/notifications")
-    revalidatePath(`/${session.user.handle}`) // プロフィールページも更新
+    revalidatePath(`/@${session.user.handle}`) // プロフィールページも更新
     return { success: true }
 
   } catch {

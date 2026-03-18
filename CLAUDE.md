@@ -9,52 +9,44 @@ Next.js 16 App Router + PostgreSQL + Prisma web application.
 ## Quick Commands
 
 ```bash
+# Initial setup
+cp .env.example .env.local  # Edit with your credentials
+npm install
+
 # Development
 docker compose -f compose.dev.yaml up -d && npm run dev
+
+# Build
+npm run build
 
 # Lint & Type check
 npm run lint && npx tsc --noEmit
 
 # Database (local)
 DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate
+
+# Prisma Studio (local)
+DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:studio
 ```
 
-## Core Rules
+## Key Files
 
-- Server Components first, Client Components only when needed
-- Server Actions first (API Routes only for webhooks/external APIs)
-- TypeScript/ESLint errors must always be zero
-- Use shadcn/ui + lucide-react (don't reinvent UI)
-- No global state libraries (use nuqs for URL state when needed)
-- Production DB changes: always use migrate (never db:push)
+- `auth.ts` - NextAuth v5 configuration
+- `middleware.ts` - Route protection and @handle rewriting
+- `prisma/schema.prisma` - Database schema (source of truth)
+- `lib/prisma.ts` - Prisma client singleton
+- `app/sw.ts` - Service Worker (Serwist)
+
+## Environment
+
+Required: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `DISCORD_CLIENT_ID/SECRET`, `STORAGE_*` (Cloudflare R2), `NEXT_PUBLIC_STORAGE_URL`, `NEXT_PUBLIC_DOMAIN`
+Optional: `TWITCH_*`
 
 ## PWA (Progressive Web App) Support
-- Use **Serwist** (`@serwist/turbopack`) for Next.js 16 Turbopack PWA integration.
-- Service Worker logic lives in `app/sw.ts`.
-- Route handler at `app/serwist/[path]/route.ts` generates `sw.js`.
-- Registration via `components/pwa/SerwistRegister.tsx` using `@serwist/window`.
-- See `docs/GUIDES/PWA-GUIDE.md` for full instructions.
 
-## Architecture
-
-- `app/` - Routes and pages (App Router)
-- `components/` - Reusable UI (no business logic)
-- `lib/` - Utility functions
-- `services/` - Business logic and external APIs
-- Feature-specific components: same level as page.tsx
-
-## Data Patterns
-
-| Scenario | Implementation |
-|----------|----------------|
-| Non-interactive | Server Components + Server Actions |
-| Interactive | Client Components + Server Actions + useSWR |
-
-## Security (3-Layer Auth)
-
-1. **Middleware**: Route-level auth check
-2. **Layout**: State verification and redirects
-3. **Page/Actions**: Final permission check
+- Use **Serwist** (`@serwist/turbopack`) for Next.js 16 Turbopack PWA integration
+- Service Worker: `app/sw.ts` → `app/serwist/[path]/route.ts` → `components/pwa/SerwistRegister.tsx`
+- See `docs/GUIDES/PWA-GUIDE.md` for full instructions
 
 ## Plan Review
 
@@ -69,6 +61,16 @@ If reviewers find issues, automatically revise the plan before presenting to use
 
 > **Note**: If a skill (e.g., `nextjs-refactor-planner`) includes its own Plan Review phase, that fulfills this requirement. Do NOT run a duplicate review.
 
+## Gotchas
+
+- `@handle` routing: `/@username` → `/[handle]` via next.config.ts rewrites
+- React Compiler enabled (`reactCompiler: true`) - no need for manual `useMemo`/`useCallback`
+- `output: 'standalone'` for Docker/VPS deployment
+- Dev server binds to `0.0.0.0:3000` (WSL2 対応)
+- Server Actions body size limit: 10MB (`serverActions.bodySizeLimit`)
+- Production DB changes: always use migrate (never db:push)
+
 ## References
 
 @docs/core-rules.md
+@docs/TROUBLESHOOTING.md

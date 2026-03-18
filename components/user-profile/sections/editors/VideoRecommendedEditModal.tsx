@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Loader2, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
-import Image from 'next/image'
 import { useVideoListEditor, type VideoItem } from '@/hooks/use-video-list-editor'
 
 interface VideoRecommendedEditModalProps {

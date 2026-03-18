@@ -179,6 +179,7 @@ export function BackgroundSelector({
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">現在の背景画像</p>
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getPublicUrl(currentBackground.imageKey)}
                   alt="現在の背景"

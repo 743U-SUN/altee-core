@@ -9,12 +9,15 @@ export function urlPatternValidator(linkTypes: LinkType[]) {
     const selectedLinkType = linkTypes.find(lt => lt.id === data.linkTypeId)
 
     if (selectedLinkType?.urlPattern) {
+      // URL長制限（ReDoS対策）
+      if (data.url.length > 2048) return false
+
       try {
         const regex = new RegExp(selectedLinkType.urlPattern)
         return regex.test(data.url)
       } catch {
-        // 正規表現が無効な場合はパターンチェックをスキップ
-        return true
+        // 正規表現が無効な場合はURLを拒否（安全側に倒す）
+        return false
       }
     }
     return true

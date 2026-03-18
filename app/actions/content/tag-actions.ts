@@ -207,6 +207,7 @@ export async function getTag(id: string) {
       where: { id },
       include: {
         articles: {
+          take: 50,
           include: {
             article: {
               select: { id: true, title: true, slug: true, published: true }

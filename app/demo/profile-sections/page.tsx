@@ -1,10 +1,6 @@
 import type React from "react";
 import Image from "next/image";
-import {
-    User, Gamepad2, Bell, Mail, Gift, Menu, Share2,
-    Heart, Star, Shield, Zap, Coffee, Sun, MapPin,
-    Crown, Settings, Image as ImageIcon, Sword
-} from "lucide-react";
+import { Menu, Share2, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ImageHero } from "./components/ImageHero";
 import { ImageGrid2 } from "./components/ImageGrid2";

@@ -9,7 +9,7 @@ import { Badge } from '@/components/decorations'
  * アイコンリンクセクション
  * SNS・連絡先のコンパクト表示（アイコンのみ、横並び）
  */
-export function IconLinksSection({ section, isEditable }: BaseSectionProps) {
+export function IconLinksSection({ section, isEditable: _isEditable }: BaseSectionProps) {
   const data = section.data as IconLinksData
 
   if (!data.items || data.items.length === 0) {

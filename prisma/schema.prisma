@@ -30,7 +30,13 @@ model User {
   // userDevices removed (Device system deleted in Phase 10)
   userItems              UserItem[] // ユーザー所有アイテム
   userNews               UserNews[] // ユーザーニュース記事
+  pcBuild                UserPcBuild? // PCビルド（1対1）
   characterInfo          CharacterInfo? // キャラクター情報（1対1）
+
+  // 管理者によるプロフィール管理
+  accountType            AccountType @default(SELF)
+  managedBy              String?     // 作成した管理者のID
+  claimedAt              DateTime?   // VTuber本人がアカウントを引き取った日時
 
   // プラットフォーム管理（YouTube/Twitch等）
   youtubeChannelId       String? // YouTube Channel ID (UC...)
@@ -48,6 +54,7 @@ model User {
   @@index([role])
   @@index([email, name])
   @@index([handle])
+  @@index([accountType])
   @@index([youtubeChannelId])
   @@index([twitchUserId])
   @@map("users")
@@ -124,6 +131,8 @@ model Article {
   @@index([publishedAt])
   @@index([createdAt])
   @@index([slug])
+  @@index([authorId])
+  @@index([thumbnailId])
   @@map("articles")
 }
 
@@ -234,6 +243,11 @@ enum UserRole {
   USER
   ADMIN
   GUEST
+}
+
+enum AccountType {
+  SELF      // OAuth登録ユーザー（既存）
+  MANAGED   // 管理者が作成した公式プロフィール
 }
 
 enum MediaType {
@@ -446,6 +460,7 @@ model Brand {
   // リレーション
   // devices removed (Device system deleted in Phase 10)
   items       Item[] @relation("ItemBrand")
+  chipSpecs   PcPartSpec[] @relation("ChipMaker") // チップメーカーとしてのリレーション
 
   @@index([sortOrder])
   @@index([name])
@@ -582,6 +597,8 @@ model Item {
   category       ItemCategory @relation(fields: [categoryId], references: [id])
   brand          Brand?       @relation("ItemBrand", fields: [brandId], references: [id])
   userItems      UserItem[]
+  pcPartSpec     PcPartSpec?              // PCパーツスペック（1:1）
+  buildParts     UserPcBuildPart[]        // このアイテムを使用しているビルドパーツ
 
   @@index([categoryId])
   @@index([brandId])
@@ -634,7 +651,82 @@ model UserNews {
 
   @@unique([userId, slug])
   @@index([userId, sortOrder])
+  @@index([thumbnailId])
+  @@index([bodyImageId])
   @@map("user_news")
+}
+
+// ===== PC Build System =====
+
+enum PcPartType {
+  CPU
+  GPU
+  MOTHERBOARD
+  RAM
+  STORAGE
+  PSU
+  CASE
+  COOLER
+  OTHER
+
+  @@map("pc_part_type")
+}
+
+model UserPcBuild {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?
+  imageKey    String?
+  description String?
+  totalBudget Int?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parts       UserPcBuildPart[]
+
+  @@map("user_pc_builds")
+}
+
+model UserPcBuildPart {
+  id        String      @id @default(cuid())
+  buildId   String
+  build     UserPcBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  partType  PcPartType
+  name      String
+  price     Int?
+  amazonUrl String?
+  memo      String?
+  sortOrder Int         @default(0)
+  itemId    String?                  // カタログアイテムへの参照（オプション）
+  item      Item?       @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([buildId, sortOrder])
+  @@index([itemId])
+  @@map("user_pc_build_parts")
+}
+
+// ===== PC Part Spec System =====
+
+model PcPartSpec {
+  id          String     @id @default(cuid())
+  itemId      String     @unique
+  item        Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  partType    PcPartType
+  chipMakerId String?
+  chipMaker   Brand?     @relation("ChipMaker", fields: [chipMakerId], references: [id])
+  tdp         Int?                   // 消費電力(W) - 相性チェックで使用
+  releaseDate DateTime?
+  specs       Json                   // カテゴリ別のZodバリデーション済みJSON
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([partType])
+  @@index([chipMakerId])
+  @@map("pc_part_specs")
 }
 
 // ===== Character Info System =====

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { EditableSectionRenderer } from '@/components/user-profile/EditableSectionRenderer'
-import { UserThemeProvider } from '@/components/theme-provider/UserThemeProvider'
+import { UserProfileLayout } from '@/components/user-profile'
 import { AddVideoSectionModal } from './components/AddVideoSectionModal'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -16,22 +16,42 @@ interface EditableVideosClientProps {
   sections: UserSection[]
   presets?: SectionBackgroundPreset[]
   userId: string
+  handle: string
   themePreset: string
   themeSettings: ThemeSettings
+  characterImageUrl: string | null
+  characterName: string | null
+  bannerImageKey: string | null
+  characterBackgroundKey: string | null
 }
 
 export function EditableVideosClient({
   sections,
   presets = [],
   userId,
+  handle,
   themePreset,
   themeSettings,
+  characterImageUrl,
+  characterName,
+  bannerImageKey,
+  characterBackgroundKey,
 }: EditableVideosClientProps) {
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false)
 
   return (
-    <UserThemeProvider themePreset={themePreset} themeSettings={themeSettings}>
-      <div className="space-y-4">
+    <UserProfileLayout
+      handle={handle}
+      themePreset={themePreset}
+      themeSettings={themeSettings}
+      characterImageUrl={characterImageUrl}
+      characterName={characterName}
+      bannerImageKey={bannerImageKey}
+      characterBackgroundKey={characterBackgroundKey}
+      isEditable={false}
+      inDashboard={true}
+    >
+      <div className="space-y-4 w-full">
         {/* セクション一覧 */}
         <EditableSectionRenderer
           sections={sections}
@@ -59,6 +79,6 @@ export function EditableVideosClient({
           existingSections={sections}
         />
       </div>
-    </UserThemeProvider>
+    </UserProfileLayout>
   )
 }

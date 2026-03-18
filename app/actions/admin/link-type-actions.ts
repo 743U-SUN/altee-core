@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -30,8 +30,10 @@ const linkTypeIconSchema = z.object({
   sortOrder: z.number().default(0),
 })
 
-// 利用可能なリンクタイプ一覧を取得
+// 利用可能なリンクタイプ一覧を取得（管理者用）
 export async function getLinkTypes() {
+  await requireAdmin()
+
   try {
     const linkTypes = await prisma.linkType.findMany({
       where: { isActive: true },
@@ -49,10 +51,7 @@ export async function getLinkTypes() {
 // 管理者用: リンクタイプを作成
 export async function createLinkType(data: z.infer<typeof linkTypeSchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     const validatedData = linkTypeSchema.parse(data)
 
@@ -88,10 +87,7 @@ export async function createLinkType(data: z.infer<typeof linkTypeSchema>) {
 // 管理者用: リンクタイプを更新
 export async function updateLinkType(linkTypeId: string, data: Partial<z.infer<typeof linkTypeSchema>>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     const validatedData = linkTypeSchema.partial().parse(data)
 
@@ -116,12 +112,9 @@ export async function updateLinkType(linkTypeId: string, data: Partial<z.infer<t
 }
 
 // 管理者用: リンクタイプを削除
-export async function deleteLinkType(linkTypeId: string, force: boolean = false) {
+export async function deleteLinkType(linkTypeId: string, _force: boolean = false) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     // Note: UserLinkテーブルは削除済みのため、使用チェックはスキップ
     // 将来的にUserSectionでリンクタイプを使用する場合は、ここにチェックを追加
@@ -145,10 +138,7 @@ export async function deleteLinkType(linkTypeId: string, force: boolean = false)
 // 管理者用: リンクタイプのアイコン一覧を取得
 export async function getLinkTypeIcons(linkTypeId: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     const icons = await prisma.linkTypeIcon.findMany({
       where: { linkTypeId },
@@ -165,10 +155,7 @@ export async function getLinkTypeIcons(linkTypeId: string) {
 // 管理者用: リンクタイプアイコンを作成
 export async function createLinkTypeIcon(linkTypeId: string, data: z.infer<typeof linkTypeIconSchema>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     const validatedData = linkTypeIconSchema.parse(data)
 
@@ -225,10 +212,7 @@ export async function createLinkTypeIcon(linkTypeId: string, data: z.infer<typeo
 // 管理者用: リンクタイプアイコンを更新
 export async function updateLinkTypeIcon(iconId: string, data: Partial<z.infer<typeof linkTypeIconSchema>>) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     const validatedData = linkTypeIconSchema.partial().parse(data)
 
@@ -274,10 +258,7 @@ export async function updateLinkTypeIcon(iconId: string, data: Partial<z.infer<t
 // 管理者用: リンクタイプアイコンを削除
 export async function deleteLinkTypeIcon(iconId: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     await prisma.linkTypeIcon.delete({
       where: { id: iconId }
@@ -294,10 +275,7 @@ export async function deleteLinkTypeIcon(iconId: string) {
 // 管理者用: デフォルトアイコンを設定
 export async function setDefaultLinkTypeIcon(iconId: string) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     const targetIcon = await prisma.linkTypeIcon.findUnique({
       where: { id: iconId }
@@ -335,10 +313,7 @@ export async function setDefaultLinkTypeIcon(iconId: string) {
 // 管理者用: アイコンの並び替え
 export async function reorderLinkTypeIcons(linkTypeId: string, iconIds: string[]) {
   try {
-    const session = await auth()
-    if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return { success: false, error: "管理者権限が必要です" }
-    }
+    await requireAdmin()
 
     // すべてのアイコンが指定したリンクタイプに属するかチェック
     const icons = await prisma.linkTypeIcon.findMany({

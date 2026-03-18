@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { requireAuth } from "@/lib/auth"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -19,12 +20,9 @@ const updateProfileSchema = z.object({
 })
 
 export async function updateUserProfile(data: z.infer<typeof updateProfileSchema>) {
+  const session = await requireAuth()
+
   try {
-    // 認証チェック
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     // バリデーション
     const validatedData = updateProfileSchema.parse(data)
@@ -92,7 +90,6 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
 
 export async function getUserProfile(userId?: string) {
   try {
-    // 認証チェック（自分のプロフィールの場合）
     const session = await auth()
     const targetUserId = userId || session?.user?.id
 
@@ -100,16 +97,19 @@ export async function getUserProfile(userId?: string) {
       return { success: false, error: "ユーザーが見つかりません" }
     }
 
+    const isOwner = session?.user?.id === targetUserId
+
     const userProfile = await prisma.userProfile.findUnique({
       where: {
         userId: targetUserId,
       },
       include: {
-        characterImage: true, // キャラクター画像
+        characterImage: true,
         user: {
           select: {
             name: true,
-            email: true,
+            // 非オーナーにはemailを返さない
+            ...(isOwner && { email: true }),
             characterInfo: {
               select: { characterName: true, iconImageKey: true }
             },
@@ -132,11 +132,9 @@ export async function getUserProfile(userId?: string) {
 export async function updateThemeSettings(
   namecard: NonNullable<ThemeSettings['namecard']> | null
 ) {
+  const session = await requireAuth()
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return { success: false, error: "認証が必要です" }
-    }
 
     const profile = await prisma.userProfile.findUnique({
       where: { userId: session.user.id },

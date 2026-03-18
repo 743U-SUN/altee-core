@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -37,7 +37,7 @@ export function MultipleIconUploadSection({
   initialIcons = [],
   onIconsChanged
 }: MultipleIconUploadSectionProps) {
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const { data: icons = initialIcons, mutate } = useSWR<LinkTypeIcon[]>(
     linkTypeId ? ['link-type-icons', linkTypeId] : null,

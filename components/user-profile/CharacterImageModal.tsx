@@ -29,7 +29,7 @@ interface CharacterImageModalProps {
 export function CharacterImageModal({
   isOpen,
   onClose,
-  currentCharacterImageId,
+  currentCharacterImageId: _currentCharacterImageId,
   currentCharacterImageUrl,
   currentCharacterBackgroundKey,
 }: CharacterImageModalProps) {

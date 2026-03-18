@@ -220,20 +220,21 @@ export async function createItemAction(input: ItemInput, pcPartSpec?: PcPartSpec
     if (pcPartSpec) {
       const specResult = validateSpecs(pcPartSpec.partType, pcPartSpec.specs)
       if (!specResult.success) {
-        // Item は作成済みだがスペックのバリデーション失敗
-        console.error('PcPartSpec validation failed:', specResult.error)
-      } else {
-        await prisma.pcPartSpec.create({
-          data: {
-            itemId: item.id,
-            partType: pcPartSpec.partType,
-            chipMakerId: pcPartSpec.chipMakerId || null,
-            tdp: pcPartSpec.tdp,
-            releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
-            specs: specResult.data,
-          },
-        })
+        return {
+          success: false,
+          error: `スペック情報のバリデーションに失敗しました: ${specResult.error.issues.map((i) => i.message).join(', ')}`,
+        }
       }
+      await prisma.pcPartSpec.create({
+        data: {
+          itemId: item.id,
+          partType: pcPartSpec.partType,
+          chipMakerId: pcPartSpec.chipMakerId || null,
+          tdp: pcPartSpec.tdp,
+          releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
+          specs: specResult.data,
+        },
+      })
     }
 
     revalidatePath('/admin/items')
@@ -342,27 +343,29 @@ export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?
     if (pcPartSpec) {
       const specResult = validateSpecs(pcPartSpec.partType, pcPartSpec.specs)
       if (!specResult.success) {
-        console.error('PcPartSpec validation failed:', specResult.error)
-      } else {
-        await prisma.pcPartSpec.upsert({
-          where: { itemId: id },
-          create: {
-            itemId: id,
-            partType: pcPartSpec.partType,
-            chipMakerId: pcPartSpec.chipMakerId || null,
-            tdp: pcPartSpec.tdp,
-            releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
-            specs: specResult.data,
-          },
-          update: {
-            partType: pcPartSpec.partType,
-            chipMakerId: pcPartSpec.chipMakerId || null,
-            tdp: pcPartSpec.tdp,
-            releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
-            specs: specResult.data,
-          },
-        })
+        return {
+          success: false,
+          error: `スペック情報のバリデーションに失敗しました: ${specResult.error.issues.map((i) => i.message).join(', ')}`,
+        }
       }
+      await prisma.pcPartSpec.upsert({
+        where: { itemId: id },
+        create: {
+          itemId: id,
+          partType: pcPartSpec.partType,
+          chipMakerId: pcPartSpec.chipMakerId || null,
+          tdp: pcPartSpec.tdp,
+          releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
+          specs: specResult.data,
+        },
+        update: {
+          partType: pcPartSpec.partType,
+          chipMakerId: pcPartSpec.chipMakerId || null,
+          tdp: pcPartSpec.tdp,
+          releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
+          specs: specResult.data,
+        },
+      })
     } else {
       // pcPartSpec が null → 既存のスペックを削除
       await prisma.pcPartSpec.deleteMany({ where: { itemId: id } })

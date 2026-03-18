@@ -113,7 +113,7 @@ export async function updateUserNotification(data: z.infer<typeof notificationSc
     })
 
     revalidatePath("/dashboard/notifications")
-    revalidatePath(`/${session.user.handle}`) // プロフィールページも更新
+    revalidatePath(`/@${session.user.handle}`) // プロフィールページも更新
     return { success: true, data: notification }
 
   } catch (error) {
@@ -153,7 +153,7 @@ export async function deleteUserNotification() {
     })
 
     revalidatePath("/dashboard/notifications")
-    revalidatePath(`/${session.user.handle}`) // プロフィールページも更新
+    revalidatePath(`/@${session.user.handle}`) // プロフィールページも更新
     return { success: true }
 
   } catch {

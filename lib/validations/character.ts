@@ -104,33 +104,37 @@ export const basicInfoSchema = z.object({
 
 export type BasicInfoInput = z.infer<typeof basicInfoSchema>
 
+const safeUrlSchema = z.string()
+  .url("URLの形式が正しくありません")
+  .refine(val => /^https?:\/\//.test(val), { message: "URLはhttp://またはhttps://で始まる必要があります" })
+
 const platformAccountSchema = z.object({
   platform: z.enum(PLATFORM_OPTIONS.map((o) => o.value) as [string, ...string[]]),
-  url: z.string().url("URLの形式が正しくありません").optional().nullable().or(z.literal("")),
+  url: safeUrlSchema.optional().nullable().or(z.literal("")),
   isActive: z.boolean(),
 })
 
 export const activitySettingsSchema = z.object({
   platformAccounts: z.array(platformAccountSchema).max(11),
-  streamingStyles: z.array(z.string()).max(20),
-  streamingTimezones: z.array(z.string()).max(10),
-  streamingFrequency: z.string().optional().nullable(),
-  languages: z.array(z.string()).max(10),
-  activityStatus: z.string().optional().nullable(),
+  streamingStyles: z.array(z.string().max(100)).max(20),
+  streamingTimezones: z.array(z.string().max(20)).max(10),
+  streamingFrequency: z.enum(["daily", "4-6", "2-3", "weekly", "irregular"]).optional().nullable(),
+  languages: z.array(z.string().max(20)).max(10),
+  activityStatus: z.enum(["active", "hiatus", "retired"]).optional().nullable(),
 })
 
 export type ActivitySettingsInput = z.infer<typeof activitySettingsSchema>
 
 export const gameSettingsSchema = z.object({
-  gamePlatforms: z.array(z.string()).max(10),
-  gameGenres: z.array(z.string()).max(20),
+  gamePlatforms: z.array(z.string().max(50)).max(10),
+  gameGenres: z.array(z.string().max(50)).max(20),
   nowPlaying: z.string().max(100, "今プレイ中のゲームは100文字以内で入力してください").optional().nullable(),
 })
 
 export type GameSettingsInput = z.infer<typeof gameSettingsSchema>
 
 export const collabSettingsSchema = z.object({
-  collabStatus: z.string().optional().nullable(),
+  collabStatus: z.enum(["open", "same_gender", "closed"]).optional().nullable(),
   collabComment: z.string().max(500, "コラボコメントは500文字以内で入力してください").optional().nullable(),
 })
 

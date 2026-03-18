@@ -96,11 +96,21 @@ export async function updateLivePriority(priority: z.infer<typeof livePrioritySc
 /**
  * Twitch EventSub Subscriptionを作成
  */
-export async function createTwitchEventSubSubscription(twitchUserId: string) {
+export async function createTwitchEventSubSubscription() {
   try {
     const session = await requireAuth()
 
-    return await createTwitchEventSub(twitchUserId, session.user.id)
+    // クライアント提供のtwitchUserIdではなくDBから取得
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { twitchUserId: true },
+    })
+
+    if (!user?.twitchUserId) {
+      return { success: false, error: "Twitchアカウントが設定されていません" }
+    }
+
+    return await createTwitchEventSub(user.twitchUserId, session.user.id)
   } catch (error) {
     console.error("EventSub作成エラー:", error)
     return { success: false, error: "EventSubの作成に失敗しました" }

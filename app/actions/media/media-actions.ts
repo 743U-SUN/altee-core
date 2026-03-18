@@ -4,21 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { requireAdmin } from '@/lib/auth'
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { storageClient, STORAGE_BUCKET as DEFAULT_BUCKET } from '@/lib/storage'
+import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { MediaType } from '@prisma/client'
-
-// S3クライアント（ストレージ削除用）
-function getS3Client() {
-  return new S3Client({
-    endpoint: process.env.STORAGE_ENDPOINT,
-    region: process.env.STORAGE_REGION || 'auto',
-    credentials: {
-      accessKeyId: process.env.STORAGE_ACCESS_KEY!,
-      secretAccessKey: process.env.STORAGE_SECRET_KEY!,
-    },
-    forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE === 'true',
-  })
-}
 
 export interface MediaFilesFilter {
   containerName?: string
@@ -388,7 +376,7 @@ export async function cleanupExpiredFiles() {
     return { success: true, deletedCount: 0, message: '削除対象のファイルはありません' }
   }
 
-  const s3Client = getS3Client()
+  const s3Client = storageClient
   const errors: string[] = []
   let successCount = 0
 
@@ -410,7 +398,7 @@ export async function cleanupExpiredFiles() {
         // 旧形式（ConoHa時代）: "folder/YYYY/MM/filename.ext"
         // Bucket: altee-images（現在のバケット）
         // Key: folder/YYYY/MM/filename.ext（全体をKeyとして使用）
-        bucket = process.env.STORAGE_BUCKET || 'altee-images'
+        bucket = DEFAULT_BUCKET
         objectKey = file.storageKey
       }
 

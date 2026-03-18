@@ -171,7 +171,7 @@ const fetcher = async (url: string) => {
 
 export function LinkTypeTable() {
   const [editingLinkType, setEditingLinkType] = useState<LinkType | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   // dnd-kit sensors設定（モバイル対応）
   const sensors = useSensors(

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createHmac } from "crypto"
+import { createHmac, timingSafeEqual } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { revalidateTag } from "next/cache"
 
@@ -45,7 +45,10 @@ function verifyTwitchSignature(
   hmac.update(message)
   const expectedSignature = "sha256=" + hmac.digest("hex")
 
-  return signature === expectedSignature
+  const sigBuf = Buffer.from(signature)
+  const expectedBuf = Buffer.from(expectedSignature)
+  if (sigBuf.length !== expectedBuf.length) return false
+  return timingSafeEqual(sigBuf, expectedBuf)
 }
 
 // POST: Twitch EventSub 通知を受信

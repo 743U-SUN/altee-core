@@ -30,7 +30,7 @@ export function CollabSettingsForm({ initialData }: CollabSettingsFormProps) {
   const form = useForm<CollabSettingsInput>({
     resolver: zodResolver(collabSettingsSchema),
     defaultValues: {
-      collabStatus: initialData?.collabStatus ?? "",
+      collabStatus: (initialData?.collabStatus ?? null) as CollabSettingsInput["collabStatus"],
       collabComment: initialData?.collabComment ?? "",
     },
   })

@@ -173,19 +173,19 @@ export async function getDeletionStats() {
   await requireAdmin()
 
   try {
+    // detectOrphanFiles内部でgetAllStorageFilesを呼ぶため重複クエリを回避
     const orphanResult = await detectOrphanFiles()
-    const storageResult = await getAllStorageFiles()
 
-    if (!orphanResult.success || !storageResult.success) {
+    if (!orphanResult.success) {
       throw new Error('統計データの取得に失敗しました')
     }
 
     // 孤立ファイルの合計サイズを計算
     const orphanTotalSize = orphanResult.orphans.reduce((sum, file) => sum + file.size, 0)
 
-    // フォルダ別統計（keyの最初の部分で分類）
+    // フォルダ別統計
     const folderStats: Record<string, number> = {}
-    for (const file of storageResult.files) {
+    for (const file of orphanResult.orphans) {
       const folder = file.key.split('/')[0] || 'unknown'
       folderStats[folder] = (folderStats[folder] || 0) + 1
     }
@@ -193,7 +193,7 @@ export async function getDeletionStats() {
     return {
       success: true,
       stats: {
-        storageFiles: storageResult.count,
+        storageFiles: orphanResult.storageTotal || 0,
         dbFiles: orphanResult.dbTotal || 0,
         orphanFiles: orphanResult.count,
         orphanSizeMB: Math.round(orphanTotalSize / 1024 / 1024 * 100) / 100,
