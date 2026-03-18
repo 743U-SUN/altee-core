@@ -4,16 +4,20 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import {
   itemSchema,
+  itemCSVRowSchema,
   type ItemInput,
   type ItemCSVRow,
   type CSVImportResult,
 } from '@/lib/validations/item'
+import { validateSpecs } from '@/lib/validations/pc-part-specs'
+import type { PcPartSpecFormData } from '@/types/pc-part-spec'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/auth'
+import { z } from 'zod'
 
 // ===== カテゴリ一覧取得（アイテムフォーム用） =====
 
 export async function getCategoriesAction() {
+  await requireAdmin()
   try {
     const categories = await prisma.itemCategory.findMany({
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
@@ -40,8 +44,10 @@ interface GetItemsFilters {
 }
 
 export async function getItemsAction(filters: GetItemsFilters = {}) {
+  await requireAdmin()
   try {
-    const { categoryId, brandId, search, page = 1, perPage = 20 } = filters
+    const { categoryId, brandId, search, page = 1, perPage: rawPerPage = 20 } = filters
+    const perPage = Math.min(rawPerPage, 100)
 
     const where = {
       AND: [
@@ -104,12 +110,14 @@ export async function getItemsAction(filters: GetItemsFilters = {}) {
 // ===== アイテム詳細取得 =====
 
 export async function getItemByIdAction(id: string) {
+  await requireAdmin()
   try {
     const item = await prisma.item.findUnique({
       where: { id },
       include: {
         category: true,
         brand: true,
+        pcPartSpec: true,
         _count: {
           select: {
             userItems: true,
@@ -137,7 +145,7 @@ export async function getItemByIdAction(id: string) {
 
 // ===== アイテム作成 =====
 
-export async function createItemAction(input: ItemInput) {
+export async function createItemAction(input: ItemInput, pcPartSpec?: PcPartSpecFormData | null) {
   await requireAdmin()
   try {
     // "null" 文字列を null に変換
@@ -149,10 +157,12 @@ export async function createItemAction(input: ItemInput) {
     // バリデーション
     const validated = itemSchema.parse(normalizedInput)
 
-    // カテゴリの存在確認
-    const category = await prisma.itemCategory.findUnique({
-      where: { id: validated.categoryId },
-    })
+    // カテゴリ・ブランド・ASIN重複チェックを並列実行
+    const [category, brand, duplicateByAsin] = await Promise.all([
+      prisma.itemCategory.findUnique({ where: { id: validated.categoryId } }),
+      validated.brandId ? prisma.brand.findUnique({ where: { id: validated.brandId } }) : null,
+      validated.asin ? prisma.item.findUnique({ where: { asin: validated.asin } }) : null,
+    ])
 
     if (!category) {
       return {
@@ -161,31 +171,17 @@ export async function createItemAction(input: ItemInput) {
       }
     }
 
-    // ブランドの存在確認（指定されている場合）
-    if (validated.brandId) {
-      const brand = await prisma.brand.findUnique({
-        where: { id: validated.brandId },
-      })
-
-      if (!brand) {
-        return {
-          success: false,
-          error: '指定されたブランドが見つかりませんでした',
-        }
+    if (validated.brandId && !brand) {
+      return {
+        success: false,
+        error: '指定されたブランドが見つかりませんでした',
       }
     }
 
-    // ASINの重複チェック（指定されている場合）
-    if (validated.asin) {
-      const existingItem = await prisma.item.findUnique({
-        where: { asin: validated.asin },
-      })
-
-      if (existingItem) {
-        return {
-          success: false,
-          error: 'このASINは既に登録されています',
-        }
+    if (duplicateByAsin) {
+      return {
+        success: false,
+        error: 'このASINは既に登録されています',
       }
     }
 
@@ -220,16 +216,30 @@ export async function createItemAction(input: ItemInput) {
       },
     })
 
+    // PcPartSpec の作成（指定されている場合）
+    if (pcPartSpec) {
+      const specResult = validateSpecs(pcPartSpec.partType, pcPartSpec.specs)
+      if (!specResult.success) {
+        // Item は作成済みだがスペックのバリデーション失敗
+        console.error('PcPartSpec validation failed:', specResult.error)
+      } else {
+        await prisma.pcPartSpec.create({
+          data: {
+            itemId: item.id,
+            partType: pcPartSpec.partType,
+            chipMakerId: pcPartSpec.chipMakerId || null,
+            tdp: pcPartSpec.tdp,
+            releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
+            specs: specResult.data,
+          },
+        })
+      }
+    }
+
     revalidatePath('/admin/items')
     return { success: true, data: item }
   } catch (error) {
     console.error('Failed to create item:', error)
-    if (error instanceof Error) {
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
     return {
       success: false,
       error: 'アイテムの作成に失敗しました',
@@ -239,7 +249,7 @@ export async function createItemAction(input: ItemInput) {
 
 // ===== アイテム更新 =====
 
-export async function updateItemAction(id: string, input: ItemInput) {
+export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?: PcPartSpecFormData | null) {
   await requireAdmin()
   try {
     // "null" 文字列を null に変換
@@ -251,10 +261,13 @@ export async function updateItemAction(id: string, input: ItemInput) {
     // バリデーション
     const validated = itemSchema.parse(normalizedInput)
 
-    // アイテムの存在確認
-    const existingItem = await prisma.item.findUnique({
-      where: { id },
-    })
+    // アイテム存在確認・カテゴリ・ブランド・ASIN重複チェックを並列実行
+    const [existingItem, category, brand, duplicateByAsin] = await Promise.all([
+      prisma.item.findUnique({ where: { id } }),
+      prisma.itemCategory.findUnique({ where: { id: validated.categoryId } }),
+      validated.brandId ? prisma.brand.findUnique({ where: { id: validated.brandId } }) : null,
+      validated.asin ? prisma.item.findUnique({ where: { asin: validated.asin } }) : null,
+    ])
 
     if (!existingItem) {
       return {
@@ -263,11 +276,6 @@ export async function updateItemAction(id: string, input: ItemInput) {
       }
     }
 
-    // カテゴリの存在確認
-    const category = await prisma.itemCategory.findUnique({
-      where: { id: validated.categoryId },
-    })
-
     if (!category) {
       return {
         success: false,
@@ -275,31 +283,18 @@ export async function updateItemAction(id: string, input: ItemInput) {
       }
     }
 
-    // ブランドの存在確認（指定されている場合）
-    if (validated.brandId) {
-      const brand = await prisma.brand.findUnique({
-        where: { id: validated.brandId },
-      })
-
-      if (!brand) {
-        return {
-          success: false,
-          error: '指定されたブランドが見つかりませんでした',
-        }
+    if (validated.brandId && !brand) {
+      return {
+        success: false,
+        error: '指定されたブランドが見つかりませんでした',
       }
     }
 
-    // ASINの重複チェック（変更されている場合）
-    if (validated.asin && validated.asin !== existingItem.asin) {
-      const duplicateItem = await prisma.item.findUnique({
-        where: { asin: validated.asin },
-      })
-
-      if (duplicateItem) {
-        return {
-          success: false,
-          error: 'このASINは既に登録されています',
-        }
+    // ASINの重複チェック（変更されている場合のみ）
+    if (duplicateByAsin && validated.asin !== existingItem.asin) {
+      return {
+        success: false,
+        error: 'このASINは既に登録されています',
       }
     }
 
@@ -310,7 +305,6 @@ export async function updateItemAction(id: string, input: ItemInput) {
 
     // 画像URLが変更された場合
     if (newImageUrl && newImageUrl !== oldImageUrl && validated.asin) {
-      console.log('画像URLが変更されました。アップロード開始...')
       // 古い画像を削除
       if (existingItem.imageStorageKey) {
         await deleteItemImageFromR2(existingItem.imageStorageKey)
@@ -320,13 +314,10 @@ export async function updateItemAction(id: string, input: ItemInput) {
       const uploadResult = await downloadAndUploadItemImage(newImageUrl, validated.asin)
       if (uploadResult.success) {
         imageStorageKey = uploadResult.storageKey || null
-        console.log('画像アップロード成功:', imageStorageKey)
       } else {
         console.error('画像アップロード失敗:', uploadResult.error)
         imageStorageKey = null
       }
-    } else {
-      console.log('画像URLは変更されていません。アップロードをスキップ')
     }
 
     // アイテム更新
@@ -347,16 +338,40 @@ export async function updateItemAction(id: string, input: ItemInput) {
       },
     })
 
+    // PcPartSpec の upsert/削除
+    if (pcPartSpec) {
+      const specResult = validateSpecs(pcPartSpec.partType, pcPartSpec.specs)
+      if (!specResult.success) {
+        console.error('PcPartSpec validation failed:', specResult.error)
+      } else {
+        await prisma.pcPartSpec.upsert({
+          where: { itemId: id },
+          create: {
+            itemId: id,
+            partType: pcPartSpec.partType,
+            chipMakerId: pcPartSpec.chipMakerId || null,
+            tdp: pcPartSpec.tdp,
+            releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
+            specs: specResult.data,
+          },
+          update: {
+            partType: pcPartSpec.partType,
+            chipMakerId: pcPartSpec.chipMakerId || null,
+            tdp: pcPartSpec.tdp,
+            releaseDate: pcPartSpec.releaseDate ? new Date(pcPartSpec.releaseDate) : null,
+            specs: specResult.data,
+          },
+        })
+      }
+    } else {
+      // pcPartSpec が null → 既存のスペックを削除
+      await prisma.pcPartSpec.deleteMany({ where: { itemId: id } })
+    }
+
     revalidatePath('/admin/items')
     return { success: true, data: item }
   } catch (error) {
     console.error('Failed to update item:', error)
-    if (error instanceof Error) {
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
     return {
       success: false,
       error: 'アイテムの更新に失敗しました',
@@ -423,23 +438,33 @@ export async function importItemsFromCSVAction(
   rows: ItemCSVRow[]
 ): Promise<CSVImportResult> {
   await requireAdmin()
+
+  // ランタイムバリデーション + サイズ制限
+  const validatedRows = z.array(itemCSVRowSchema).max(500, 'CSVの行数は500行以内にしてください').parse(rows)
+
   const result: CSVImportResult = {
     success: 0,
     failed: 0,
     errors: [],
   }
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i]
+  // N+1回避: カテゴリとブランドをプリロード
+  const [allCategories, allBrands] = await Promise.all([
+    prisma.itemCategory.findMany({ select: { id: true, slug: true } }),
+    prisma.brand.findMany({ select: { id: true, name: true } }),
+  ])
+  const categoryMap = new Map(allCategories.map((c) => [c.slug, c.id]))
+  const brandMap = new Map(allBrands.map((b) => [b.name, b.id]))
+
+  for (let i = 0; i < validatedRows.length; i++) {
+    const row = validatedRows[i]
     const rowNumber = i + 2 // CSVの行番号（ヘッダー分+1）
 
     try {
-      // カテゴリをslugから検索
-      const category = await prisma.itemCategory.findUnique({
-        where: { slug: row.categorySlug },
-      })
+      // カテゴリをslugから検索（プリロード済みMapから取得）
+      const categoryId = categoryMap.get(row.categorySlug)
 
-      if (!category) {
+      if (!categoryId) {
         result.failed++
         result.errors.push({
           row: rowNumber,
@@ -452,21 +477,19 @@ export async function importItemsFromCSVAction(
       // ブランドを名前から検索または作成
       let brandId: string | null = null
       if (row.brandName) {
-        let brand = await prisma.brand.findFirst({
-          where: { name: row.brandName },
-        })
+        brandId = brandMap.get(row.brandName) ?? null
 
-        if (!brand) {
-          // ブランドが存在しない場合は作成
-          brand = await prisma.brand.create({
+        if (!brandId) {
+          // ブランドが存在しない場合は作成し、Mapにも追加
+          const brand = await prisma.brand.create({
             data: {
               name: row.brandName,
               slug: row.brandName.toLowerCase().replace(/\s+/g, '-'),
             },
           })
+          brandId = brand.id
+          brandMap.set(row.brandName, brand.id)
         }
-
-        brandId = brand.id
       }
 
       // アイテム作成
@@ -474,7 +497,7 @@ export async function importItemsFromCSVAction(
         data: {
           name: row.name,
           description: row.description || null,
-          categoryId: category.id,
+          categoryId,
           brandId,
           amazonUrl: row.amazonUrl || null,
           asin: row.asin || null,
@@ -526,20 +549,31 @@ async function deleteItemImageFromR2(imageStorageKey: string): Promise<void> {
 /**
  * Amazon画像またはカスタムURLから画像をダウンロードしてR2にアップロード
  */
-export async function downloadAndUploadItemImage(imageUrl: string, asin: string, uploaderId?: string): Promise<{
+async function downloadAndUploadItemImage(imageUrl: string, asin: string): Promise<{
   success: boolean
   storageKey?: string
   error?: string
 }> {
   try {
-    // アップロード者IDを取得（引数で渡されない場合はセッションから取得）
-    let finalUploaderId = uploaderId
-    if (!finalUploaderId) {
-      const session = await auth()
-      if (!session?.user?.id) {
-        return { success: false, error: '認証が必要です' }
+    // 管理者権限チェック（常に実行）
+    const session = await requireAdmin()
+    const uploaderId = session.user.id
+
+    // URL ホワイトリスト
+    const ALLOWED_IMAGE_HOSTS = [
+      'images-na.ssl-images-amazon.com',
+      'images-fe.ssl-images-amazon.com',
+      'images-eu.ssl-images-amazon.com',
+      'm.media-amazon.com',
+      'images-amazon.com',
+    ]
+    try {
+      const parsedUrl = new URL(imageUrl)
+      if (parsedUrl.protocol !== 'https:' || !ALLOWED_IMAGE_HOSTS.some((h) => parsedUrl.hostname.endsWith(h))) {
+        return { success: false, error: '許可されていない画像URLです' }
       }
-      finalUploaderId = session.user.id
+    } catch {
+      return { success: false, error: '不正なURLです' }
     }
 
     // 画像をダウンロード
@@ -586,14 +620,14 @@ export async function downloadAndUploadItemImage(imageUrl: string, asin: string,
         mimeType: contentType,
         uploadType: 'SYSTEM',
         containerName: folder,
-        uploaderId: finalUploaderId,
+        uploaderId: uploaderId,
       },
       update: {
         fileName,
         originalName: fileName,
         fileSize: buffer.length,
         mimeType: contentType,
-        uploaderId: finalUploaderId,
+        uploaderId: uploaderId,
       }
     })
 
@@ -612,6 +646,7 @@ export async function refreshItemImage(itemId: string): Promise<{
   message?: string
   error?: string
 }> {
+  await requireAdmin()
   try {
     const item = await prisma.item.findUnique({
       where: { id: itemId }
