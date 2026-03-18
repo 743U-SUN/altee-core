@@ -1,6 +1,7 @@
-import { cache } from 'react'
+import { cache, Suspense } from 'react'
 import { getUserPublicItemsByHandle } from '@/app/actions/content/item-actions'
-import { UserPublicItemList } from './components/UserPublicItemList'
+import { getPublicPcBuildByHandle } from '@/app/actions/content/pc-build-actions'
+import { ItemsTabs } from './components/ItemsTabs'
 import { notFound } from 'next/navigation'
 
 interface UserItemsPageProps {
@@ -8,28 +9,44 @@ interface UserItemsPageProps {
 }
 
 // React.cache()でリクエスト単位のデデュプリケーション
-const getItemsData = cache(async (handle: string) => {
-  return getUserPublicItemsByHandle(handle)
+const getPageData = cache(async (handle: string) => {
+  const [itemsResult, pcBuildResult] = await Promise.all([
+    getUserPublicItemsByHandle(handle),
+    getPublicPcBuildByHandle(handle),
+  ])
+  return { itemsResult, pcBuildResult }
 })
 
 export default async function UserItemsPage({ params }: UserItemsPageProps) {
   const { handle } = await params
 
-  const result = await getItemsData(handle)
+  const { itemsResult, pcBuildResult } = await getPageData(handle)
 
-  if (!result.success || !result.data) {
+  if (!itemsResult.success || !itemsResult.data) {
     notFound()
   }
 
-  const userItems = result.data
+  const userItems = itemsResult.data
+  const pcBuild = pcBuildResult.success ? (pcBuildResult.data ?? null) : null
   const userName = `@${handle}`
 
   return (
     <div className="space-y-6">
-      <UserPublicItemList
-        userItems={userItems || []}
-        userName={userName}
-      />
+      <Suspense
+        fallback={
+          <div className="animate-pulse space-y-4">
+            <div className="h-10 bg-muted rounded w-48" />
+            <div className="h-32 bg-muted rounded" />
+          </div>
+        }
+      >
+        <ItemsTabs
+          userItems={userItems}
+          pcBuild={pcBuild}
+          userName={userName}
+          hasPcBuild={pcBuild !== null}
+        />
+      </Suspense>
     </div>
   )
 }
@@ -37,15 +54,15 @@ export default async function UserItemsPage({ params }: UserItemsPageProps) {
 export async function generateMetadata({ params }: UserItemsPageProps) {
   const { handle } = await params
 
-  const result = await getItemsData(handle)
+  const { itemsResult } = await getPageData(handle)
 
-  if (!result.success || !result.data) {
+  if (!itemsResult.success || !itemsResult.data) {
     return {
       title: 'ユーザーが見つかりません',
     }
   }
 
-  const userItems = result.data
+  const userItems = itemsResult.data
   const userName = `@${handle}`
 
   return {

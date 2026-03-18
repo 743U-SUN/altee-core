@@ -1,5 +1,3 @@
-'use client'
-
 import { Suspense } from 'react'
 import Image from 'next/image'
 import { UserNewsMarkdownPreview } from '@/components/editor/user-news-markdown-preview'
@@ -19,6 +17,11 @@ export function NewsArticleContent({
   bodyImageUrl,
   createdAt,
 }: NewsArticleContentProps) {
+  // Server Component なのでサーバー側で日付フォーマット（ハイドレーションミスマッチ回避）
+  const formattedDate = new Date(createdAt).toLocaleDateString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+  })
+
   return (
     <article className="w-full">
       {/* サムネイル */}
@@ -29,6 +32,7 @@ export function NewsArticleContent({
             alt={title}
             width={800}
             height={450}
+            sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover w-full h-full"
             priority
           />
@@ -40,7 +44,7 @@ export function NewsArticleContent({
         {title}
       </h1>
       <time className="text-sm text-[var(--theme-text-secondary)] block mb-6">
-        {new Date(createdAt).toLocaleDateString('ja-JP')}
+        {formattedDate}
       </time>
 
       {/* 本文 */}

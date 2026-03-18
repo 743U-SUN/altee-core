@@ -1,5 +1,3 @@
-'use client'
-
 import { ChevronDown } from 'lucide-react'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { SectionBand } from '@/components/profile/SectionBand'
