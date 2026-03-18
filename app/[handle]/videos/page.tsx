@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
 import { SectionRenderer } from '@/components/profile/SectionRenderer'
 import { getActivePresets } from '@/lib/sections/preset-queries'
+import { getVideoPageData } from '@/lib/queries/video-queries'
 import Link from 'next/link'
 import type { UserSection } from '@/types/profile-sections'
 
@@ -11,23 +11,31 @@ interface VideosPageProps {
   }>
 }
 
+export async function generateMetadata({ params }: VideosPageProps) {
+  const { handle } = await params
+  const user = await getVideoPageData(handle)
+
+  if (!user) {
+    return { title: '動画 - ユーザーが見つかりません' }
+  }
+
+  const characterName = user.characterInfo?.characterName ?? `@${handle}`
+
+  return {
+    title: `${characterName} の動画`,
+    description: `${characterName} の動画ページです。`,
+    openGraph: {
+      title: `${characterName} の動画`,
+      description: `${characterName} の動画ページです。`,
+    },
+  }
+}
+
 export default async function VideosPage({ params }: VideosPageProps) {
   const { handle } = await params
 
   const [user, presets] = await Promise.all([
-    prisma.user.findUnique({
-      where: { handle },
-      select: {
-        id: true,
-        characterInfo: {
-          select: { characterName: true },
-        },
-        userSections: {
-          where: { isVisible: true, page: 'videos' },
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
-    }),
+    getVideoPageData(handle),
     getActivePresets(),
   ])
 

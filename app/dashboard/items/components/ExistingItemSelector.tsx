@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, Search } from "lucide-react"
 import { toast } from "sonner"
-import { createUserItem, getItems, checkUserItemExists } from "@/app/actions/content/item-actions"
+import { createUserItem, checkUserItemExists, getItems } from "@/app/actions/content/item-actions"
 import { UserItemWithDetails } from "@/types/item"
 import { Item, ItemCategory } from '@prisma/client'
 import { ItemImage } from "@/components/items/item-image"
@@ -36,7 +36,7 @@ interface ExistingItemSelectorProps {
 }
 
 const ExistingItemSelectorComponent = ({
-  userId,
+  userId: _userId,
   categories,
   brands,
   onItemAdded
@@ -91,13 +91,13 @@ const ExistingItemSelectorComponent = ({
     setIsSubmitting(true)
     try {
       // ユーザーアイテムの重複チェック
-      const alreadyRegistered = await checkUserItemExists(userId, selectedItem.id)
+      const alreadyRegistered = await checkUserItemExists(selectedItem.id)
       if (alreadyRegistered) {
         toast.error('このアイテムは既に登録されています')
         return
       }
 
-      const result = await createUserItem(userId, {
+      const result = await createUserItem({
         itemId: selectedItem.id,
         ...data,
       })

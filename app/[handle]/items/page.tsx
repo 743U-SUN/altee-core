@@ -1,5 +1,5 @@
 import { cache, Suspense } from 'react'
-import { getUserPublicItemsByHandle } from '@/app/actions/content/item-actions'
+import { getUserPublicItemsByHandle } from '@/lib/queries/item-queries'
 import { getPublicPcBuildByHandle } from '@/app/actions/content/pc-build-actions'
 import { ItemsTabs } from './components/ItemsTabs'
 import { notFound } from 'next/navigation'

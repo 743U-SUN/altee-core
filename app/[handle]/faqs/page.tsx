@@ -1,15 +1,11 @@
 import { cache } from 'react'
-import { getPublicFaqByHandle } from '@/app/actions/content/faq-actions'
+import { getPublicFaqByHandle } from '@/lib/queries/faq-queries'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { FAQPublicContent } from './components/FAQPublicContent'
-import type { FaqCategoryBase, FaqQuestionBase } from '@/types/faq'
+import type { FaqCategoryWithQuestions } from '@/types/faq'
 
 interface FAQsPageProps {
   params: Promise<{ handle: string }>
-}
-
-export interface FaqCategoryWithQuestions extends FaqCategoryBase {
-  questions: FaqQuestionBase[]
 }
 
 // リクエスト単位のデータフェッチの重複排除（generateMetadataとページ本体で共有）

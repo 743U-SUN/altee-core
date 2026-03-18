@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { notFound } from 'next/navigation'
-import { getPublicNewsArticle } from '@/app/actions/content/user-news-actions'
+import { getPublicNewsArticle } from '@/lib/queries/news-queries'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { NewsArticleContent } from '../components/NewsArticleContent'
 

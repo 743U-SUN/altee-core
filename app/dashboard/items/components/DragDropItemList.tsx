@@ -74,7 +74,7 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
     onItemsChange(newItems)
 
     // サーバーで並び順を更新
-    const result = await reorderUserItems(userId, newItems.map(item => item.id))
+    const result = await reorderUserItems(newItems.map(item => item.id))
 
     if (!result.success) {
       toast.error("並び替えに失敗しました")
@@ -84,7 +84,7 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
   }
 
   const handleVisibilityToggle = async (item: UserItemWithDetails) => {
-    const result = await updateUserItem(userId, item.id, {
+    const result = await updateUserItem(item.id, {
       isPublic: !item.isPublic
     })
 
@@ -102,7 +102,7 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
   const handleDeleteItem = async (item: UserItemWithDetails) => {
     if (!confirm(`${item.item.name}を削除しますか？`)) return
 
-    const result = await deleteUserItem(userId, item.id)
+    const result = await deleteUserItem(item.id)
 
     if (result.success) {
       const updatedItems = userItems.filter(p => p.id !== item.id)

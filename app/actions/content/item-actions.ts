@@ -3,7 +3,69 @@
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import { userItemSchema, type UserItemInput } from '@/lib/validations/item'
+
+// 公開用読み取り関数は lib/queries/item-queries.ts に移動済み
+// getUserPublicItemsByHandle → lib/queries/item-queries.ts
+
+const getItemsParamsSchema = z.object({
+  search: z.string().max(100).optional(),
+  categoryId: z.string().optional(),
+  brandId: z.string().optional(),
+}).optional()
+
+/**
+ * アイテム一覧を検索・フィルタして取得（モーダル用）
+ * クライアントコンポーネントから呼び出されるためServer Actionとして維持
+ */
+export async function getItems(params?: {
+  search?: string
+  categoryId?: string
+  brandId?: string
+}) {
+  await requireAuth()
+  const validatedParams = getItemsParamsSchema.parse(params)
+
+  try {
+    const where = {
+      ...(validatedParams?.search && {
+        OR: [
+          { name: { contains: validatedParams.search, mode: 'insensitive' as const } },
+          {
+            description: {
+              contains: validatedParams.search,
+              mode: 'insensitive' as const,
+            },
+          },
+        ],
+      }),
+      ...(validatedParams?.categoryId && { categoryId: validatedParams.categoryId }),
+      ...(validatedParams?.brandId && { brandId: validatedParams.brandId }),
+    }
+
+    const items = await prisma.item.findMany({
+      where,
+      include: {
+        category: true,
+        brand: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+
+    return {
+      success: true,
+      data: items,
+    }
+  } catch (error) {
+    console.error('Failed to fetch items:', error)
+    return {
+      success: false,
+      error: 'アイテムの取得に失敗しました',
+    }
+  }
+}
 
 // ===== UserItem CRUD =====
 
@@ -11,13 +73,13 @@ import { userItemSchema, type UserItemInput } from '@/lib/validations/item'
  * ユーザーが特定のアイテムを既に所有しているかチェック
  */
 export async function checkUserItemExists(
-  userId: string,
   itemId: string
 ): Promise<boolean> {
+  const session = await requireAuth()
   const userItem = await prisma.userItem.findUnique({
     where: {
       userId_itemId: {
-        userId,
+        userId: session.user.id,
         itemId,
       },
     },
@@ -29,9 +91,10 @@ export async function checkUserItemExists(
 /**
  * ユーザーのアイテム一覧を取得
  */
-export async function getUserItems(userId: string) {
+export async function getUserItems() {
+  const session = await requireAuth()
   const userItems = await prisma.userItem.findMany({
-    where: { userId },
+    where: { userId: session.user.id },
     include: {
       item: {
         include: {
@@ -49,8 +112,9 @@ export async function getUserItems(userId: string) {
 /**
  * ユーザーにアイテムを追加
  */
-export async function createUserItem(userId: string, data: UserItemInput) {
-  await requireAuth()
+export async function createUserItem(data: UserItemInput) {
+  const session = await requireAuth()
+  const userId = session.user.id
   try {
     // バリデーション
     const validated = userItemSchema.parse(data)
@@ -68,8 +132,15 @@ export async function createUserItem(userId: string, data: UserItemInput) {
     }
 
     // 既に追加されていないかチェック
-    const exists = await checkUserItemExists(userId, validated.itemId)
-    if (exists) {
+    const existingItem = await prisma.userItem.findUnique({
+      where: {
+        userId_itemId: {
+          userId,
+          itemId: validated.itemId,
+        },
+      },
+    })
+    if (existingItem) {
       return {
         success: false,
         error: 'このアイテムは既に追加されています',
@@ -136,11 +207,11 @@ export async function createUserItem(userId: string, data: UserItemInput) {
  * ユーザーアイテムを更新
  */
 export async function updateUserItem(
-  userId: string,
   userItemId: string,
   data: Partial<UserItemInput>
 ) {
-  await requireAuth()
+  const session = await requireAuth()
+  const userId = session.user.id
   try {
     // 所有権確認
     const userItem = await prisma.userItem.findUnique({
@@ -198,8 +269,9 @@ export async function updateUserItem(
 /**
  * ユーザーアイテムを削除
  */
-export async function deleteUserItem(userId: string, userItemId: string) {
-  await requireAuth()
+export async function deleteUserItem(userItemId: string) {
+  const session = await requireAuth()
+  const userId = session.user.id
   try {
     // 所有権確認
     const userItem = await prisma.userItem.findUnique({
@@ -243,10 +315,10 @@ export async function deleteUserItem(userId: string, userItemId: string) {
  * ユーザーアイテムの並び順を更新
  */
 export async function reorderUserItems(
-  userId: string,
   itemIds: string[]
 ) {
-  await requireAuth()
+  const session = await requireAuth()
+  const userId = session.user.id
   try {
     // トランザクションで一括更新
     await prisma.$transaction(
@@ -284,98 +356,3 @@ export async function reorderUserItems(
   }
 }
 
-/**
- * 公開ページ用：ハンドルからユーザーの公開アイテムを取得
- */
-export async function getUserPublicItemsByHandle(handle: string) {
-  try {
-    // ユーザーを取得
-    const user = await prisma.user.findUnique({
-      where: { handle },
-      select: { id: true },
-    })
-
-    if (!user) {
-      return {
-        success: false,
-        error: 'ユーザーが見つかりませんでした',
-      }
-    }
-
-    // 公開アイテムを取得
-    const userItems = await prisma.userItem.findMany({
-      where: {
-        userId: user.id,
-        isPublic: true,
-      },
-      include: {
-        item: {
-          include: {
-            category: true,
-            brand: true,
-          },
-        },
-      },
-      orderBy: { sortOrder: 'asc' },
-    })
-
-    return {
-      success: true,
-      data: userItems,
-    }
-  } catch (error) {
-    console.error('Failed to fetch public user items:', error)
-    return {
-      success: false,
-      error: '公開アイテムの取得に失敗しました',
-    }
-  }
-}
-
-/**
- * アイテム一覧を検索・フィルタして取得（モーダル用）
- */
-export async function getItems(params?: {
-  search?: string
-  categoryId?: string
-  brandId?: string
-}) {
-  try {
-    const where = {
-      ...(params?.search && {
-        OR: [
-          { name: { contains: params.search, mode: 'insensitive' as const } },
-          {
-            description: {
-              contains: params.search,
-              mode: 'insensitive' as const,
-            },
-          },
-        ],
-      }),
-      ...(params?.categoryId && { categoryId: params.categoryId }),
-      ...(params?.brandId && { brandId: params.brandId }),
-    }
-
-    const items = await prisma.item.findMany({
-      where,
-      include: {
-        category: true,
-        brand: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50, // 検索結果は50件まで
-    })
-
-    return {
-      success: true,
-      data: items,
-    }
-  } catch (error) {
-    console.error('Failed to fetch items:', error)
-    return {
-      success: false,
-      error: 'アイテムの取得に失敗しました',
-    }
-  }
-}

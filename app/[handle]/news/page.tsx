@@ -1,5 +1,9 @@
 import { cache } from 'react'
-import { getPublicNewsByHandle } from '@/app/actions/content/user-news-actions'
+import {
+  getPublicNewsByHandle,
+  getPublicNewsSection,
+} from '@/lib/queries/news-queries'
+import { getActivePresets } from '@/lib/sections/preset-queries'
 import { NewsListContent } from './components/NewsListContent'
 
 interface NewsPageProps {
@@ -25,11 +29,19 @@ export async function generateMetadata({ params }: NewsPageProps) {
 
 export default async function NewsPage({ params }: NewsPageProps) {
   const { handle } = await params
-  const news = await getCachedNews(handle)
+
+  const [news, newsSection, presets] = await Promise.all([
+    getCachedNews(handle),
+    getPublicNewsSection(handle),
+    getActivePresets(),
+  ])
 
   return (
-    <div className="space-y-6 w-full">
-      <NewsListContent handle={handle} news={news} />
-    </div>
+    <NewsListContent
+      handle={handle}
+      news={news}
+      newsSection={newsSection}
+      presets={presets}
+    />
   )
 }

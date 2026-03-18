@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { SectionBand } from '@/components/profile/SectionBand'
 import { resolvePreset } from '@/lib/sections/background-utils'
-import type { FaqCategoryWithQuestions } from '../page'
+import type { FaqCategoryWithQuestions } from '@/types/faq'
 import type { SectionBackgroundPreset } from '@/types/profile-sections'
 
 interface FAQAccordionProps {

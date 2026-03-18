@@ -1,6 +1,11 @@
 import { SortableParentItem, SortableChildItem } from '@/components/sortable-list/types'
 import type { SectionSettings } from '@/types/profile-sections'
 
+// カテゴリー + 質問の結合型（公開ページ用）
+export interface FaqCategoryWithQuestions extends FaqCategoryBase {
+  questions: FaqQuestionBase[]
+}
+
 // Prismaから生成される基本型
 export interface FaqCategoryBase {
   id: string

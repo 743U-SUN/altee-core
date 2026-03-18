@@ -16,7 +16,7 @@ interface DeleteUserItemButtonProps {
 
 export function DeleteUserItemButton({
   userItemId,
-  userId,
+  userId: _userId,
   itemName,
   onDelete
 }: DeleteUserItemButtonProps) {
@@ -26,7 +26,7 @@ export function DeleteUserItemButton({
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const result = await deleteUserItem(userId, userItemId)
+      const result = await deleteUserItem(userItemId)
 
       if (result.success) {
         toast.success('アイテムを削除しました')

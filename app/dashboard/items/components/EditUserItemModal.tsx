@@ -34,7 +34,7 @@ export function EditUserItemModal({
   isOpen,
   onClose,
   userItem,
-  userId,
+  userId: _userId,
   onUpdate
 }: EditUserItemModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -50,7 +50,7 @@ export function EditUserItemModal({
   const onSubmit = async (data: z.infer<typeof userItemSchema>) => {
     setIsSubmitting(true)
     try {
-      const result = await updateUserItem(userId, userItem.id, data)
+      const result = await updateUserItem(userItem.id, data)
 
       if (result.success) {
         toast.success('アイテム情報を更新しました')

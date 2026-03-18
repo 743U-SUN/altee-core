@@ -58,37 +58,7 @@ const reorderQuestionsSchema = z.object({
   questionIds: z.array(z.string()).min(1, "並び替える質問が必要です"),
 })
 
-// 公開FAQ取得（ハンドルから）
-export async function getPublicFaqByHandle(
-  handle: string
-): Promise<FaqActionResult> {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { handle },
-      select: { id: true },
-    })
-
-    if (!user) {
-      return { success: false, error: 'ユーザーが見つかりません' }
-    }
-
-    const categories = await prisma.faqCategory.findMany({
-      where: { userId: user.id, isVisible: true },
-      include: {
-        questions: {
-          where: { isVisible: true },
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
-      orderBy: { sortOrder: 'asc' },
-    })
-
-    return { success: true, data: categories }
-  } catch (error) {
-    console.error('公開FAQ取得エラー:', error)
-    return { success: false, error: 'FAQの取得に失敗しました' }
-  }
-}
+// 公開FAQ取得はlib/queries/faq-queries.tsに移動済み
 
 // FAQカテゴリー一覧取得
 export async function getFaqCategories(): Promise<FaqActionResult> {

@@ -5,6 +5,7 @@ import { cachedAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { USER_NEWS_LIMITS } from '@/types/user-news'
+import type { SectionSettings } from '@/types/profile-sections'
 
 // バリデーションスキーマ
 const userNewsSchema = z.object({
@@ -237,8 +238,11 @@ export async function reorderUserNews(ids: string[]) {
   const session = await cachedAuth()
   if (!session?.user?.id) throw new Error('Unauthorized')
 
+  const reorderSchema = z.array(z.string().cuid()).min(1).max(100)
+  const validatedIds = reorderSchema.parse(ids)
+
   await prisma.$transaction(
-    ids.map((id, index) =>
+    validatedIds.map((id, index) =>
       prisma.userNews.updateMany({
         where: { id, userId: session.user.id },
         data: { sortOrder: index },
@@ -270,63 +274,44 @@ export async function toggleUserNewsPublished(id: string) {
   return { success: true, data: news }
 }
 
-/** 公開ニュース一覧取得（ハンドル指定、認証不要） */
+// 公開ニュース取得関数はlib/queries/news-queries.tsに移動済み
+// クライアントコンポーネントから呼び出す場合はServer Action経由のラッパーを使用
+import { getPublicNewsByHandle as getPublicNewsByHandleQuery } from '@/lib/queries/news-queries'
+
+/** 公開ニュース一覧取得（クライアントコンポーネント用Server Actionラッパー） */
 export async function getPublicNewsByHandle(handle: string) {
-  const normalizedHandle = handle.startsWith('@')
-    ? handle.slice(1).toLowerCase()
-    : handle.toLowerCase()
-
-  const user = await prisma.user.findUnique({
-    where: { handle: normalizedHandle },
-    select: { id: true, isActive: true },
-  })
-
-  if (!user || !user.isActive) return []
-
-  return prisma.userNews.findMany({
-    where: {
-      userId: user.id,
-      published: true,
-      adminHidden: false,
-    },
-    orderBy: { sortOrder: 'asc' },
-    include: {
-      thumbnail: { select: { storageKey: true } },
-    },
-  })
+  return getPublicNewsByHandleQuery(handle)
 }
 
-/** 公開ニュース個別記事取得（ハンドル+slug、認証不要） */
-export async function getPublicNewsArticle(handle: string, slug: string) {
-  const normalizedHandle = handle.startsWith('@')
-    ? handle.slice(1).toLowerCase()
-    : handle.toLowerCase()
+/** ニュースリストセクションのスタイル設定を更新 */
+export async function updateNewsListSettings(
+  sectionId: string,
+  settings: SectionSettings | null
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await cachedAuth()
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-  const decodedSlug = decodeURIComponent(slug)
+    const section = await prisma.userSection.findUnique({
+      where: { id: sectionId },
+      select: { userId: true },
+    })
 
-  const user = await prisma.user.findUnique({
-    where: { handle: normalizedHandle },
-    select: {
-      id: true,
-      isActive: true,
-      characterInfo: { select: { characterName: true } },
-    },
-  })
+    if (!section || section.userId !== session.user.id) {
+      return { success: false, error: 'セクションが見つかりません' }
+    }
 
-  if (!user || !user.isActive) return null
+    await prisma.userSection.update({
+      where: { id: sectionId },
+      data: { settings: settings as never },
+    })
 
-  const news = await prisma.userNews.findFirst({
-    where: {
-      userId: user.id,
-      slug: decodedSlug,
-      published: true,
-      adminHidden: false,
-    },
-    include: {
-      thumbnail: { select: { storageKey: true } },
-      bodyImage: { select: { storageKey: true } },
-    },
-  })
-
-  return news ? { ...news, characterName: user.characterInfo?.characterName ?? null } : null
+    revalidatePath(`/@${session.user.handle}/news`)
+    revalidatePath('/dashboard/news')
+    return { success: true }
+  } catch {
+    return { success: false, error: 'スタイルの更新に失敗しました' }
+  }
 }
+
+// getPublicNewsSection, getPublicNewsArticle はlib/queries/news-queries.tsに移動済み
