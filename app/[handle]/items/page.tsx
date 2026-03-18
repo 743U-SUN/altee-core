@@ -44,7 +44,6 @@ export default async function UserItemsPage({ params }: UserItemsPageProps) {
           userItems={userItems}
           pcBuild={pcBuild}
           userName={userName}
-          hasPcBuild={pcBuild !== null}
         />
       </Suspense>
     </div>
