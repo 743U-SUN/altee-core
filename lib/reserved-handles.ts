@@ -30,6 +30,7 @@ export const RESERVED_HANDLES = [
   'lib',        // ライブラリ（リンク集、フォント、オーディション）
   'pc-builder', // PCビルダー
   'items',      // アイテムカタログ
+  'tools',      // ツールページ（PC構成シミュレーター等）
 
   // 法的ページ
   'terms',

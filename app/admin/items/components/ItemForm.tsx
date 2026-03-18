@@ -1,15 +1,17 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { Item, ItemCategory, Brand } from '@prisma/client'
+import { Item, ItemCategory, Brand, PcPartSpec } from '@prisma/client'
 import {
   itemSchema,
   type ItemInput,
 } from '@/lib/validations/item'
 import { createItemAction, updateItemAction } from '../actions'
+import { PcPartSpecFields } from './PcPartSpecFields'
+import type { PcPartSpecFormData } from '@/types/pc-part-spec'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -34,7 +36,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
 interface ItemFormProps {
-  item?: Item
+  item?: Item & { pcPartSpec?: PcPartSpec | null }
   categories: ItemCategory[]
   brands: Brand[]
 }
@@ -42,6 +44,19 @@ interface ItemFormProps {
 export function ItemForm({ item, categories, brands }: ItemFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [pcPartSpecData, setPcPartSpecData] = useState<PcPartSpecFormData | null>(
+    item?.pcPartSpec
+      ? {
+          partType: item.pcPartSpec.partType,
+          chipMakerId: item.pcPartSpec.chipMakerId,
+          tdp: item.pcPartSpec.tdp,
+          releaseDate: item.pcPartSpec.releaseDate
+            ? new Date(item.pcPartSpec.releaseDate).toISOString().split('T')[0]
+            : null,
+          specs: item.pcPartSpec.specs as Record<string, unknown>,
+        }
+      : null
+  )
 
   const form = useForm<ItemInput>({
     resolver: zodResolver(itemSchema),
@@ -60,11 +75,15 @@ export function ItemForm({ item, categories, brands }: ItemFormProps) {
     },
   })
 
+  const handlePcPartSpecChange = (data: PcPartSpecFormData | null) => {
+    setPcPartSpecData(data)
+  }
+
   const onSubmit = (data: ItemInput) => {
     startTransition(async () => {
       const result = item
-        ? await updateItemAction(item.id, data)
-        : await createItemAction(data)
+        ? await updateItemAction(item.id, data, pcPartSpecData)
+        : await createItemAction(data, pcPartSpecData)
 
       if (result.success) {
         toast.success(
@@ -307,6 +326,16 @@ export function ItemForm({ item, categories, brands }: ItemFormProps) {
               )}
             />
           </div>
+        </div>
+
+        {/* PCパーツスペック */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">PCパーツスペック</h3>
+          <PcPartSpecFields
+            brands={brands}
+            value={pcPartSpecData}
+            onChange={handlePcPartSpecChange}
+          />
         </div>
 
         {/* OG情報 */}
