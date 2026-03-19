@@ -1,30 +1,46 @@
+import 'server-only'
+
 /**
  * YouTube PubSubHubbub サービス
  * YouTube の新着動画通知を受け取るためのサブスクリプション管理
  */
 
-/**
- * YouTube PubSubHubbub に subscribe
- */
-export async function subscribeToYoutubePush(channelId: string): Promise<{
+type PubSubResult = {
   success: boolean
   message?: string
   error?: string
-}> {
+}
+
+/**
+ * PubSubHubbub 共通処理
+ */
+async function managePubSubSubscription(
+  channelId: string,
+  mode: 'subscribe' | 'unsubscribe'
+): Promise<PubSubResult> {
   try {
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/youtube`
-    const topicUrl = `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${channelId}`
+    const topicUrl = `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`
     const hubUrl = "https://pubsubhubbub.appspot.com/subscribe"
 
-    const formData = new URLSearchParams({
+    const params: Record<string, string> = {
       "hub.callback": callbackUrl,
       "hub.topic": topicUrl,
-      "hub.mode": "subscribe",
+      "hub.mode": mode,
       "hub.verify": "async",
-      "hub.lease_seconds": "864000", // 10 days
-    })
+    }
 
-    console.log(`[PubSubHubbub] Subscribing to channel ${channelId}`)
+    if (mode === 'subscribe') {
+      params["hub.lease_seconds"] = "864000" // 10 days
+    }
+
+    // webhook署名検証用のシークレットを送信
+    const webhookSecret = process.env.YOUTUBE_WEBHOOK_SECRET
+    if (webhookSecret) {
+      params["hub.secret"] = webhookSecret
+    }
+
+    const formData = new URLSearchParams(params)
 
     const response = await fetch(hubUrl, {
       method: "POST",
@@ -35,59 +51,25 @@ export async function subscribeToYoutubePush(channelId: string): Promise<{
     })
 
     if (response.status === 202) {
-      console.log(`[PubSubHubbub] Subscription request accepted for channel ${channelId}`)
-      return { success: true, message: "Subscription request sent successfully" }
+      return { success: true, message: `${mode} request sent successfully` }
     } else {
-      const errorText = await response.text()
-      console.error(`[PubSubHubbub] Subscription failed:`, errorText)
-      return { success: false, error: `Subscription failed: ${response.status}` }
+      return { success: false, error: `${mode} failed: ${response.status}` }
     }
-  } catch (error) {
-    console.error("[PubSubHubbub] Subscription error:", error)
-    return { success: false, error: "Subscription request failed" }
+  } catch {
+    return { success: false, error: `${mode} request failed` }
   }
+}
+
+/**
+ * YouTube PubSubHubbub に subscribe
+ */
+export async function subscribeToYoutubePush(channelId: string): Promise<PubSubResult> {
+  return managePubSubSubscription(channelId, 'subscribe')
 }
 
 /**
  * YouTube PubSubHubbub から unsubscribe
  */
-export async function unsubscribeFromYoutubePush(channelId: string): Promise<{
-  success: boolean
-  message?: string
-  error?: string
-}> {
-  try {
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/youtube`
-    const topicUrl = `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${channelId}`
-    const hubUrl = "https://pubsubhubbub.appspot.com/subscribe"
-
-    const formData = new URLSearchParams({
-      "hub.callback": callbackUrl,
-      "hub.topic": topicUrl,
-      "hub.mode": "unsubscribe",
-      "hub.verify": "async",
-    })
-
-    console.log(`[PubSubHubbub] Unsubscribing from channel ${channelId}`)
-
-    const response = await fetch(hubUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData.toString(),
-    })
-
-    if (response.status === 202) {
-      console.log(`[PubSubHubbub] Unsubscription request accepted for channel ${channelId}`)
-      return { success: true, message: "Unsubscription request sent successfully" }
-    } else {
-      const errorText = await response.text()
-      console.error(`[PubSubHubbub] Unsubscription failed:`, errorText)
-      return { success: false, error: `Unsubscription failed: ${response.status}` }
-    }
-  } catch (error) {
-    console.error("[PubSubHubbub] Unsubscription error:", error)
-    return { success: false, error: "Unsubscription request failed" }
-  }
+export async function unsubscribeFromYoutubePush(channelId: string): Promise<PubSubResult> {
+  return managePubSubSubscription(channelId, 'unsubscribe')
 }

@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { getUserNews } from '@/app/actions/content/user-news-actions'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { EditableNewsClient } from './EditableNewsClient'
@@ -78,10 +77,6 @@ export default async function DashboardNewsPage() {
     }
   }
 
-  const characterImageUrl = user.profile.characterImage?.storageKey
-    ? getPublicUrl(user.profile.characterImage.storageKey)
-    : null
-
   const initialData = newsResult.success ? (newsResult.data as UserNewsWithImages[]) : []
 
   return (
@@ -90,10 +85,7 @@ export default async function DashboardNewsPage() {
         handle={user.handle ?? ''}
         themePreset={themePreset}
         themeSettings={themeSettings}
-        characterImageUrl={characterImageUrl}
         characterName={user.characterInfo?.characterName ?? null}
-        bannerImageKey={user.profile.bannerImageKey}
-        characterBackgroundKey={user.profile.characterBackgroundKey}
         initialData={initialData}
         newsSection={{
           id: newsSection.id,

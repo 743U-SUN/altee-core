@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Bell } from "lucide-react"
 import { NotificationModal } from "./NotificationModal"
-import { isNotificationUnread, setNotificationReadCookie } from "@/lib/cookie-utils"
+import { isNotificationUnread, setNotificationReadCookie } from "@/lib/cookie-utils.client"
 import type { UserNotification } from "@/types/notifications"
 
 interface NotificationIconProps {
@@ -18,10 +18,8 @@ export function NotificationIcon({ notification, userId }: NotificationIconProps
 
   // 未読状態をチェック
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const unreadStatus = isNotificationUnread(userId, notification.updatedAt.toString())
-      setHasUnread(unreadStatus)
-    }
+    const unreadStatus = isNotificationUnread(userId, notification.updatedAt.toString())
+    setHasUnread(unreadStatus)
   }, [userId, notification.updatedAt])
 
   const handleClick = () => {

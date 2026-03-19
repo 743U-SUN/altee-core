@@ -35,7 +35,7 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
 }
 
-function SortableChildListComponent<TParent extends SortableParentItem, TChild extends SortableChildItem>({
+export function SortableChildList<TParent extends SortableParentItem, TChild extends SortableChildItem>({
   parentId,
   childItems,
   config,
@@ -75,6 +75,9 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     });
   };
 
+  const accordionOpenRef = useRef(childState.accordionOpen);
+  accordionOpenRef.current = childState.accordionOpen;
+
   // 新しいアイテムが追加されたときに自動的にアコーディオンを開く
   useEffect(() => {
     const currentCount = childItems.length;
@@ -85,7 +88,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
       processingNewItemRef.current = true;
 
       // sortOrderでソートして最後のアイテム（新しく追加されたアイテム）を取得
-      const sortedItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
+      const sortedItems = childItems.toSorted((a, b) => a.sortOrder - b.sortOrder);
       const newItem = sortedItems[sortedItems.length - 1];
 
       if (newItem) {
@@ -94,7 +97,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
         const newAccordionState: { [itemId: string]: boolean } = {};
 
         // 親のIDが存在する場合は保持（Q&A管理全体のアコーディオンを開いたまま）
-        if (childState.accordionOpen[parentId]) {
+        if (accordionOpenRef.current[parentId]) {
           newAccordionState[parentId] = true;
         }
 
@@ -113,7 +116,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     }
 
     prevChildItemsCountRef.current = currentCount;
-  }, [childItems, parentId, onUpdateChildState, childState.accordionOpen]);
+  }, [childItems, parentId, onUpdateChildState]);
 
   // 子アイテムを追加
   const handleAddChildItem = async () => {
@@ -127,8 +130,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     try {
       setIsAdding(true);
       await config.childConfig.onAdd(parentId);
-    } catch (error) {
-      console.error('Add child item error:', error);
+    } catch {
       toast.error('子アイテムの追加に失敗しました');
     } finally {
       setIsAdding(false);
@@ -143,7 +145,6 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
       await config.childConfig.onEdit(parentId, itemId, updates);
       toast.success('保存しました');
     } catch (error) {
-      console.error('Edit child item error:', error);
       toast.error('保存に失敗しました');
       throw error; // InlineEditが元に戻すためにthrow
     }
@@ -165,8 +166,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
       });
 
       toast.success('削除しました');
-    } catch (error) {
-      console.error('Delete child item error:', error);
+    } catch {
       toast.error('削除に失敗しました');
       onUpdateChildState(parentId, {
         isDeleting: { ...childState.isDeleting, [itemId]: false }
@@ -197,14 +197,13 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     try {
       await config.childConfig.onReorder(parentId, updatedItems);
       toast.success('並び順を更新しました');
-    } catch (error) {
-      console.error('Reorder child error:', error);
+    } catch {
       toast.error('並び順の更新に失敗しました');
     }
   };
 
   // sortOrderでソートされた子アイテムリストを取得
-  const sortedChildItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedChildItems = childItems.toSorted((a, b) => a.sortOrder - b.sortOrder);
 
   // 子アイテムのIDのセットを作成
   const childItemIds = new Set(childItems.map(item => item.id));
@@ -282,8 +281,3 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     </div>
   );
 }
-
-// React.memoでメモ化して不要な再レンダリングを防ぐ
-export const SortableChildList = React.memo(SortableChildListComponent) as <TParent extends SortableParentItem, TChild extends SortableChildItem>(
-  props: SortableChildListProps<TParent, TChild>
-) => React.ReactElement;

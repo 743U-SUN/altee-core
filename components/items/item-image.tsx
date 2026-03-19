@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import React, { useState, memo } from 'react'
+import { useState } from 'react'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +16,7 @@ interface ItemImageProps {
   priority?: boolean
 }
 
-const ItemImageComponent = ({
+export function ItemImage({
   imageStorageKey,
   customImageUrl,
   amazonImageUrl,
@@ -25,7 +25,7 @@ const ItemImageComponent = ({
   height = 300,
   className,
   priority = false
-}: ItemImageProps) => {
+}: ItemImageProps) {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -60,8 +60,7 @@ const ItemImageComponent = ({
           "object-cover transition-opacity duration-300 w-full h-full",
           isLoading ? "opacity-0" : "opacity-100"
         )}
-        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-          console.error('[ItemImage] Image load error:', src, e)
+        onError={() => {
           setHasError(true)
           setIsLoading(false)
         }}
@@ -82,20 +81,3 @@ const ItemImageComponent = ({
     </div>
   )
 }
-
-// propsの比較関数 - 画像URLが同じなら再レンダリングをスキップ
-const arePropsEqual = (prevProps: ItemImageProps, nextProps: ItemImageProps) => {
-  return (
-    prevProps.imageStorageKey === nextProps.imageStorageKey &&
-    prevProps.customImageUrl === nextProps.customImageUrl &&
-    prevProps.amazonImageUrl === nextProps.amazonImageUrl &&
-    prevProps.alt === nextProps.alt &&
-    prevProps.width === nextProps.width &&
-    prevProps.height === nextProps.height &&
-    prevProps.className === nextProps.className &&
-    prevProps.priority === nextProps.priority
-  )
-}
-
-// メモ化されたコンポーネントをエクスポート
-export const ItemImage = memo(ItemImageComponent, arePropsEqual)

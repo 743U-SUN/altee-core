@@ -54,8 +54,7 @@ export function BannerImageModal({
         } else {
           toast.error(result.error || '背景画像の取得に失敗しました')
         }
-      } catch (error) {
-        console.error('背景画像取得エラー:', error)
+      } catch {
         toast.error('背景画像の取得中にエラーが発生しました')
       } finally {
         setIsLoading(false)
@@ -79,8 +78,7 @@ export function BannerImageModal({
       } else {
         toast.error(result.error || 'バナー画像の更新に失敗しました')
       }
-    } catch (error) {
-      console.error('バナー画像更新エラー:', error)
+    } catch {
       toast.error('バナー画像の更新中にエラーが発生しました')
     } finally {
       setIsSaving(false)

@@ -129,12 +129,23 @@ export async function getUserProfile(userId?: string) {
  * themeSettings の namecard フィールドを更新（他フィールドはマージして保持）
  * namecard が null の場合はデフォルトに戻す（namecard キーを削除）
  */
+const hexColorPattern = /^#[0-9a-fA-F]{6}$/
+
+const namecardSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('color'), color: z.string().regex(hexColorPattern), textColor: z.string().regex(hexColorPattern).optional() }),
+  z.object({ type: z.literal('preset'), imageKey: z.string().min(1), textColor: z.string().regex(hexColorPattern).optional() }),
+  z.object({ type: z.literal('image'), imageKey: z.string().min(1), textColor: z.string().regex(hexColorPattern).optional() }),
+])
+
 export async function updateThemeSettings(
   namecard: NonNullable<ThemeSettings['namecard']> | null
 ) {
   const session = await requireAuth()
 
   try {
+    if (namecard !== null) {
+      namecardSchema.parse(namecard)
+    }
 
     const profile = await prisma.userProfile.findUnique({
       where: { userId: session.user.id },

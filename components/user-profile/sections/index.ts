@@ -1,6 +1,0 @@
-export { SectionRenderer } from '@/components/profile/SectionRenderer'
-export { ThemedCard } from '@/components/sections/_shared/ThemedCard'
-export { ProfileCardSection } from './ProfileCardSection'
-export { FAQSection } from './FAQSection'
-export { LinksSection } from './LinksSection'
-export { TimelineSection } from './TimelineSection'

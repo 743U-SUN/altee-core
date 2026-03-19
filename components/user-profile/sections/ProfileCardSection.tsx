@@ -1,7 +1,6 @@
-'use client'
-
 import type { BaseSectionProps, ProfileCardData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
+import { Badge } from '@/components/decorations'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import Image from 'next/image'
 
@@ -33,9 +32,7 @@ export function ProfileCardSection({ section }: BaseSectionProps) {
       <div className="relative z-10 space-y-2">
         {/* バッジ */}
         {badgeText && (
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[var(--theme-accent-bg,rgba(176,125,79,0.1))] text-[var(--theme-text-accent,#b07d4f)]">
-            {badgeText}
-          </span>
+          <Badge variant="accent">{badgeText}</Badge>
         )}
 
         {/* キャラクター名 */}

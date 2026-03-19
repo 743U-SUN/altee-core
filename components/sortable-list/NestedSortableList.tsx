@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,7 +31,7 @@ interface NestedSortableListProps<TParent extends SortableParentItemType, TChild
   loading?: boolean;
 }
 
-function NestedSortableListComponent<TParent extends SortableParentItemType, TChild extends SortableChildItem>({ 
+export function NestedSortableList<TParent extends SortableParentItemType, TChild extends SortableChildItem>({
   config, 
   loading = false 
 }: NestedSortableListProps<TParent, TChild>) {
@@ -51,23 +51,26 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     })
   );
 
+  const initializedParentsRef = useRef(new Set<string>());
+
   // 子アイテムの状態を初期化（accordionOpenのみ）
   useEffect(() => {
     const newChildStates: { [parentId: string]: ItemState } = {};
 
     config.parentItems.forEach(parentItem => {
-      if (!childStates[parentItem.id]) {
+      if (!initializedParentsRef.current.has(parentItem.id)) {
         newChildStates[parentItem.id] = {
           isDeleting: {},
           accordionOpen: {},
         };
+        initializedParentsRef.current.add(parentItem.id);
       }
     });
 
     if (Object.keys(newChildStates).length > 0) {
       setChildStates(prev => ({ ...prev, ...newChildStates }));
     }
-  }, [config.parentItems, childStates]);
+  }, [config.parentItems]);
 
   // 親アイテムを追加
   const handleAddParentItem = async () => {
@@ -81,8 +84,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     try {
       setIsAddingParent(true);
       await config.parentConfig.onAdd();
-    } catch (error) {
-      console.error('Add parent item error:', error);
+    } catch {
       toast.error('アイテムの追加に失敗しました');
     } finally {
       setIsAddingParent(false);
@@ -97,7 +99,6 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
       await config.parentConfig.onEdit(itemId, updates);
       toast.success('保存しました');
     } catch (error) {
-      console.error('Edit parent item error:', error);
       toast.error('保存に失敗しました');
       throw error; // InlineEditが元に戻すためにthrow
     }
@@ -128,8 +129,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
       });
       
       toast.success('削除しました');
-    } catch (error) {
-      console.error('Delete parent item error:', error);
+    } catch {
       toast.error('削除に失敗しました');
       setParentState(prev => ({
         ...prev,
@@ -161,8 +161,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     try {
       await config.parentConfig.onReorder(updatedItems);
       toast.success('並び順を更新しました');
-    } catch (error) {
-      console.error('Reorder parent error:', error);
+    } catch {
       toast.error('並び順の更新に失敗しました');
     }
   };
@@ -215,7 +214,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
   }
 
   // sortOrderでソート
-  const sortedParentItems = [...config.parentItems].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedParentItems = config.parentItems.toSorted((a, b) => a.sortOrder - b.sortOrder);
 
   return (
     <div className="space-y-6">
@@ -283,8 +282,3 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     </div>
   );
 }
-
-// React.memoでメモ化して不要な再レンダリングを防ぐ
-export const NestedSortableList = React.memo(NestedSortableListComponent) as <TParent extends SortableParentItemType, TChild extends SortableChildItem>(
-  props: NestedSortableListProps<TParent, TChild>
-) => React.ReactElement;

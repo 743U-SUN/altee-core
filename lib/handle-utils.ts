@@ -1,3 +1,4 @@
+import 'server-only'
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import { handleSchema } from '@/lib/validations/user-setup';
@@ -70,24 +71,22 @@ export async function checkHandleAvailability(handle: string): Promise<HandleAva
  * @returns 提案されるhandle
  */
 async function generateHandleSuggestion(baseHandle: string): Promise<string> {
-  const suggestions = [
+  const candidates = [
     `${baseHandle}1`,
     `${baseHandle}2`,
     `${baseHandle}3`,
     `${baseHandle}_user`,
     `${baseHandle}_alt`,
-  ];
+  ].filter(c => !isReservedHandle(c));
 
-  for (const suggestion of suggestions) {
-    const result = await checkHandleAvailability(suggestion);
-    if (result.available) {
-      return suggestion;
-    }
-  }
+  const taken = await prisma.user.findMany({
+    where: { handle: { in: candidates } },
+    select: { handle: true },
+  });
+  const takenSet = new Set(taken.map(u => u.handle));
+  const available = candidates.find(c => !takenSet.has(c));
 
-  // すべての提案が使用済みの場合、ランダムな数字を付加
-  const randomNum = Math.floor(Math.random() * 9000) + 1000;
-  return `${baseHandle}${randomNum}`;
+  return available ?? `${baseHandle}${Math.floor(Math.random() * 9000) + 1000}`;
 }
 
 /**

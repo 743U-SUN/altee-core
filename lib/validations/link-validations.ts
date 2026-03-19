@@ -12,6 +12,9 @@ export function urlPatternValidator(linkTypes: LinkType[]) {
       // URL長制限（ReDoS対策）
       if (data.url.length > 2048) return false
 
+      // ネスト量子化子の検出（ReDoS対策: (a+)+ 等のパターンを拒否）
+      if (/(\+|\*|\{)\)?(\+|\*|\{)/.test(selectedLinkType.urlPattern)) return false
+
       try {
         const regex = new RegExp(selectedLinkType.urlPattern)
         return regex.test(data.url)

@@ -1,5 +1,3 @@
-'use client'
-
 import type { BaseSectionProps, HeaderData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 

@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { updateUserThemeSettings } from '@/app/actions/user/theme-actions'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import type { ThemeSettings } from '@/types/profile-sections'
 
 interface VisibilityTogglesProps {
@@ -28,7 +29,7 @@ export function VisibilityToggles({ visibility }: VisibilityTogglesProps) {
     if (result.success) {
       router.refresh()
     } else {
-      console.error('Failed to update visibility:', result.error)
+      toast.error('表示設定の更新に失敗しました')
     }
   }
 

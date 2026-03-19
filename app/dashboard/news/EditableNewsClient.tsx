@@ -1,6 +1,6 @@
 'use client'
 
-import { UserProfileLayout } from '@/components/user-profile'
+import { UserProfileLayout } from '@/components/user-profile/UserProfileLayout'
 import { NewsManagementSection } from './components/NewsManagementSection'
 import type {
   ThemeSettings,
@@ -13,10 +13,7 @@ interface EditableNewsClientProps {
   handle: string
   themePreset: string
   themeSettings: ThemeSettings
-  characterImageUrl: string | null
   characterName: string | null
-  bannerImageKey: string | null
-  characterBackgroundKey: string | null
   initialData: UserNewsWithImages[]
   newsSection: { id: string; settings: SectionSettings | null }
   presets: SectionBackgroundPreset[]
@@ -30,10 +27,7 @@ export function EditableNewsClient({
   handle,
   themePreset,
   themeSettings,
-  characterImageUrl,
   characterName,
-  bannerImageKey,
-  characterBackgroundKey,
   initialData,
   newsSection,
   presets,
@@ -43,10 +37,7 @@ export function EditableNewsClient({
       handle={handle}
       themePreset={themePreset}
       themeSettings={themeSettings}
-      characterImageUrl={characterImageUrl}
       characterName={characterName}
-      bannerImageKey={bannerImageKey}
-      characterBackgroundKey={characterBackgroundKey}
       isEditable={false}
       inDashboard={true}
     >

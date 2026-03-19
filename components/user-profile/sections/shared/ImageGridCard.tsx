@@ -7,6 +7,7 @@ import type { ImageGridItem } from '@/types/profile-sections'
 import { useUserTheme } from '@/components/theme-provider/useUserTheme'
 import { cn } from '@/lib/utils'
 import { HOVER_CLASSES } from '@/lib/sections/constants'
+import { isSafeUrl } from '@/lib/validations/shared'
 
 interface ImageGridCardProps {
   item: ImageGridItem
@@ -106,7 +107,7 @@ export function ImageGridCard({ item, aspectRatio, cardSize, imageSizes }: Image
     </div>
   )
 
-  if (item.linkUrl) {
+  if (item.linkUrl && isSafeUrl(item.linkUrl)) {
     return (
       <a
         href={item.linkUrl}

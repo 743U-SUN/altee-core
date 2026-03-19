@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo, useCallback } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { EditModal } from '../../EditModal'
 import { Button } from '@/components/ui/button'
@@ -66,49 +66,46 @@ export function ImageHeroEditModal({
   )
 
   // --- PC画像アップロード値 ---
-  const uploadValue = useMemo<UploadedFile[]>(() => {
-    if (!item.imageKey) return []
-    return [{
-      id: item.id,
-      name: item.imageKey,
-      originalName: item.imageKey,
-      url: getPublicUrl(item.imageKey),
-      key: item.imageKey,
-      size: 0,
-      type: 'image/jpeg',
-      uploadedAt: new Date().toISOString(),
-    }]
-  }, [item.imageKey, item.id])
+  const uploadValue: UploadedFile[] = item.imageKey
+    ? [{
+        id: item.id,
+        name: item.imageKey,
+        originalName: item.imageKey,
+        url: getPublicUrl(item.imageKey),
+        key: item.imageKey,
+        size: 0,
+        type: 'image/jpeg',
+        uploadedAt: new Date().toISOString(),
+      }]
+    : []
 
   // --- モバイル画像アップロード値 ---
-  const mobileUploadValue = useMemo<UploadedFile[]>(() => {
-    if (!mobileImageKey) return []
-    return [{
-      id: `mobile-${item.id}`,
-      name: mobileImageKey,
-      originalName: mobileImageKey,
-      url: getPublicUrl(mobileImageKey),
-      key: mobileImageKey,
-      size: 0,
-      type: 'image/webp',
-      uploadedAt: new Date().toISOString(),
-    }]
-  }, [mobileImageKey, item.id])
+  const mobileUploadValue: UploadedFile[] = mobileImageKey
+    ? [{
+        id: `mobile-${item.id}`,
+        name: mobileImageKey,
+        originalName: mobileImageKey,
+        url: getPublicUrl(mobileImageKey),
+        key: mobileImageKey,
+        size: 0,
+        type: 'image/webp',
+        uploadedAt: new Date().toISOString(),
+      }]
+    : []
 
   // --- キャラクター画像アップロード値 ---
-  const characterUploadValue = useMemo<UploadedFile[]>(() => {
-    if (!characterImageKey) return []
-    return [{
-      id: `character-${item.id}`,
-      name: characterImageKey,
-      originalName: characterImageKey,
-      url: getPublicUrl(characterImageKey),
-      key: characterImageKey,
-      size: 0,
-      type: 'image/png',
-      uploadedAt: new Date().toISOString(),
-    }]
-  }, [characterImageKey, item.id])
+  const characterUploadValue: UploadedFile[] = characterImageKey
+    ? [{
+        id: `character-${item.id}`,
+        name: characterImageKey,
+        originalName: characterImageKey,
+        url: getPublicUrl(characterImageKey),
+        key: characterImageKey,
+        size: 0,
+        type: 'image/png',
+        uploadedAt: new Date().toISOString(),
+      }]
+    : []
 
   // --- PC画像ハンドラ ---
   const handleUpload = (files: UploadedFile[]) => {
@@ -156,7 +153,7 @@ export function ImageHeroEditModal({
   }
 
   // --- セリフ操作 ---
-  const handleAddSpeech = useCallback(() => {
+  const handleAddSpeech = () => {
     if (speeches.length >= MAX_SPEECHES) return
     const newSpeech: SpeechBubbleItem = {
       id: nanoid(),
@@ -164,21 +161,21 @@ export function ImageHeroEditModal({
       sortOrder: speeches.length,
     }
     setSpeeches(prev => [...prev, newSpeech])
-  }, [speeches.length])
+  }
 
-  const updateSpeechText = useCallback((id: string, text: string) => {
+  const updateSpeechText = (id: string, text: string) => {
     setSpeeches(prev =>
       prev.map(s => s.id === id ? { ...s, text: text.slice(0, MAX_SPEECH_LENGTH) } : s)
     )
-  }, [])
+  }
 
-  const deleteSpeech = useCallback((id: string) => {
+  const deleteSpeech = (id: string) => {
     setSpeeches(prev =>
       prev.filter(s => s.id !== id).map((s, i) => ({ ...s, sortOrder: i }))
     )
-  }, [])
+  }
 
-  const moveSpeech = useCallback((index: number, direction: 'up' | 'down') => {
+  const moveSpeech = (index: number, direction: 'up' | 'down') => {
     setSpeeches(prev => {
       const next = [...prev]
       const targetIndex = direction === 'up' ? index - 1 : index + 1
@@ -186,7 +183,7 @@ export function ImageHeroEditModal({
       ;[next[index], next[targetIndex]] = [next[targetIndex], next[index]]
       return next.map((s, i) => ({ ...s, sortOrder: i }))
     })
-  }, [])
+  }
 
   // --- 保存 ---
   const handleSave = () => {

@@ -1,9 +1,10 @@
 import type { BaseSectionProps, IconLinksData } from '@/types/profile-sections'
 import { ExternalLink } from 'lucide-react'
-import { LUCIDE_ICON_MAP } from '@/lib/lucide-icons'
+import { getLucideIcon } from '@/lib/lucide-icons'
 import Image from 'next/image'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge } from '@/components/decorations'
+import { isSafeUrl } from '@/lib/validations/shared'
 
 /**
  * アイコンリンクセクション
@@ -30,13 +31,13 @@ export function IconLinksSection({ section, isEditable: _isEditable }: BaseSecti
           .map((item) => {
             const LucideIconComponent =
               item.iconType === 'lucide' && item.lucideIconName
-                ? (LUCIDE_ICON_MAP[item.lucideIconName] ?? null)
+                ? getLucideIcon(item.lucideIconName)
                 : null
 
             return (
               <a
                 key={item.id}
-                href={item.url}
+                href={isSafeUrl(item.url) ? item.url : undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={item.platform}

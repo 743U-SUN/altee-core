@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 import type { FAQData } from '@/types/profile-sections'
 import type { OldFAQData } from '@/lib/faq-compat'
 import { normalizeQuestions } from '@/lib/faq-compat'
-import { nanoid } from 'nanoid'
+import { useEditableList } from './hooks/useEditableList'
 
 interface FAQEditModalProps {
   isOpen: boolean
@@ -44,9 +44,6 @@ type EditingQuestion = {
   sortOrder: number
 }
 
-// 編集中の質問ID（questionsから直接取得するためIDのみ管理）
-type EditingItemId = string | null
-
 /**
  * FAQ編集モーダル
  * 単一の質問リスト（カテゴリーなし）・タイトル入力・アイコン選択に対応
@@ -60,100 +57,40 @@ export function FAQEditModal({
 }: FAQEditModalProps) {
   const router = useRouter()
   const [title, setTitle] = useState(currentTitle ?? '')
-  const [questions, setQuestions] = useState<EditingQuestion[]>(() =>
-    normalizeQuestions(currentData as FAQData | OldFAQData)
-  )
-  const [editingItemId, setEditingItemId] = useState<EditingItemId>(null)
-  const [editingBackup, setEditingBackup] = useState<EditingQuestion | null>(null)
   const [showIconPicker, setShowIconPicker] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  // 質問を追加（自動的に編集モードに）
+  const {
+    items: questions,
+    editingItemId,
+    handleAdd: rawHandleAdd,
+    handleCloseEdit: rawHandleCloseEdit,
+    handleToggleEdit: rawHandleToggleEdit,
+    handleFieldChange,
+    handleEscapeEdit: rawHandleEscapeEdit,
+    handleDelete: handleDeleteQuestion,
+    handleMove: handleMoveOrder,
+  } = useEditableList<EditingQuestion>({
+    initialItems: normalizeQuestions(currentData as FAQData | OldFAQData),
+    createEmptyItem: () => ({ question: '', answer: '' }),
+  })
+
+  // Wrap handlers that need showIconPicker reset:
   const handleAddQuestion = () => {
-    const newQuestion: EditingQuestion = {
-      id: nanoid(),
-      question: '',
-      answer: '',
-      sortOrder: questions.length,
-    }
-    setQuestions([...questions, newQuestion])
-    setEditingBackup({ ...newQuestion }) // バックアップ保存
-    setEditingItemId(newQuestion.id) // 自動的に編集モードに
+    rawHandleAdd()
     setShowIconPicker(false)
   }
-
-  // 編集を閉じる（内容は保持、バックアップはクリア）
   const handleCloseEdit = () => {
-    setEditingItemId(null)
-    setEditingBackup(null)
+    rawHandleCloseEdit()
     setShowIconPicker(false)
   }
-
-  // 質問の編集を開始/終了（トグル）
   const handleToggleEdit = (itemId: string) => {
-    if (editingItemId === itemId) {
-      handleCloseEdit()
-      return
-    }
-    const item = questions.find((q) => q.id === itemId)
-    if (item) {
-      setEditingBackup({ ...item }) // バックアップ保存
-      setEditingItemId(itemId)
-      setShowIconPicker(false)
-    }
-  }
-
-  // フィールド変更（ローカルstateのみ更新、DB保存なし）
-  const handleFieldChange = <K extends keyof EditingQuestion>(
-    itemId: string,
-    field: K,
-    value: EditingQuestion[K]
-  ) => {
-    setQuestions((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item))
-    )
-  }
-
-  // Escapeキーで編集キャンセル（編集中の質問のみ元に戻す）
-  const handleEscapeEdit = () => {
-    if (editingItemId && editingBackup) {
-      // 編集中のアイテムのみバックアップから復元
-      setQuestions((prev) =>
-        prev.map((item) =>
-          item.id === editingItemId ? { ...editingBackup } : item
-        )
-      )
-    }
-    setEditingItemId(null)
-    setEditingBackup(null)
+    rawHandleToggleEdit(itemId)
     setShowIconPicker(false)
   }
-
-  // 質問を削除（ローカルstateのみ更新、DB保存なし）
-  const handleDeleteQuestion = (questionId: string) => {
-    if (!confirm('この質問を削除しますか？')) return
-    const filtered = questions.filter((q) => q.id !== questionId)
-    const updatedQuestions = filtered.map((q, idx) => ({ ...q, sortOrder: idx }))
-    setQuestions(updatedQuestions)
-    // DB保存はしない（完了ボタンで一括保存）
-  }
-
-  // 質問を上下に移動（ローカルstateのみ更新、DB保存なし）
-  const handleMoveOrder = (questionId: string, direction: 'up' | 'down') => {
-    const index = questions.findIndex((q) => q.id === questionId)
-    if (index === -1) return
-    if (direction === 'up' && index === 0) return
-    if (direction === 'down' && index === questions.length - 1) return
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    const newQuestions = [...questions]
-    ;[newQuestions[index], newQuestions[targetIndex]] = [
-      newQuestions[targetIndex],
-      newQuestions[index],
-    ]
-    const updatedQuestions = newQuestions.map((q, idx) => ({ ...q, sortOrder: idx }))
-    setQuestions(updatedQuestions)
-    // DB保存はしない（完了ボタンで一括保存）
+  const handleEscapeEdit = () => {
+    rawHandleEscapeEdit()
+    setShowIconPicker(false)
   }
 
   // アイコンのクリア

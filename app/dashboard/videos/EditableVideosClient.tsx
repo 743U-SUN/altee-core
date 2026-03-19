@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { EditableSectionRenderer } from '@/components/user-profile/EditableSectionRenderer'
-import { UserProfileLayout } from '@/components/user-profile'
+import { UserProfileLayout } from '@/components/user-profile/UserProfileLayout'
 import { AddVideoSectionModal } from './components/AddVideoSectionModal'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -19,10 +19,7 @@ interface EditableVideosClientProps {
   handle: string
   themePreset: string
   themeSettings: ThemeSettings
-  characterImageUrl: string | null
   characterName: string | null
-  bannerImageKey: string | null
-  characterBackgroundKey: string | null
 }
 
 export function EditableVideosClient({
@@ -32,10 +29,7 @@ export function EditableVideosClient({
   handle,
   themePreset,
   themeSettings,
-  characterImageUrl,
   characterName,
-  bannerImageKey,
-  characterBackgroundKey,
 }: EditableVideosClientProps) {
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false)
 
@@ -44,10 +38,7 @@ export function EditableVideosClient({
       handle={handle}
       themePreset={themePreset}
       themeSettings={themeSettings}
-      characterImageUrl={characterImageUrl}
       characterName={characterName}
-      bannerImageKey={bannerImageKey}
-      characterBackgroundKey={characterBackgroundKey}
       isEditable={false}
       inDashboard={true}
     >

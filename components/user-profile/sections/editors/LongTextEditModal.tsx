@@ -55,8 +55,7 @@ export function LongTextEditModal({
         } else {
           toast.error(result.error || '長文テキストの更新に失敗しました')
         }
-      } catch (error) {
-        console.error('長文テキスト更新エラー:', error)
+      } catch {
         toast.error('長文テキストの更新中にエラーが発生しました')
       }
     })
@@ -93,6 +92,7 @@ export function LongTextEditModal({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Markdown形式でテキストを入力してください"
+            maxLength={5000}
             rows={15}
             className="font-mono text-sm"
           />

@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
 import { EditModal } from '../../EditModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,8 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { IconSelector } from '@/components/ui/icon-selector'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { updateSection } from '@/app/actions/user/section-actions'
-import { getCustomIcons } from '@/app/actions/admin/icon-actions'
-import type { CustomIcon } from '@/app/actions/admin/icon-actions'
 import { toast } from 'sonner'
 import {
   Plus,
@@ -24,7 +21,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LinksData } from '@/types/profile-sections'
-import { nanoid } from 'nanoid'
+import { useEditableList } from './hooks/useEditableList'
+import { useCustomIcons, resolveIconSelection, getSelectedIconValue } from '@/hooks/use-custom-icons'
 
 interface LinksEditModalProps {
   isOpen: boolean
@@ -45,15 +43,6 @@ type EditingLink = {
   sortOrder: number
 }
 
-/**
- * リンク編集モーダル
- * SNS・Webサイトリンクを管理
- */
-const fetchCustomIcons = async (): Promise<CustomIcon[]> => {
-  const result = await getCustomIcons()
-  return result.success && result.icons ? result.icons : []
-}
-
 export function LinksEditModal({
   isOpen,
   onClose,
@@ -61,142 +50,49 @@ export function LinksEditModal({
   currentData,
 }: LinksEditModalProps) {
   const router = useRouter()
-  const [links, setLinks] = useState<EditingLink[]>(
-    currentData.items.map((item) => ({ ...item }))
-  )
-
-  const [editingLinkId, setEditingLinkId] = useState<string | null>(null)
-  const [editingBackup, setEditingBackup] = useState<EditingLink | null>(null)
-
   const [isPending, startTransition] = useTransition()
 
-  // カスタムアイコンを取得（保存時にURL解決するため）
-  // IconSelector と同じキー 'custom-icons' で SWR キャッシュを共有
-  const { data: customIcons = [] } = useSWR('custom-icons', fetchCustomIcons)
+  const { data: customIcons = [] } = useCustomIcons()
 
-  // リンクを追加（自動的に編集モードに）
-  const handleAddLink = () => {
-    const newLink: EditingLink = {
-      id: nanoid(),
+  const {
+    items: links,
+    editingItemId: editingLinkId,
+    handleAdd: handleAddLink,
+    handleCloseEdit,
+    handleToggleEdit,
+    handleFieldChange,
+    handleEscapeEdit,
+    handleDelete: handleDeleteLink,
+    handleMove: handleMoveLinkOrder,
+    setItems: setLinks,
+  } = useEditableList<EditingLink>({
+    initialItems: currentData.items.map((item) => ({ ...item })),
+    createEmptyItem: () => ({
       url: '',
       title: '',
       description: '',
-      iconType: 'preset',
-      sortOrder: links.length,
-    }
-    setLinks([...links, newLink])
-    setEditingBackup({ ...newLink }) // バックアップ保存
-    setEditingLinkId(newLink.id)
-  }
+      iconType: 'preset' as const,
+    }),
+  })
 
-  // 編集を閉じる（内容は保持、バックアップはクリア）
-  const handleCloseEdit = () => {
-    setEditingLinkId(null)
-    setEditingBackup(null)
-  }
-
-  // リンクの編集を開始/終了（トグル）
-  const handleToggleEdit = (linkId: string) => {
-    if (editingLinkId === linkId) {
-      handleCloseEdit()
-      return
-    }
-    const link = links.find((l) => l.id === linkId)
-    if (link) {
-      setEditingBackup({ ...link }) // バックアップ保存
-      setEditingLinkId(linkId)
-    }
-  }
-
-  // フィールド変更（ローカルstateのみ更新、DB保存なし）
-  const handleFieldChange = (linkId: string, field: 'title' | 'url' | 'description', value: string) => {
-    setLinks((prev) =>
-      prev.map((link) => (link.id === linkId ? { ...link, [field]: value } : link))
-    )
-  }
-
-  // アイコン選択の変更（ローカルstateのみ更新、DB保存なし）
   const handleIconChange = (linkId: string, iconSelection: string) => {
-    // アイコン選択を解決
-    let iconType: 'preset' | 'custom' | 'lucide' = 'preset'
-    let lucideIconName: string | undefined
-    let customIconUrl: string | undefined
-    let iconKey: string | undefined
-
-    if (iconSelection.startsWith('custom:')) {
-      const iconId = iconSelection.replace('custom:', '')
-      const found = customIcons.find((ic) => ic.id === iconId)
-      if (found) {
-        iconType = 'custom'
-        customIconUrl = found.url
-      }
-    } else if (iconSelection) {
-      iconType = 'lucide'
-      lucideIconName = iconSelection
-    } else {
-      // アイコン未選択の場合、既存のpreset情報を保持
+    if (!iconSelection) {
       const existing = links.find((l) => l.id === linkId)
       if (existing?.iconType === 'preset') {
-        iconType = 'preset'
-        iconKey = existing.iconKey
+        return
       }
     }
-
-    // linksに反映
+    const resolved = resolveIconSelection(customIcons, iconSelection)
     setLinks((prev) =>
       prev.map((l) =>
         l.id === linkId
-          ? { ...l, iconType, lucideIconName, customIconUrl, iconKey }
+          ? { ...l, iconType: resolved.iconType, lucideIconName: resolved.lucideIconName, customIconUrl: resolved.customIconUrl, iconKey: resolved.iconKey }
           : l
       )
     )
   }
 
-  // Escapeキーで編集キャンセル（編集中のリンクのみ元に戻す）
-  const handleEscapeEdit = () => {
-    if (editingLinkId && editingBackup) {
-      // 編集中のリンクのみバックアップから復元
-      setLinks((prev) =>
-        prev.map((link) =>
-          link.id === editingLinkId ? { ...editingBackup } : link
-        )
-      )
-    }
-    setEditingLinkId(null)
-    setEditingBackup(null)
-  }
-
-  // リンクを削除（ローカルstateのみ更新、DB保存なし）
-  const handleDeleteLink = (linkId: string) => {
-    if (!confirm('このリンクを削除しますか？')) return
-    const updatedLinks = links.filter((l) => l.id !== linkId)
-    setLinks(updatedLinks)
-    // DB保存はしない（完了ボタンで一括保存）
-  }
-
-  // リンクを上下に移動（ローカルstateのみ更新、DB保存なし）
-  const handleMoveLinkOrder = (linkId: string, direction: 'up' | 'down') => {
-    const index = links.findIndex((l) => l.id === linkId)
-    if (index === -1) return
-    if (direction === 'up' && index === 0) return
-    if (direction === 'down' && index === links.length - 1) return
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    const newLinks = [...links]
-    ;[newLinks[index], newLinks[targetIndex]] = [
-      newLinks[targetIndex],
-      newLinks[index],
-    ]
-
-    // sortOrderを再計算
-    const updatedLinks = newLinks.map((link, idx) => ({ ...link, sortOrder: idx }))
-    setLinks(updatedLinks)
-    // DB保存はしない（完了ボタンで一括保存）
-  }
-
-  // 完了処理（全変更を1回のみDB保存してモーダル閉じる）
   const handleSave = () => {
-    // 未入力チェック
     const invalidLinks = links.filter((link) => !link.title.trim() || !link.url.trim())
     if (invalidLinks.length > 0) {
       toast.error('タイトルまたはURLが未入力の項目があります')
@@ -227,11 +123,9 @@ export function LinksEditModal({
           router.refresh()
         } else {
           toast.error(result.error || '保存に失敗しました')
-          // モーダルは開いたまま（編集継続可能）
         }
       } catch {
         toast.error('保存中にエラーが発生しました')
-        // モーダルは開いたまま（編集継続可能）
       }
     })
   }
@@ -245,7 +139,6 @@ export function LinksEditModal({
       isSaving={isPending}
     >
       <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-        {/* リンク追加ボタン */}
         <Button
           onClick={handleAddLink}
           variant="outline"
@@ -256,7 +149,6 @@ export function LinksEditModal({
           リンクを追加
         </Button>
 
-        {/* リンク一覧 */}
         {links.map((link, index) => {
           const isEditing = editingLinkId === link.id
           return (
@@ -272,7 +164,6 @@ export function LinksEditModal({
               }}
               className="border rounded-lg p-4 bg-muted/30"
             >
-              {/* 常に表示される部分 */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <ExternalLink className="w-5 h-5 text-muted-foreground shrink-0" />
@@ -331,7 +222,6 @@ export function LinksEditModal({
                 </div>
               </div>
 
-              {/* 展開される編集フォーム */}
               <CollapsibleContent>
                 <div className="pt-3 mt-3 border-t space-y-3">
                   <div>
@@ -393,13 +283,7 @@ export function LinksEditModal({
                   <div>
                     <Label className="mb-2 block">アイコン（任意）</Label>
                     <IconSelector
-                      selectedIcon={
-                        link.iconType === 'lucide' && link.lucideIconName
-                          ? link.lucideIconName
-                          : link.iconType === 'custom' && link.customIconUrl
-                          ? `custom:${customIcons.find((ic) => ic.url === link.customIconUrl)?.id ?? ''}`
-                          : ''
-                      }
+                      selectedIcon={getSelectedIconValue(customIcons, link.iconType, link.lucideIconName, link.customIconUrl)}
                       onIconSelect={(iconName) => handleIconChange(link.id, iconName)}
                     />
                   </div>

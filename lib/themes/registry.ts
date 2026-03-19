@@ -3,7 +3,7 @@
  * 全テーマプリセットの管理と取得
  */
 
-import type { ThemePreset, ThemeBase } from './types'
+import type { ThemePreset } from './types'
 import { claymorphicThemes, minimalThemes, pastelDreamThemes, tacticalThemes } from './presets'
 
 /**
@@ -34,17 +34,11 @@ export function getTheme(id: string): ThemePreset | undefined {
 }
 
 /**
- * 全テーマを取得
+ * 全テーマを取得（キャッシュ済み配列を返す）
  */
+const ALL_THEMES = Array.from(THEME_REGISTRY.values())
 export function getAllThemes(): ThemePreset[] {
-  return Array.from(THEME_REGISTRY.values())
-}
-
-/**
- * テーマをベースでフィルタ
- */
-export function getThemesByBase(base: ThemeBase): ThemePreset[] {
-  return getAllThemes().filter((theme) => theme.base === base)
+  return ALL_THEMES
 }
 
 /**
@@ -84,9 +78,3 @@ export function hasTheme(id: string): boolean {
   return THEME_REGISTRY.has(id)
 }
 
-/**
- * テーマ数を取得
- */
-export function getThemeCount(): number {
-  return THEME_REGISTRY.size
-}

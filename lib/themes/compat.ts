@@ -8,7 +8,7 @@
  */
 const LEGACY_THEME_MAP: Record<string, string> = {
   claymorphic: 'claymorphic-warm',
-  minimal: 'minimal-white', // Phase 1.5で追加予定
+  minimal: 'minimal-white',
 }
 
 /**

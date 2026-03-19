@@ -21,7 +21,6 @@ interface EditableProfileClientProps {
   themePreset: string
   themeSettings: ThemeSettings
   characterImageUrl: string | null  // キャラクター画像（9:16縦長）
-  characterImageId: string | null
   avatarImageUrl: string | null     // アイコン画像（1:1正方形、ヘッダー用）
   characterName: string | null
   bannerImageKey: string | null
@@ -40,7 +39,6 @@ export function EditableProfileClient({
   themePreset,
   themeSettings,
   characterImageUrl,
-  characterImageId,
   avatarImageUrl,
   characterName,
   bannerImageKey,
@@ -79,11 +77,8 @@ export function EditableProfileClient({
         handle={handle}
         themePreset={themePreset}
         themeSettings={themeSettings}
-        characterImageUrl={characterImageUrl}
         avatarImageUrl={avatarImageUrl}
         characterName={characterName}
-        bannerImageKey={bannerImageKey}
-        characterBackgroundKey={characterBackgroundKey}
         isEditable={true}
         inDashboard={true}
         onImageEdit={handleImageEdit}
@@ -113,7 +108,6 @@ export function EditableProfileClient({
       <CharacterImageModal
         isOpen={imageEditType === 'character'}
         onClose={handleImageEditClose}
-        currentCharacterImageId={characterImageId}
         currentCharacterImageUrl={characterImageUrl}
         currentCharacterBackgroundKey={characterBackgroundKey}
       />

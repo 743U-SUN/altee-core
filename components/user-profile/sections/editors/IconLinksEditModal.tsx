@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
 import { EditModal } from '../../EditModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,8 +9,6 @@ import { Button } from '@/components/ui/button'
 import { IconSelector } from '@/components/ui/icon-selector'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { updateSection } from '@/app/actions/user/section-actions'
-import { getCustomIcons } from '@/app/actions/admin/icon-actions'
-import type { CustomIcon } from '@/app/actions/admin/icon-actions'
 import { toast } from 'sonner'
 import {
   Plus,
@@ -23,7 +20,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { IconLinksData } from '@/types/profile-sections'
-import { nanoid } from 'nanoid'
+import { useEditableList } from './hooks/useEditableList'
+import { useCustomIcons, resolveIconSelection, getSelectedIconValue } from '@/hooks/use-custom-icons'
 
 interface IconLinksEditModalProps {
   isOpen: boolean
@@ -46,11 +44,6 @@ type EditingIconLink = {
  * アイコンリンク編集モーダル
  * SNS・連絡先アイコンを管理
  */
-const fetchCustomIcons = async (): Promise<CustomIcon[]> => {
-  const result = await getCustomIcons()
-  return result.success && result.icons ? result.icons : []
-}
-
 export function IconLinksEditModal({
   isOpen,
   onClose,
@@ -58,129 +51,40 @@ export function IconLinksEditModal({
   currentData,
 }: IconLinksEditModalProps) {
   const router = useRouter()
-  const [links, setLinks] = useState<EditingIconLink[]>(
-    currentData.items.map((item) => ({ ...item }))
-  )
-
-  const [editingLinkId, setEditingLinkId] = useState<string | null>(null)
-  const [editingBackup, setEditingBackup] = useState<EditingIconLink | null>(null)
-
   const [isPending, startTransition] = useTransition()
 
-  // カスタムアイコンを取得（保存時にURL解決するため）
-  // IconSelector と同じキー 'custom-icons' で SWR キャッシュを共有
-  const { data: customIcons = [] } = useSWR('custom-icons', fetchCustomIcons)
+  const { data: customIcons = [] } = useCustomIcons()
 
-  // リンクを追加（自動的に編集モードに）
-  const handleAddLink = () => {
-    const newLink: EditingIconLink = {
-      id: nanoid(),
+  const {
+    items: links,
+    editingItemId: editingLinkId,
+    handleAdd: handleAddLink,
+    handleCloseEdit,
+    handleToggleEdit,
+    handleFieldChange,
+    handleEscapeEdit,
+    handleDelete: handleDeleteLink,
+    handleMove: handleMoveLinkOrder,
+    setItems: setLinks,
+  } = useEditableList<EditingIconLink>({
+    initialItems: currentData.items.map((item) => ({ ...item })),
+    createEmptyItem: () => ({
       url: '',
       platform: '',
-      iconType: 'lucide',
+      iconType: 'lucide' as const,
       lucideIconName: 'Link',
-      sortOrder: links.length,
-    }
-    setLinks([...links, newLink])
-    setEditingBackup({ ...newLink }) // バックアップ保存
-    setEditingLinkId(newLink.id)
-  }
+    }),
+  })
 
-  // 編集を閉じる（内容は保持、バックアップはクリア）
-  const handleCloseEdit = () => {
-    setEditingLinkId(null)
-    setEditingBackup(null)
-  }
-
-  // リンクの編集を開始/終了（トグル）
-  const handleToggleEdit = (linkId: string) => {
-    if (editingLinkId === linkId) {
-      handleCloseEdit()
-      return
-    }
-    const link = links.find((l) => l.id === linkId)
-    if (link) {
-      setEditingBackup({ ...link }) // バックアップ保存
-      setEditingLinkId(linkId)
-    }
-  }
-
-  // フィールド変更（ローカルstateのみ更新、DB保存なし）
-  const handleFieldChange = (linkId: string, field: 'platform' | 'url', value: string) => {
-    setLinks((prev) =>
-      prev.map((link) => (link.id === linkId ? { ...link, [field]: value } : link))
-    )
-  }
-
-  // アイコン選択の変更（ローカルstateのみ更新、DB保存なし）
   const handleIconChange = (linkId: string, iconSelection: string) => {
-    // アイコン選択を解決
-    let iconType: 'lucide' | 'custom' = 'lucide'
-    let lucideIconName: string | undefined
-    let customIconUrl: string | undefined
-
-    if (iconSelection.startsWith('custom:')) {
-      const iconId = iconSelection.replace('custom:', '')
-      const found = customIcons.find((ic) => ic.id === iconId)
-      if (found) {
-        iconType = 'custom'
-        customIconUrl = found.url
-      }
-    } else if (iconSelection) {
-      iconType = 'lucide'
-      lucideIconName = iconSelection
-    }
-
-    // linksに反映
+    const resolved = resolveIconSelection(customIcons, iconSelection)
     setLinks((prev) =>
       prev.map((l) =>
         l.id === linkId
-          ? { ...l, iconType, lucideIconName, customIconUrl }
+          ? { ...l, iconType: resolved.iconType as 'lucide' | 'custom', lucideIconName: resolved.lucideIconName, customIconUrl: resolved.customIconUrl }
           : l
       )
     )
-  }
-
-  // Escapeキーで編集キャンセル（編集中のリンクのみ元に戻す）
-  const handleEscapeEdit = () => {
-    if (editingLinkId && editingBackup) {
-      // 編集中のリンクのみバックアップから復元
-      setLinks((prev) =>
-        prev.map((link) =>
-          link.id === editingLinkId ? { ...editingBackup } : link
-        )
-      )
-    }
-    setEditingLinkId(null)
-    setEditingBackup(null)
-  }
-
-  // リンクを削除（ローカルstateのみ更新、DB保存なし）
-  const handleDeleteLink = (linkId: string) => {
-    if (!confirm('このリンクを削除しますか？')) return
-    const updatedLinks = links.filter((l) => l.id !== linkId)
-    setLinks(updatedLinks)
-    // DB保存はしない（完了ボタンで一括保存）
-  }
-
-  // リンクを上下に移動（ローカルstateのみ更新、DB保存なし）
-  const handleMoveLinkOrder = (linkId: string, direction: 'up' | 'down') => {
-    const index = links.findIndex((l) => l.id === linkId)
-    if (index === -1) return
-    if (direction === 'up' && index === 0) return
-    if (direction === 'down' && index === links.length - 1) return
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    const newLinks = [...links]
-    ;[newLinks[index], newLinks[targetIndex]] = [
-      newLinks[targetIndex],
-      newLinks[index],
-    ]
-
-    // sortOrderを再計算
-    const updatedLinks = newLinks.map((link, idx) => ({ ...link, sortOrder: idx }))
-    setLinks(updatedLinks)
-    // DB保存はしない（完了ボタンで一括保存）
   }
 
   // 完了処理（全変更を1回のみDB保存してモーダル閉じる）
@@ -351,13 +255,7 @@ export function IconLinksEditModal({
                   <div>
                     <Label className="mb-2 block">アイコン</Label>
                     <IconSelector
-                      selectedIcon={
-                        link.iconType === 'lucide' && link.lucideIconName
-                          ? link.lucideIconName
-                          : link.iconType === 'custom' && link.customIconUrl
-                          ? `custom:${customIcons.find((ic) => ic.url === link.customIconUrl)?.id ?? ''}`
-                          : ''
-                      }
+                      selectedIcon={getSelectedIconValue(customIcons, link.iconType, link.lucideIconName, link.customIconUrl)}
                       onIconSelect={(iconName) => handleIconChange(link.id, iconName)}
                     />
                   </div>

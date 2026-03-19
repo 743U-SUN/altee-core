@@ -59,8 +59,7 @@ export function SortableList<T extends SortableItemType>({
     try {
       setIsAdding(true);
       await config.onAdd();
-    } catch (error) {
-      console.error('Add item error:', error);
+    } catch {
       toast.error('アイテムの追加に失敗しました');
     } finally {
       setIsAdding(false);
@@ -75,7 +74,6 @@ export function SortableList<T extends SortableItemType>({
       await config.onEdit(itemId, updates);
       toast.success('保存しました');
     } catch (error) {
-      console.error('Edit item error:', error);
       toast.error('保存に失敗しました');
       throw error; // InlineEditが元に戻すためにthrow
     }
@@ -100,8 +98,7 @@ export function SortableList<T extends SortableItemType>({
       }));
       
       toast.success('削除しました');
-    } catch (error) {
-      console.error('Delete item error:', error);
+    } catch {
       toast.error('削除に失敗しました');
       setItemState(prev => ({
         ...prev,
@@ -133,8 +130,7 @@ export function SortableList<T extends SortableItemType>({
     try {
       await config.onReorder(updatedItems);
       toast.success('並び順を更新しました');
-    } catch (error) {
-      console.error('Reorder error:', error);
+    } catch {
       toast.error('並び順の更新に失敗しました');
     }
   };

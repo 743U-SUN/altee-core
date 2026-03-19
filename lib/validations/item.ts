@@ -61,6 +61,10 @@ export const itemSchema = z.object({
   amazonUrl: z
     .string()
     .url('正しいURLを入力してください')
+    .refine(
+      (val) => !val || /^https:\/\/(www\.)?amazon\.(co\.jp|com)\//.test(val),
+      { message: 'AmazonのURLを入力してください' }
+    )
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),

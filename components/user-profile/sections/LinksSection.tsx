@@ -1,9 +1,10 @@
 import type { BaseSectionProps, LinksData } from '@/types/profile-sections'
 import { ExternalLink } from 'lucide-react'
-import { LUCIDE_ICON_MAP } from '@/lib/lucide-icons'
+import { getLucideIcon } from '@/lib/lucide-icons'
 import Image from 'next/image'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge } from '@/components/decorations'
+import { isSafeUrl } from '@/lib/validations/shared'
 
 /**
  * リンクセクション
@@ -30,13 +31,13 @@ export function LinksSection({ section, isEditable: _isEditable }: BaseSectionPr
           .map((link) => {
             const LucideIconComponent =
               link.iconType === 'lucide' && link.lucideIconName
-                ? (LUCIDE_ICON_MAP[link.lucideIconName] ?? null)
+                ? getLucideIcon(link.lucideIconName)
                 : null
 
             return (
               <a
                 key={link.id}
-                href={link.url}
+                href={isSafeUrl(link.url) ? link.url : undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-4 p-4 rounded-lg hover:bg-theme-bar-bg/50 transition-all duration-300"

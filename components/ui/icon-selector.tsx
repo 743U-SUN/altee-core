@@ -18,13 +18,8 @@ import {
   Gift, Tag, Flag, Target, Gamepad2, Palette, Search
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { getCustomIcons, getIconTags } from "@/app/actions/admin/icon-actions"
-import type { CustomIcon } from "@/app/actions/admin/icon-actions"
-
-const fetchCustomIcons = async (): Promise<CustomIcon[]> => {
-  const result = await getCustomIcons()
-  return result.success && result.icons ? result.icons : []
-}
+import { useCustomIcons } from "@/hooks/use-custom-icons"
+import { getIconTags } from "@/app/actions/admin/icon-actions"
 
 const fetchIconTags = async (): Promise<string[]> => {
   const result = await getIconTags()
@@ -51,7 +46,7 @@ export function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) 
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState("lucide")
 
-  const { data: customIcons = [], isLoading } = useSWR('custom-icons', fetchCustomIcons)
+  const { data: customIcons = [], isLoading } = useCustomIcons()
   const { data: availableTags = [] } = useSWR('icon-tags', fetchIconTags)
 
   // Lucideアイコンの検索フィルタリング

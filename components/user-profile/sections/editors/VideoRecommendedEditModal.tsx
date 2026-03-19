@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { EditModal } from '../../EditModal'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -21,8 +22,8 @@ interface VideoRecommendedEditModalProps {
     data?: { videoId: string; title?: string; thumbnail?: string }
     error?: string
   }>
-  renderThumbnail: (item: VideoItem) => React.ReactNode
-  renderItemExtra?: (item: VideoItem) => React.ReactNode
+  renderThumbnail: (item: VideoItem) => ReactNode
+  renderItemExtra?: (item: VideoItem) => ReactNode
 }
 
 export function VideoRecommendedEditModal({

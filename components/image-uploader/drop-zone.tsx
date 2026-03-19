@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Upload, FileImage } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PreviewSize, CustomSize } from '@/types/image-upload'
@@ -26,46 +26,46 @@ export function DropZone({
 }: DropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (!disabled) {
       setIsDragOver(true)
     }
-  }, [disabled])
+  }
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
-  }, [])
+  }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
-    
+
     if (disabled) return
 
     const files = Array.from(e.dataTransfer.files)
     const limitedFiles = maxFiles ? files.slice(0, maxFiles) : files
-    
+
     if (limitedFiles.length > 0) {
       onFilesSelected(limitedFiles)
     }
-  }, [disabled, maxFiles, onFilesSelected])
+  }
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     const limitedFiles = maxFiles ? files.slice(0, maxFiles) : files
-    
+
     if (limitedFiles.length > 0) {
       onFilesSelected(limitedFiles)
     }
-    
+
     // ファイル選択をリセット（同じファイルを再選択可能にする）
     e.target.value = ''
-  }, [maxFiles, onFilesSelected])
+  }
 
   // プレビューサイズからドロップゾーンのサイズを計算
   const getDimensions = () => {

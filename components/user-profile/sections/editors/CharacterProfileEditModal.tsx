@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { EditModal } from '../../EditModal'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -33,6 +34,7 @@ export function CharacterProfileEditModal({
   sectionId,
   currentData,
 }: CharacterProfileEditModalProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editName, setEditName] = useState(currentData.name || '')
   const [editTagline, setEditTagline] = useState(currentData.tagline || '')
@@ -53,66 +55,81 @@ export function CharacterProfileEditModal({
     }
 
     startTransition(async () => {
-      const newData: CharacterProfileData = {
-        name: editName,
-        tagline: editTagline,
-        bio: editBio,
-        badgeLeft: editBadgeLeft,
-        badgeRight: editBadgeRight,
-        characterPosition: editPosition,
-        showSocialLinks: editShowSocialLinks,
-        socialLinks: editSocialLinks,
-        characterImageKey: uploadedCharacterImages.length > 0
-          ? uploadedCharacterImages[0].key
-          : currentData.characterImageKey,
-        characterBackgroundKey: uploadedBackgroundImages.length > 0
-          ? uploadedBackgroundImages[0].key
-          : currentData.characterBackgroundKey,
-      }
+      try {
+        const newData: CharacterProfileData = {
+          name: editName,
+          tagline: editTagline,
+          bio: editBio,
+          badgeLeft: editBadgeLeft,
+          badgeRight: editBadgeRight,
+          characterPosition: editPosition,
+          showSocialLinks: editShowSocialLinks,
+          socialLinks: editSocialLinks,
+          characterImageKey: uploadedCharacterImages.length > 0
+            ? uploadedCharacterImages[0].key
+            : currentData.characterImageKey,
+          characterBackgroundKey: uploadedBackgroundImages.length > 0
+            ? uploadedBackgroundImages[0].key
+            : currentData.characterBackgroundKey,
+        }
 
-      const result = await updateSection(sectionId, { data: newData })
+        const result = await updateSection(sectionId, { data: newData })
 
-      if (result.success) {
-        toast.success('キャラクタープロフィールを更新しました')
-        onClose()
-      } else {
-        toast.error(result.error || '更新に失敗しました')
+        if (result.success) {
+          toast.success('キャラクタープロフィールを更新しました')
+          onClose()
+          router.refresh()
+        } else {
+          toast.error(result.error || '更新に失敗しました')
+        }
+      } catch {
+        toast.error('更新中にエラーが発生しました')
       }
     })
   }
 
   const handleDeleteCharacterImage = () => {
     startTransition(async () => {
-      const newData: CharacterProfileData = {
-        ...currentData,
-        characterImageKey: undefined,
-      }
+      try {
+        const newData: CharacterProfileData = {
+          ...currentData,
+          characterImageKey: undefined,
+        }
 
-      const result = await updateSection(sectionId, { data: newData })
+        const result = await updateSection(sectionId, { data: newData })
 
-      if (result.success) {
-        toast.success('キャラクター画像を削除しました')
-        onClose()
-      } else {
-        toast.error(result.error || '削除に失敗しました')
+        if (result.success) {
+          toast.success('キャラクター画像を削除しました')
+          onClose()
+          router.refresh()
+        } else {
+          toast.error(result.error || '削除に失敗しました')
+        }
+      } catch {
+        toast.error('削除中にエラーが発生しました')
       }
     })
   }
 
   const handleDeleteBackgroundImage = () => {
     startTransition(async () => {
-      const newData: CharacterProfileData = {
-        ...currentData,
-        characterBackgroundKey: undefined,
-      }
+      try {
+        const newData: CharacterProfileData = {
+          ...currentData,
+          characterBackgroundKey: undefined,
+        }
 
-      const result = await updateSection(sectionId, { data: newData })
+        const result = await updateSection(sectionId, { data: newData })
 
-      if (result.success) {
-        toast.success('背景画像を削除しました')
-        onClose()
-      } else {
-        toast.error(result.error || '削除に失敗しました')
+        if (result.success) {
+          toast.success('背景画像を削除しました')
+          onClose()
+          router.refresh()
+        } else {
+          toast.error(result.error || '削除に失敗しました')
+        }
+      } catch {
+        toast.error('削除中にエラーが発生しました')
       }
     })
   }

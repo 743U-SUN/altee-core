@@ -74,3 +74,4 @@ If reviewers find issues, automatically revise the plan before presenting to use
 
 @docs/core-rules.md
 @docs/TROUBLESHOOTING.md
+@docs/output-conventions.md

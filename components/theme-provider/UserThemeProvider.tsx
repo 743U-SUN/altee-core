@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useContext,
   useMemo,
   useCallback,
   type ReactNode,
@@ -128,13 +127,3 @@ export function UserThemeProvider({
   )
 }
 
-/**
- * テーマコンテキストを使用するフック
- */
-export function useUserTheme(): UserThemeContextValue {
-  const context = useContext(UserThemeContext)
-  if (!context) {
-    throw new Error('useUserTheme must be used within UserThemeProvider')
-  }
-  return context
-}

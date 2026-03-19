@@ -6,6 +6,8 @@
 import { XMLParser } from "fast-xml-parser"
 import { RSS_FEED_CACHE_SECONDS } from "./constants"
 
+const xmlParser = new XMLParser({ ignoreAttributes: false })
+
 /**
  * YouTube oEmbed API から動画メタデータを取得
  */
@@ -16,7 +18,7 @@ export async function fetchYoutubeVideoMetadata(videoId: string): Promise<{
   error?: string
 }> {
   try {
-    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&format=json`
     const response = await fetch(oembedUrl)
 
     if (!response.ok) {
@@ -67,7 +69,7 @@ export async function fetchYoutubeRssFeed(
   error?: string
 }> {
   try {
-    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`
+    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`
 
     const response = await fetch(rssUrl, {
       next: {
@@ -82,8 +84,7 @@ export async function fetchYoutubeRssFeed(
     }
 
     const xmlText = await response.text()
-    const parser = new XMLParser({ ignoreAttributes: false })
-    const result = parser.parse(xmlText)
+    const result = xmlParser.parse(xmlText)
 
     // 動画エントリーを抽出
     const entries = Array.isArray(result.feed?.entry)

@@ -1,5 +1,3 @@
-'use client'
-
 import type { BaseSectionProps } from '@/types/profile-sections'
 import { ImageGridCard } from './shared/ImageGridCard'
 import { isImageGrid2Data } from '@/lib/sections'
@@ -13,8 +11,7 @@ export function ImageGrid2Section({ section }: BaseSectionProps) {
   const data = isImageGrid2Data(section.data) ? section.data : { items: [] }
   const items = data.items || []
 
-  // sortOrderでソート
-  const sortedItems = [...items].sort((a, b) => a.sortOrder - b.sortOrder)
+  const sortedItems = items.toSorted((a, b) => a.sortOrder - b.sortOrder)
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-4">

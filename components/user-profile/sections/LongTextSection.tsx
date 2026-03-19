@@ -1,9 +1,59 @@
-'use client'
-
 import type { BaseSectionProps, LongTextData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
-import ReactMarkdown from 'react-markdown'
+import { Badge } from '@/components/decorations'
+import dynamic from 'next/dynamic'
 import remarkGfm from 'remark-gfm'
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: true })
+
+const remarkPlugins = [remarkGfm]
+
+const markdownComponents = {
+  h1: ({ children }: { children?: React.ReactNode }) => (
+    <h1 className="text-2xl font-bold text-[var(--theme-text-primary)] mb-3">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }: { children?: React.ReactNode }) => (
+    <h2 className="text-xl font-bold text-[var(--theme-text-primary)] mb-2">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }: { children?: React.ReactNode }) => (
+    <h3 className="text-lg font-semibold text-[var(--theme-text-primary)] mb-2">
+      {children}
+    </h3>
+  ),
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="text-[var(--theme-text-secondary)] mb-3">
+      {children}
+    </p>
+  ),
+  ul: ({ children }: { children?: React.ReactNode }) => (
+    <ul className="list-disc list-inside text-[var(--theme-text-secondary)] mb-3">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: { children?: React.ReactNode }) => (
+    <ol className="list-decimal list-inside text-[var(--theme-text-secondary)] mb-3">
+      {children}
+    </ol>
+  ),
+  a: ({ children, href }: { children?: React.ReactNode; href?: string }) => {
+    const safeHref = href && /^https?:\/\//.test(href) ? href : undefined
+    return (
+      <a
+        href={safeHref}
+        className="text-[var(--theme-text-accent)] hover:underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    )
+  },
+  img: () => null,
+}
 
 /**
  * 長文セクション
@@ -15,58 +65,14 @@ export function LongTextSection({ section, isEditable: _isEditable }: BaseSectio
   return (
     <ThemedCard className="w-full mb-6">
       {section.title && (
-        <span className="inline-block px-3 py-1 rounded-full mb-3 text-xs font-bold bg-[var(--theme-accent-bg,rgba(176,125,79,0.1))] text-[var(--theme-text-accent,#b07d4f)]">
+        <Badge variant="accent" className="mb-3">
           {section.title}
-        </span>
+        </Badge>
       )}
       <div className="prose prose-sm max-w-none">
         <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            h1: ({ children }) => (
-              <h1 className="text-2xl font-bold text-[var(--theme-text-primary)] mb-3">
-                {children}
-              </h1>
-            ),
-            h2: ({ children }) => (
-              <h2 className="text-xl font-bold text-[var(--theme-text-primary)] mb-2">
-                {children}
-              </h2>
-            ),
-            h3: ({ children }) => (
-              <h3 className="text-lg font-semibold text-[var(--theme-text-primary)] mb-2">
-                {children}
-              </h3>
-            ),
-            p: ({ children }) => (
-              <p className="text-[var(--theme-text-secondary)] mb-3">
-                {children}
-              </p>
-            ),
-            ul: ({ children }) => (
-              <ul className="list-disc list-inside text-[var(--theme-text-secondary)] mb-3">
-                {children}
-              </ul>
-            ),
-            ol: ({ children }) => (
-              <ol className="list-decimal list-inside text-[var(--theme-text-secondary)] mb-3">
-                {children}
-              </ol>
-            ),
-            a: ({ children, href }) => {
-              const safeHref = href && /^https?:\/\//.test(href) ? href : undefined
-              return (
-                <a
-                  href={safeHref}
-                  className="text-[var(--theme-text-accent)] hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {children}
-                </a>
-              )
-            },
-          }}
+          remarkPlugins={remarkPlugins}
+          components={markdownComponents}
         >
           {data.content || '内容がありません'}
         </ReactMarkdown>

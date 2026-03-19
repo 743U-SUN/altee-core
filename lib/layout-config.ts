@@ -30,6 +30,14 @@ export const iconMap = {
 
 export type IconName = keyof typeof iconMap
 
+// アイコンを解決する関数
+export function getBrandIcon(icon: IconName | React.ComponentType<{ className?: string }>) {
+  if (typeof icon === 'string') {
+    return iconMap[icon]
+  }
+  return icon
+}
+
 // 型定義
 export interface NavItem {
   title: string

@@ -27,31 +27,11 @@ export { THEME_CSS_VARIABLES } from './types'
 export {
   getTheme,
   getAllThemes,
-  getThemesByBase,
   getThemesGroupedByName,
   hasTheme,
-  getThemeCount,
   DEFAULT_THEME_ID,
 } from './registry'
 
-// プリセット
-export {
-  // Claymorphic
-  claymorphicThemes,
-  claymorphicWarm,
-  claymorphicCool,
-  claymorphicDark,
-  // Minimal
-  minimalThemes,
-  minimalWhite,
-  minimalGray,
-  minimalBlack,
-  // Pastel Dream
-  pastelDreamThemes,
-  pastelPink,
-  pastelMint,
-  pastelBlue,
-} from './presets'
 
 // 互換性レイヤー
 export { migrateLegacyThemeId, isLegacyThemeId } from './compat'

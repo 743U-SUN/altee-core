@@ -3,7 +3,7 @@
 /**
  * ユーザーデータ
  */
-export interface UserData {
+export interface ProfileFieldData {
   id: string
   userId: string
   icon: string          // Lucideアイコン名
@@ -40,13 +40,13 @@ export interface UpdateUserDataInput {
  */
 export interface UserDataApiResponse {
   success: boolean
-  data?: UserData
+  data?: ProfileFieldData
   error?: string
 }
 
 export interface UserDataListApiResponse {
   success: boolean
-  data?: UserData[]
+  data?: ProfileFieldData[]
   error?: string
 }
 

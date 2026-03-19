@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import Image from 'next/image'
 import type { BaseSectionProps, YoutubeSectionData } from '@/types/profile-sections'
 import { IMAGE_SIZES } from '@/lib/image-sizes'
@@ -16,11 +15,6 @@ import { Badge } from '@/components/decorations'
 export function YoutubeSection({ section, isEditable }: BaseSectionProps) {
     const data = section.data as YoutubeSectionData
 
-    // アスペクト比のクラス (現在は16:9固定だが将来拡張のため)
-    const aspectRatioClass = useMemo(() => {
-        return 'aspect-video'
-    }, [])
-
     return (
         <ThemedCard size="md" className="w-full mb-6">
             {/* タイトル (存在する場合はBadgeで表示) */}
@@ -30,7 +24,7 @@ export function YoutubeSection({ section, isEditable }: BaseSectionProps) {
                 </Badge>
             )}
             {/* 動画埋め込み or プレースホルダー */}
-            <div className={`w-full ${aspectRatioClass} bg-black/5 rounded-lg overflow-hidden relative`}>
+            <div className="w-full aspect-video bg-black/5 rounded-lg overflow-hidden relative">
                 {data.videoId ? (
                     isEditable ? (
                         // 編集モード時はiframeの代わりにサムネイル画像を表示 (ドラッグ&ドロップ等の操作性向上のため)

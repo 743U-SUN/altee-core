@@ -38,7 +38,7 @@ export function VideoGallerySectionModal({
 
   // 動画リスト
   const [items, setItems] = useState<VideoGalleryItem[]>(
-    [...currentData.items].sort((a, b) => a.sortOrder - b.sortOrder)
+    () => [...currentData.items].sort((a, b) => a.sortOrder - b.sortOrder)
   )
 
   // 新規追加用URL

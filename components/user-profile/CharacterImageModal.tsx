@@ -17,7 +17,6 @@ import { Trash2 } from 'lucide-react'
 interface CharacterImageModalProps {
   isOpen: boolean
   onClose: () => void
-  currentCharacterImageId?: string | null
   currentCharacterImageUrl?: string | null
   currentCharacterBackgroundKey?: string | null
 }
@@ -29,7 +28,6 @@ interface CharacterImageModalProps {
 export function CharacterImageModal({
   isOpen,
   onClose,
-  currentCharacterImageId: _currentCharacterImageId,
   currentCharacterImageUrl,
   currentCharacterBackgroundKey,
 }: CharacterImageModalProps) {

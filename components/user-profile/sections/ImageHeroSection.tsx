@@ -9,6 +9,14 @@ import { isImageHeroData } from '@/lib/sections'
 import { cn } from '@/lib/utils'
 import { IMAGE_SIZES } from '@/lib/image-sizes'
 
+const DEFAULT_HERO_DATA = {
+  item: undefined,
+  mobileImageKey: undefined,
+  characterImageKey: undefined,
+  speeches: undefined,
+  speechDisplayMode: undefined as 'sequential' | 'random' | undefined,
+}
+
 /**
  * ヒーロー画像セクション
  * PC（>992px）: 16:9 画像をビューポート全画面表示（ヘッダー分を除く）
@@ -18,7 +26,7 @@ import { IMAGE_SIZES } from '@/lib/image-sizes'
 export function ImageHeroSection({ section }: BaseSectionProps) {
   const data = isImageHeroData(section.data)
     ? section.data
-    : { item: undefined, mobileImageKey: undefined, characterImageKey: undefined, speeches: undefined, speechDisplayMode: undefined as 'sequential' | 'random' | undefined }
+    : DEFAULT_HERO_DATA
   const item = data.item
 
   // セリフ表示状態
@@ -27,7 +35,7 @@ export function ImageHeroSection({ section }: BaseSectionProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const speeches = data.speeches ?? []
-  const sortedSpeeches = [...speeches].sort((a, b) => a.sortOrder - b.sortOrder)
+  const sortedSpeeches = speeches.toSorted((a, b) => a.sortOrder - b.sortOrder)
 
   const currentSpeechText =
     speechIndex >= 0 && speechIndex < sortedSpeeches.length

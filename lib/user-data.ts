@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { cachedAuth } from '@/lib/auth'
 import { resolveAvatarUrl } from '@/lib/avatar-utils'
 import { prisma } from '@/lib/prisma'
@@ -17,7 +18,7 @@ export interface UserNavData {
  * 表示名: CharacterInfo.characterName → User.name フォールバック
  * アイコン: CharacterInfo.iconImageKey → User.image フォールバック
  */
-export async function getUserNavData(): Promise<UserNavData | null> {
+export const getUserNavData = cache(async (): Promise<UserNavData | null> => {
   const session = await cachedAuth()
 
   if (!session?.user?.id) {
@@ -49,4 +50,4 @@ export async function getUserNavData(): Promise<UserNavData | null> {
     avatar,
     role: user.role
   }
-}
+})

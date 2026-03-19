@@ -1,5 +1,3 @@
-'use client'
-
 import type { BaseSectionProps, BarGraphData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge } from '@/components/decorations'
@@ -24,7 +22,7 @@ export function BarGraphSection({ section, isEditable: _isEditable }: BaseSectio
   return (
     <ThemedCard showCornerDecor className="w-full mb-6">
       {section.title && (
-        <Badge variant="accent" className="mb-3">
+        <Badge variant="accent" className="mb-4">
           {section.title}
         </Badge>
       )}

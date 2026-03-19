@@ -1,5 +1,3 @@
-'use client'
-
 import type { BaseSectionProps, CharacterProfileData } from '@/types/profile-sections'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge } from '@/components/decorations'
@@ -9,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Twitter, Youtube, Twitch as TwitchIcon, Github, ExternalLink } from 'lucide-react'
 import { LUCIDE_ICON_MAP } from '@/lib/lucide-icons'
 import { IMAGE_SIZES } from '@/lib/image-sizes'
+import { isSafeUrl } from '@/lib/validations/shared'
 
 // SNSプラットフォームごとのアイコンマッピング
 const PLATFORM_ICONS = {
@@ -110,7 +109,7 @@ export function CharacterProfileSection({ section }: BaseSectionProps) {
                 return (
                   <a
                     key={link.id}
-                    href={link.url}
+                    href={isSafeUrl(link.url) ? link.url : undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center w-10 h-10 rounded-full bg-theme-bar-bg text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-accent)] hover:bg-theme-accent-bg transition-all duration-200"

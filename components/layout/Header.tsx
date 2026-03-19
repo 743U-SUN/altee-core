@@ -59,51 +59,41 @@ export function Header({ config }: HeaderProps) {
         </>
       )}
       
-      {config.title && (
-        <div className="flex items-center gap-2">
-          {config.titleUrl ? (
-            <Link href={config.titleUrl} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              {config.titleImage ? (
-                <div className="w-6 h-6 rounded-md overflow-hidden">
-                  <Image
-                    src={config.titleImage}
-                    alt="User Avatar"
-                    width={24}
-                    height={24}
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : config.titleIcon && (
-                <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
-                  <config.titleIcon className="w-4 h-4 text-white" />
-                </div>
-              )}
-              <span className="text-lg font-semibold">{config.title}</span>
-            </Link>
-          ) : (
-            <>
-              {config.titleImage ? (
-                <div className="w-6 h-6 rounded-md overflow-hidden">
-                  <Image
-                    src={config.titleImage}
-                    alt="User Avatar"
-                    width={24}
-                    height={24}
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : config.titleIcon && (
-                <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
-                  <config.titleIcon className="w-4 h-4 text-white" />
-                </div>
-              )}
-              <span className="text-lg font-semibold">{config.title}</span>
-            </>
-          )}
-        </div>
-      )}
+      {config.title && (() => {
+        const titleContent = (
+          <>
+            {config.titleImage ? (
+              <div className="w-6 h-6 rounded-md overflow-hidden">
+                <Image
+                  src={config.titleImage}
+                  alt="User Avatar"
+                  width={24}
+                  height={24}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : config.titleIcon && (
+              <div className={`flex items-center justify-center w-6 h-6 rounded-md ${config.titleIconBgColor || 'bg-sidebar-primary'}`}>
+                <config.titleIcon className="w-4 h-4 text-white" />
+              </div>
+            )}
+            <span className="text-lg font-semibold">{config.title}</span>
+          </>
+        )
+
+        return (
+          <div className="flex items-center gap-2">
+            {config.titleUrl ? (
+              <Link href={config.titleUrl} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                {titleContent}
+              </Link>
+            ) : (
+              titleContent
+            )}
+          </div>
+        )
+      })()}
 
       {config.rightContent && (
         <div className="ml-auto">

@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { useUserTheme } from '@/components/theme-provider/UserThemeProvider'
+import { useUserTheme } from '@/components/theme-provider/useUserTheme'
 import { Star, Heart, Ribbon } from 'lucide-react'
 import type { CornerDecorType } from '@/types/theme'
 

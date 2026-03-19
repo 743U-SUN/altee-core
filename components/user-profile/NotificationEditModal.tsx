@@ -1,12 +1,20 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
 import { EditModal } from './EditModal'
-import { NotificationSettings } from '@/app/dashboard/notifications/notification-settings'
-import { ContactSettings } from '@/app/dashboard/notifications/contact-settings'
-import { GiftSettings } from '@/app/dashboard/notifications/gift-settings'
 import { getUserNotification } from '@/app/actions/user/notification-actions'
+
+const NotificationSettings = dynamic(() =>
+  import('@/app/dashboard/notifications/notification-settings').then(m => ({ default: m.NotificationSettings }))
+)
+const ContactSettings = dynamic(() =>
+  import('@/app/dashboard/notifications/contact-settings').then(m => ({ default: m.ContactSettings }))
+)
+const GiftSettings = dynamic(() =>
+  import('@/app/dashboard/notifications/gift-settings').then(m => ({ default: m.GiftSettings }))
+)
 import { getUserContact } from '@/app/actions/user/contact-actions'
 import { getUserGift } from '@/app/actions/user/gift-actions'
 import type { UserNotification } from '@/types/notifications'
@@ -63,8 +71,7 @@ export function NotificationEditModal({
           toast.error('ギフト設定の読み込みに失敗しました')
         }
       }
-    } catch (err) {
-      console.error('データ読み込みエラー:', err)
+    } catch {
       setError('エラーが発生しました')
       toast.error('データの読み込みに失敗しました')
     } finally {

@@ -1,6 +1,5 @@
 'use client'
 
-import { memo, useCallback } from 'react'
 import { Share2, Gamepad2, Bell, Gift, Mail } from 'lucide-react'
 
 interface FloatingElementsProps {
@@ -19,30 +18,12 @@ interface FloatingElementsProps {
  * PC: 右下にシェアボタン
  * モバイル: 左下ゲーム、右下SNS、右上通知
  */
-export const FloatingElements = memo(function FloatingElements({
+export function FloatingElements({
   visibility,
   isEditable = false,
   inDashboard = false,
   onNotificationClick,
 }: FloatingElementsProps) {
-  const handleGiftClick = useCallback(() => {
-    if (isEditable && onNotificationClick) {
-      onNotificationClick('gift')
-    }
-  }, [isEditable, onNotificationClick])
-
-  const handleMailClick = useCallback(() => {
-    if (isEditable && onNotificationClick) {
-      onNotificationClick('mail')
-    }
-  }, [isEditable, onNotificationClick])
-
-  const handleBellClick = useCallback(() => {
-    if (isEditable && onNotificationClick) {
-      onNotificationClick('bell')
-    }
-  }, [isEditable, onNotificationClick])
-
   return (
     <>
       {/* PC: Share Button (右下) */}
@@ -57,7 +38,6 @@ export const FloatingElements = memo(function FloatingElements({
 
       {/* Mobile: Floating Buttons */}
       <div className="min-[993px]:hidden">
-        {/* Game Button (左下) */}
         {visibility.gameButton && (
           <button
             className={`
@@ -77,7 +57,6 @@ export const FloatingElements = memo(function FloatingElements({
           </button>
         )}
 
-        {/* SNS Share Button (右下) */}
         {visibility.snsButton && (
           <button
             className={`
@@ -97,7 +76,6 @@ export const FloatingElements = memo(function FloatingElements({
           </button>
         )}
 
-        {/* Notification Buttons (右上: Gift/Mail/Bell セット) */}
         {visibility.notification && (
           <div
             className={`fixed right-2 z-40 flex items-center gap-1 px-1 h-12 bg-black/20 backdrop-blur-sm rounded-md ${inDashboard ? 'top-20' : 'top-4'
@@ -106,7 +84,7 @@ export const FloatingElements = memo(function FloatingElements({
             <button
               className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white"
               aria-label="Gift"
-              onClick={handleGiftClick}
+              onClick={() => onNotificationClick?.('gift')}
               disabled={!isEditable}
             >
               <Gift className="w-5 h-5" />
@@ -114,7 +92,7 @@ export const FloatingElements = memo(function FloatingElements({
             <button
               className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white"
               aria-label="Mail"
-              onClick={handleMailClick}
+              onClick={() => onNotificationClick?.('mail')}
               disabled={!isEditable}
             >
               <Mail className="w-5 h-5" />
@@ -122,7 +100,7 @@ export const FloatingElements = memo(function FloatingElements({
             <button
               className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white relative"
               aria-label="Notifications"
-              onClick={handleBellClick}
+              onClick={() => onNotificationClick?.('bell')}
               disabled={!isEditable}
             >
               <Bell className="w-5 h-5" />
@@ -132,4 +110,4 @@ export const FloatingElements = memo(function FloatingElements({
       </div>
     </>
   )
-})
+}

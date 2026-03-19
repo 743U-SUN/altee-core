@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { EditableVideosClient } from './EditableVideosClient'
 import {
@@ -53,10 +52,6 @@ export default async function VideosPage() {
     ? (user.profile.themeSettings as unknown as ThemeSettings)
     : DEFAULT_THEME_SETTINGS
 
-  const characterImageUrl = user.profile.characterImage?.storageKey
-    ? getPublicUrl(user.profile.characterImage.storageKey)
-    : null
-
   return (
     <div className="flex flex-1 flex-col">
       <EditableVideosClient
@@ -66,10 +61,7 @@ export default async function VideosPage() {
         handle={user.handle ?? ''}
         themePreset={themePreset}
         themeSettings={themeSettings}
-        characterImageUrl={characterImageUrl}
         characterName={user.characterInfo?.characterName ?? null}
-        bannerImageKey={user.profile.bannerImageKey}
-        characterBackgroundKey={user.profile.characterBackgroundKey}
       />
     </div>
   )

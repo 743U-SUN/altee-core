@@ -14,11 +14,8 @@ interface UserProfileLayoutProps {
   handle: string
   themePreset: string
   themeSettings: ThemeSettings
-  characterImageUrl?: string | null // キャラクター画像（9:16縦長）- Phase 4で使用
   avatarImageUrl?: string | null    // アイコン画像（1:1正方形、ヘッダー用）
   characterName?: string | null
-  bannerImageKey?: string | null    // Phase 4で使用
-  characterBackgroundKey?: string | null // Phase 4で使用
   children: ReactNode
   isEditable?: boolean
   inDashboard?: boolean // ダッシュボード内の場合はtrue

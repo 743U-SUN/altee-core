@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { useUserTheme } from '@/components/theme-provider/UserThemeProvider'
+import { useUserTheme } from '@/components/theme-provider/useUserTheme'
 import type { DividerType } from '@/types/theme'
 
 interface DividerProps {

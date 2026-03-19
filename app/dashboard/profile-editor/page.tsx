@@ -66,7 +66,6 @@ export default async function ProfileEditorPage() {
         themePreset={themePreset}
         themeSettings={themeSettings}
         characterImageUrl={characterImageUrl}
-        characterImageId={user.profile.characterImageId}
         avatarImageUrl={avatarImageUrl}
         characterName={user.characterInfo?.characterName ?? null}
         bannerImageKey={user.profile.bannerImageKey}

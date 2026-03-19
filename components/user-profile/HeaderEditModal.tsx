@@ -1,11 +1,17 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { EditModal } from './EditModal'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { AvatarEditTab } from './header-edit/AvatarEditTab'
-import { CharacterNameEditTab } from './header-edit/CharacterNameEditTab'
-import { NamecardEditTab } from './header-edit/NamecardEditTab'
 import type { ThemeSettings } from '@/types/profile-sections'
+
+const CharacterNameEditTab = dynamic(() =>
+  import('./header-edit/CharacterNameEditTab').then(m => ({ default: m.CharacterNameEditTab }))
+)
+const NamecardEditTab = dynamic(() =>
+  import('./header-edit/NamecardEditTab').then(m => ({ default: m.NamecardEditTab }))
+)
 
 interface HeaderEditModalProps {
   isOpen: boolean

@@ -20,10 +20,12 @@ export function resolveBackgroundStyle(
   switch (category) {
     case 'solid': {
       const c = config as SolidBgConfig
+      if (!c.color || typeof c.color !== 'string') return {}
       return { backgroundColor: c.color }
     }
     case 'gradient': {
       const c = config as GradientBgConfig
+      if (!c.stops || !Array.isArray(c.stops) || !c.type) return {}
       const gradientString = buildGradientString(c)
       return { background: gradientString }
     }
@@ -79,10 +81,12 @@ export function generateCssString(
   switch (category) {
     case 'solid': {
       const c = config as SolidBgConfig
+      if (!c.color || typeof c.color !== 'string') return ''
       return `background-color: ${c.color}`
     }
     case 'gradient': {
       const c = config as GradientBgConfig
+      if (!c.stops || !Array.isArray(c.stops) || !c.type) return ''
       return `background: ${buildGradientString(c)}`
     }
     default:

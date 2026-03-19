@@ -3,10 +3,12 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Play } from "lucide-react"
+import { YOUTUBE_VIDEO_ID_PATTERN } from "@/services/youtube/constants"
 
 interface YouTubeFacadeProps {
   videoId: string
   title?: string
+  priority?: boolean
 }
 
 /**
@@ -16,9 +18,14 @@ interface YouTubeFacadeProps {
  */
 export function YouTubeFacade({
   videoId,
-  title = "YouTube video"
+  title = "YouTube video",
+  priority = false,
 }: YouTubeFacadeProps) {
   const [isLoaded, setIsLoaded] = useState(false)
+
+  if (!YOUTUBE_VIDEO_ID_PATTERN.test(videoId)) {
+    return null
+  }
 
   // サムネイル画像のURL (maxresdefault > sddefault > hqdefault の優先順)
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
@@ -59,7 +66,8 @@ export function YouTubeFacade({
         alt={title}
         fill
         className="object-cover transition-opacity group-hover:opacity-90"
-        priority
+        sizes="(max-width: 768px) 100vw, 640px"
+        priority={priority}
       />
 
       {/* 再生ボタン */}

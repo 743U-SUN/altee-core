@@ -1,9 +1,8 @@
 'use client'
 
-import { memo, useMemo } from 'react'
 import Link from 'next/link'
-import { User, Video, HelpCircle, Package, Newspaper } from 'lucide-react'
 import { usePathname } from 'next/navigation'
+import { getNavItems } from './nav-items'
 
 interface MobileBottomNavProps {
   handle: string
@@ -14,33 +13,13 @@ interface MobileBottomNavProps {
 /**
  * モバイルボトムナビゲーション
  */
-export const MobileBottomNav = memo(function MobileBottomNav({
+export function MobileBottomNav({
   handle,
   inDashboard = false,
   visibility,
 }: MobileBottomNavProps) {
   const pathname = usePathname()
-
-  const navItems = useMemo(() => {
-    const items = inDashboard ? [
-      { label: 'Profile', href: '/dashboard/profile-editor', icon: User },
-      { label: 'Items', href: '/dashboard/items', icon: Package },
-      { label: 'News', href: '/dashboard/news', icon: Newspaper },
-      { label: 'Videos', href: '/dashboard/platforms', icon: Video },
-      { label: 'FAQs', href: '/dashboard/faqs', icon: HelpCircle },
-    ] : [
-      { label: 'Profile', href: `/@${handle}`, icon: User },
-      { label: 'Items', href: `/@${handle}/items`, icon: Package },
-      { label: 'News', href: `/@${handle}/news`, icon: Newspaper },
-      { label: 'Videos', href: `/@${handle}/videos`, icon: Video },
-      { label: 'FAQs', href: `/@${handle}/faqs`, icon: HelpCircle },
-    ]
-    // 公開ページ側のみ visibility で News を除外（ダッシュボードは常に表示）
-    if (!inDashboard && visibility?.newsPage === false) {
-      return items.filter((item) => item.label !== 'News')
-    }
-    return items
-  }, [handle, inDashboard, visibility?.newsPage])
+  const navItems = getNavItems(handle, inDashboard, visibility)
 
   return (
     <nav
@@ -72,4 +51,4 @@ export const MobileBottomNav = memo(function MobileBottomNav({
       </div>
     </nav>
   )
-})
+}

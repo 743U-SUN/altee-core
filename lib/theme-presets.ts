@@ -142,7 +142,7 @@ export function applyThemeVariables(
     overrides['--theme-header-text'] = options.headerTextColor
   }
 
-  if (options?.accentColor) {
+  if (options?.accentColor && /^#[0-9a-fA-F]{3,8}$/.test(options.accentColor)) {
     overrides['--theme-text-accent'] = options.accentColor
     overrides['--theme-accent-bg'] = `${options.accentColor}14`
     overrides['--theme-accent-border'] = `${options.accentColor}33`

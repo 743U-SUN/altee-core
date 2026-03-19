@@ -3,22 +3,13 @@
  * 3層アーキテクチャ: Base → Variant → Color
  */
 
+import type { SectionCategory } from '@/lib/sections/types'
+export type { SectionCategory }
+
 /**
  * テーマベース（スタイルの基本形）
  */
 export type ThemeBase = 'neumorphic' | 'flat' | 'glass' | 'card'
-
-/**
- * セクションカテゴリ
- */
-export type SectionCategory =
-  | 'main'      // メインコンテンツ
-  | 'image'     // 画像系
-  | 'links'     // リンク系
-  | 'content'   // テキストコンテンツ
-  | 'data'      // データ表示
-  | 'video'     // 動画系
-  | 'structure' // 構造要素
 
 /**
  * カラーバリアント

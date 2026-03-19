@@ -35,7 +35,7 @@ export function MobileSidebarSheet({
   // 縦並びレイアウトの場合はモバイル判定に関係なく表示
   if (verticalLayout) {
     return (
-      <div className={`w-full bg-sidebar text-sidebar-foreground border-b ${noPadding ? '' : ''}`}>
+      <div className="w-full bg-sidebar text-sidebar-foreground border-b">
         <div className={noPadding ? '' : 'p-4'}>
           {secondSidebarContent || (
             <div className="text-muted-foreground text-sm">

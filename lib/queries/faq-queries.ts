@@ -1,24 +1,25 @@
+import 'server-only'
+import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
+import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
 import type { FaqActionResult } from '@/types/faq'
-
-const handleSchema = z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/, '不正なハンドルです')
 
 /**
  * 公開FAQ取得（ハンドルから）
  */
-export async function getPublicFaqByHandle(
+export const getPublicFaqByHandle = cache(async (
   handle: string
-): Promise<FaqActionResult> {
-  const validatedHandle = handleSchema.parse(handle)
+): Promise<FaqActionResult> => {
+  const validatedHandle = queryHandleSchema.parse(handle)
+  const normalized = normalizeHandle(validatedHandle)
 
   try {
     const user = await prisma.user.findUnique({
-      where: { handle: validatedHandle },
-      select: { id: true },
+      where: { handle: normalized },
+      select: { id: true, isActive: true },
     })
 
-    if (!user) {
+    if (!user || !user.isActive) {
       return { success: false, error: 'ユーザーが見つかりません' }
     }
 
@@ -38,4 +39,4 @@ export async function getPublicFaqByHandle(
     console.error('公開FAQ取得エラー:', error)
     return { success: false, error: 'FAQの取得に失敗しました' }
   }
-}
+})

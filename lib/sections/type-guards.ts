@@ -246,6 +246,5 @@ export function getSectionData<T>(
   if (validator(data)) {
     return data
   }
-  console.warn(`[getSectionData] Invalid data for section type: ${sectionType}`)
   return defaultValue
 }

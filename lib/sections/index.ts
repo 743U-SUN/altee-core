@@ -20,11 +20,14 @@ export {
   getCategoryDefinition,
   getAllCategories,
   getSectionsByPage,
-  preloadHighPrioritySections,
 } from './registry'
 
 // 型（後方互換性）
 export type { SectionCategoryKey } from './registry'
 
-// 型ガード
-export * from './type-guards'
+// 型ガード（バレル経由で使用されるもののみ）
+export {
+  isImageHeroData,
+  isImageGrid2Data,
+  isImageGrid3Data,
+} from './type-guards'

@@ -3,6 +3,7 @@
 import * as React from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
+import Link from "next/link"
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -15,7 +16,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { SidebarConfig, defaultBrand, iconMap, IconName } from "@/lib/layout-config"
+import { SidebarConfig, defaultBrand, iconMap, IconName, getBrandIcon } from "@/lib/layout-config"
 
 const NavUser = dynamic(
   () => import("@/components/navigation/nav-user").then(mod => ({ default: mod.NavUser })),
@@ -58,14 +59,6 @@ export function Sidebar({
   // ブランド設定（デフォルト値を使用）
   const brand = firstSidebarConfig.brand || defaultBrand
   
-  // アイコンを解決する関数
-  const getBrandIcon = (icon: IconName | React.ComponentType<{ className?: string }>) => {
-    if (typeof icon === 'string') {
-      return iconMap[icon]
-    }
-    return icon
-  }
-  
   const BrandIcon = getBrandIcon(brand.icon)
 
   return (
@@ -83,7 +76,7 @@ export function Sidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
-                <a href={brand.url || "#"}>
+                <Link href={brand.url || "#"}>
                   {brand.brandImage ? (
                     <div className="aspect-square size-8 overflow-hidden rounded-lg">
                       <Image
@@ -104,7 +97,7 @@ export function Sidebar({
                     <span className="truncate font-medium">{brand.title}</span>
                     <span className="truncate text-xs">{brand.subtitle}</span>
                   </div>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -126,13 +119,13 @@ export function Sidebar({
                       className="px-2.5 md:px-2"
                       asChild
                     >
-                      <a href={item.url}>
-                        {typeof item.icon === 'string' 
+                      <Link href={item.url}>
+                        {typeof item.icon === 'string'
                           ? React.createElement(iconMap[item.icon as IconName])
                           : React.createElement(item.icon)
                         }
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}

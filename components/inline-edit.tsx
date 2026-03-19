@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -47,7 +47,7 @@ export function InlineEdit({
     }
   }, [isEditing])
 
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     if (editValue.trim() === value.trim()) {
       setIsEditing(false)
       return
@@ -57,21 +57,20 @@ export function InlineEdit({
     try {
       await onSave(editValue.trim())
       setIsEditing(false)
-    } catch (error) {
-      console.error("保存エラー:", error)
+    } catch {
       // エラー時は編集値を元に戻す
       setEditValue(value)
     } finally {
       setIsSaving(false)
     }
-  }, [editValue, value, onSave])
+  }
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     setEditValue(value)
     setIsEditing(false)
-  }, [value])
+  }
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (multiline) {
       // 自己紹介（textarea）の場合
       if (e.key === "Enter" && e.ctrlKey) {
@@ -91,14 +90,14 @@ export function InlineEdit({
         handleCancel()
       }
     }
-  }, [multiline, handleSave, handleCancel])
+  }
 
-  const handleBlur = useCallback(() => {
+  const handleBlur = () => {
     // 保存中でなければフォーカスアウト時に保存
     if (!isSaving) {
       handleSave()
     }
-  }, [handleSave, isSaving])
+  }
 
   const displayValue = value || placeholder
   const isEmpty = !value
@@ -150,7 +149,15 @@ export function InlineEdit({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => setIsEditing(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          setIsEditing(true)
+        }
+      }}
       className={cn(
         "cursor-pointer rounded-md px-3 py-2 transition-all duration-200",
         "border border-border",

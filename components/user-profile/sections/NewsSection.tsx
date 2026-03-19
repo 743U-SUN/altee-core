@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -23,18 +23,13 @@ type NewsItem = UserNews & {
 export function NewsSection({ section: _section, isEditable }: BaseSectionProps) {
   const params = useParams()
   const handle = (params?.handle as string) || ''
-  const [news, setNews] = useState<NewsItem[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!handle) return
-    getPublicNewsByHandle(handle)
-      .then((data) => setNews(data as NewsItem[]))
-      .catch(() => setNews([]))
-      .finally(() => setLoading(false))
-  }, [handle])
+  const { data: news = [], isLoading } = useSWR(
+    handle ? `news-${handle}` : null,
+    () => getPublicNewsByHandle(handle) as Promise<NewsItem[]>
+  )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <ThemedCard size="md" className="w-full mb-6">
         <div className="flex items-center justify-center py-8 text-[var(--theme-text-secondary)]">
@@ -58,17 +53,16 @@ export function NewsSection({ section: _section, isEditable }: BaseSectionProps)
     return null
   }
 
-  const gridCols =
-    news.length === 1
-      ? 'max-w-sm mx-auto'
-      : news.length === 2
-        ? 'grid grid-cols-2 gap-4'
-        : 'grid grid-cols-3 gap-4'
-
   return (
     <ThemedCard size="md" className="w-full mb-6">
       {/* PC: グリッド表示 */}
-      <div className={`hidden min-[993px]:${news.length === 1 ? 'block' : 'grid'} ${gridCols}`}>
+      <div className={
+        news.length === 1
+          ? 'hidden min-[993px]:block max-w-sm mx-auto'
+          : news.length === 2
+            ? 'hidden min-[993px]:grid grid-cols-2 gap-4'
+            : 'hidden min-[993px]:grid grid-cols-3 gap-4'
+      }>
         {news.map((item) => (
           <NewsCard
             key={item.id}

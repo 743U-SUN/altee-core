@@ -150,10 +150,7 @@ export function EditableSectionRenderer({
       {editTarget &&
         (() => {
           const editorDef = getEditorDefinition(editTarget.sectionType)
-          if (!editorDef) {
-            console.warn(`Unknown section type: ${editTarget.sectionType}`)
-            return null
-          }
+          if (!editorDef) return null
 
           const EditorComponent = editorDef.component
           const props: BaseSectionEditorProps = {

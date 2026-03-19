@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BarGraphData } from '@/types/profile-sections'
-import { nanoid } from 'nanoid'
+import { useEditableList } from './hooks/useEditableList'
 
 interface BarGraphEditModalProps {
   isOpen: boolean
@@ -38,9 +38,6 @@ type EditingBarItem = {
   sortOrder: number
 }
 
-// 編集中のアイテムID（itemsから直接取得するためIDのみ管理）
-type EditingItemId = string | null
-
 /**
  * バーグラフ編集モーダル
  * スキルセットや数値データの編集
@@ -54,98 +51,26 @@ export function BarGraphEditModal({
 }: BarGraphEditModalProps) {
   const router = useRouter()
   const [title, setTitle] = useState(currentTitle ?? '')
-  const [items, setItems] = useState<EditingBarItem[]>(
-    currentData.items.map((item) => ({ ...item }))
-  )
-  const [editingItemId, setEditingItemId] = useState<EditingItemId>(null)
-  const [editingBackup, setEditingBackup] = useState<EditingBarItem | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  // アイテムを追加（自動的に編集モードに）
-  const handleAddItem = () => {
-    const newItem: EditingBarItem = {
-      id: nanoid(),
+  const {
+    items,
+    editingItemId,
+    handleAdd: handleAddItem,
+    handleCloseEdit,
+    handleToggleEdit,
+    handleFieldChange,
+    handleEscapeEdit,
+    handleDelete: handleDeleteItem,
+    handleMove: handleMoveItemOrder,
+  } = useEditableList<EditingBarItem>({
+    initialItems: currentData.items.map((item) => ({ ...item })),
+    createEmptyItem: () => ({
       label: '',
       value: 0,
       maxValue: 100,
-      sortOrder: items.length,
-    }
-    setItems([...items, newItem])
-    setEditingBackup({ ...newItem }) // バックアップ保存
-    setEditingItemId(newItem.id) // 自動的に編集モードに
-  }
-
-  // 編集を閉じる（内容は保持、バックアップはクリア）
-  const handleCloseEdit = () => {
-    setEditingItemId(null)
-    setEditingBackup(null)
-  }
-
-  // アイテムの編集を開始/終了（トグル）
-  const handleToggleEdit = (itemId: string) => {
-    if (editingItemId === itemId) {
-      handleCloseEdit()
-      return
-    }
-    const item = items.find((i) => i.id === itemId)
-    if (item) {
-      setEditingBackup({ ...item }) // バックアップ保存
-      setEditingItemId(itemId)
-    }
-  }
-
-  // フィールド変更（ローカルstateのみ更新、DB保存なし）
-  const handleFieldChange = <K extends keyof EditingBarItem>(
-    itemId: string,
-    field: K,
-    value: EditingBarItem[K]
-  ) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item))
-    )
-  }
-
-  // Escapeキーで編集キャンセル（編集中のアイテムのみ元に戻す）
-  const handleEscapeEdit = () => {
-    if (editingItemId && editingBackup) {
-      // 編集中のアイテムのみバックアップから復元
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === editingItemId ? { ...editingBackup } : item
-        )
-      )
-    }
-    setEditingItemId(null)
-    setEditingBackup(null)
-  }
-
-  // アイテムを削除（ローカルstateのみ更新、DB保存なし）
-  const handleDeleteItem = (itemId: string) => {
-    if (!confirm('このアイテムを削除しますか？')) return
-    const updatedItems = items.filter((i) => i.id !== itemId).map((i, idx) => ({ ...i, sortOrder: idx }))
-    setItems(updatedItems)
-    // DB保存はしない（完了ボタンで一括保存）
-  }
-
-  // アイテムを上下に移動（ローカルstateのみ更新、DB保存なし）
-  const handleMoveItemOrder = (itemId: string, direction: 'up' | 'down') => {
-    const index = items.findIndex((i) => i.id === itemId)
-    if (index === -1) return
-    if (direction === 'up' && index === 0) return
-    if (direction === 'down' && index === items.length - 1) return
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    const newItems = [...items]
-    ;[newItems[index], newItems[targetIndex]] = [
-      newItems[targetIndex],
-      newItems[index],
-    ]
-
-    // sortOrderを再計算
-    const updatedItems = newItems.map((item, idx) => ({ ...item, sortOrder: idx }))
-    setItems(updatedItems)
-    // DB保存はしない（完了ボタンで一括保存）
-  }
+    }),
+  })
 
   // 完了処理（全変更を1回のみDB保存してモーダル閉じる）
   const handleSave = () => {

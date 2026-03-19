@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { EditModal } from '../../EditModal'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -33,6 +34,7 @@ export function ProfileCardEditModal({
   sectionId,
   currentData,
 }: ProfileCardEditModalProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editCharacterName, setEditCharacterName] = useState(currentData.characterName || '')
   const [editBio, setEditBio] = useState(currentData.bio || '')
@@ -42,41 +44,51 @@ export function ProfileCardEditModal({
 
   const handleSave = () => {
     startTransition(async () => {
-      const newData: ProfileCardData = {
-        characterName: editCharacterName,
-        bio: editBio,
-        badgeLeft: editBadgeLeft,
-        badgeRight: editBadgeRight,
-        avatarImageKey: uploadedFiles.length > 0
-          ? uploadedFiles[0].key
-          : currentData.avatarImageKey,
-      }
+      try {
+        const newData: ProfileCardData = {
+          characterName: editCharacterName,
+          bio: editBio,
+          badgeLeft: editBadgeLeft,
+          badgeRight: editBadgeRight,
+          avatarImageKey: uploadedFiles.length > 0
+            ? uploadedFiles[0].key
+            : currentData.avatarImageKey,
+        }
 
-      const result = await updateSection(sectionId, { data: newData })
+        const result = await updateSection(sectionId, { data: newData })
 
-      if (result.success) {
-        toast.success('プロフィールを更新しました')
-        onClose()
-      } else {
-        toast.error(result.error || 'プロフィールの更新に失敗しました')
+        if (result.success) {
+          toast.success('プロフィールを更新しました')
+          onClose()
+          router.refresh()
+        } else {
+          toast.error(result.error || 'プロフィールの更新に失敗しました')
+        }
+      } catch {
+        toast.error('プロフィールの更新中にエラーが発生しました')
       }
     })
   }
 
   const handleDeleteImage = () => {
     startTransition(async () => {
-      const newData: ProfileCardData = {
-        ...currentData,
-        avatarImageKey: undefined,
-      }
+      try {
+        const newData: ProfileCardData = {
+          ...currentData,
+          avatarImageKey: undefined,
+        }
 
-      const result = await updateSection(sectionId, { data: newData })
+        const result = await updateSection(sectionId, { data: newData })
 
-      if (result.success) {
-        toast.success('画像を削除しました')
-        onClose()
-      } else {
-        toast.error(result.error || '削除に失敗しました')
+        if (result.success) {
+          toast.success('画像を削除しました')
+          onClose()
+          router.refresh()
+        } else {
+          toast.error(result.error || '削除に失敗しました')
+        }
+      } catch {
+        toast.error('削除中にエラーが発生しました')
       }
     })
   }

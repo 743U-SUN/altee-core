@@ -5,6 +5,8 @@ import {
   NICONICO_THUMBINFO_API_URL,
 } from './constants'
 
+const xmlParser = new XMLParser()
+
 export interface NiconicoVideoMetadata {
   videoId: string
   title: string
@@ -46,7 +48,7 @@ export async function fetchNiconicoVideoMetadata(
   videoId: string
 ): Promise<NiconicoVideoMetadata | null> {
   try {
-    const response = await fetch(`${NICONICO_THUMBINFO_API_URL}/${videoId}`, {
+    const response = await fetch(`${NICONICO_THUMBINFO_API_URL}/${encodeURIComponent(videoId)}`, {
       signal: AbortSignal.timeout(5000),
     })
 
@@ -55,8 +57,7 @@ export async function fetchNiconicoVideoMetadata(
     const xml = await response.text()
     // Defense-in-depth: XML レスポンスのサイズ上限チェック (1MB)
     if (xml.length > 1_000_000) return null
-    const parser = new XMLParser()
-    const result = parser.parse(xml)
+    const result = xmlParser.parse(xml)
 
     const thumb = result?.nicovideo_thumb_response?.thumb
     if (!thumb) return null

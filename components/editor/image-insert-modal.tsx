@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,37 +58,21 @@ export function ImageInsertModal({ open, onOpenChange, onInsert }: ImageInsertMo
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedImage, setSelectedImage] = useState<MediaFile | null>(null)
   const [altText, setAltText] = useState('')
-  const [mediaData, setMediaData] = useState<{ mediaFiles: MediaFile[]; pagination: { total: number; page: number; limit: number; totalPages: number } } | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // データフェッチ
-  useEffect(() => {
-    if (!open) return
-
-    setLoading(true)
-    setError(null)
-
-    const fetchData = async () => {
-      try {
-        const mediaFilter: MediaFilesFilter = {
-          containerName: selectedContainer,
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-        }
-        
-        const result = await getMediaFiles(mediaFilter)
-        setMediaData(result)
-      } catch (err) {
-        setError('画像の読み込みに失敗しました')
-        console.error('Failed to fetch media files:', err)
-      } finally {
-        setLoading(false)
-      }
+  const fetcher = async () => {
+    const mediaFilter: MediaFilesFilter = {
+      containerName: selectedContainer,
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
     }
+    return getMediaFiles(mediaFilter)
+  }
 
-    fetchData()
-  }, [open, selectedContainer, currentPage])
+  const { data: mediaData, isLoading: loading, error } = useSWR(
+    open ? ['media-files', selectedContainer, currentPage] : null,
+    fetcher
+  )
 
 
   // 既存画像選択時の処理

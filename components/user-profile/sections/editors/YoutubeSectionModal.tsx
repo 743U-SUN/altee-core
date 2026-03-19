@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { EditModal } from '../../EditModal'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -25,6 +26,7 @@ export function YoutubeSectionModal({
     sectionId,
     currentData,
 }: YoutubeSectionModalProps) {
+    const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [isLoadingMetadata, setIsLoadingMetadata] = useState(false)
 
@@ -54,7 +56,7 @@ export function YoutubeSectionModal({
             } else {
                 toast.error(result.error || "動画情報の取得に失敗しました")
             }
-        } catch (_error) {
+        } catch {
             toast.error("エラーが発生しました")
         } finally {
             setIsLoadingMetadata(false)
@@ -68,23 +70,26 @@ export function YoutubeSectionModal({
         }
 
         startTransition(async () => {
-            const newData: YoutubeSectionData = {
-                url,
-                videoId,
-                title, // 空文字の場合は非表示になる（YoutubeSection側で制御）
-                thumbnail,
-                aspectRatio: '16:9',
-            }
+            try {
+                const newData: YoutubeSectionData = {
+                    url,
+                    videoId,
+                    title, // 空文字の場合は非表示になる（YoutubeSection側で制御）
+                    thumbnail,
+                    aspectRatio: '16:9',
+                }
 
-            const result = await updateSection(sectionId, { data: newData })
+                const result = await updateSection(sectionId, { data: newData })
 
-            if (result.success) {
-                toast.success('YouTubeセクションを更新しました')
-                onClose()
-                // 必要に応じてリロード
-                // window.location.reload() // Next.js server actions revalidatePath usually handles this
-            } else {
-                toast.error(result.error || '更新に失敗しました')
+                if (result.success) {
+                    toast.success('YouTubeセクションを更新しました')
+                    onClose()
+                    router.refresh()
+                } else {
+                    toast.error(result.error || '更新に失敗しました')
+                }
+            } catch {
+                toast.error('更新中にエラーが発生しました')
             }
         })
     }

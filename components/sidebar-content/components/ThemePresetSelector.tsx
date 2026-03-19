@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { Label } from '@/components/ui/label'
 import { updateUserThemeSettings } from '@/app/actions/user/theme-actions'
 import { useRouter } from 'next/navigation'
@@ -8,6 +8,7 @@ import { getThemesGroupedByName } from '@/lib/themes/registry'
 import { applyThemePreview } from '@/lib/themes/preview'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ThemePresetSelectorProps {
   currentPreset: string
@@ -24,7 +25,7 @@ export function ThemePresetSelector({
   const cleanupPreviewRef = useRef<(() => void) | null>(null)
 
   // テーマファミリーをグループ化
-  const themeGroups = useMemo(() => getThemesGroupedByName(), [])
+  const themeGroups = getThemesGroupedByName()
 
   // プレビュー開始
   const handlePreviewStart = useCallback(
@@ -53,7 +54,7 @@ export function ThemePresetSelector({
     if (result.success) {
       router.refresh()
     } else {
-      console.error('Failed to update theme preset:', result.error)
+      toast.error('テーマの更新に失敗しました')
     }
   }
 

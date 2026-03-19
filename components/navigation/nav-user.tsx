@@ -135,7 +135,12 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {
-                await logoutAction()
+                try {
+                  await logoutAction()
+                } catch {
+                  // ログアウト失敗時はページリロードでフォールバック
+                  window.location.href = '/'
+                }
               }}
             >
               <LogOut />

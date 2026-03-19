@@ -1,14 +1,20 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateThemeBackground } from '@/app/actions/user/theme-actions'
 import { toast } from 'sonner'
+
+const ImageUploader = dynamic(
+  () => import('@/components/image-uploader/image-uploader').then(mod => ({ default: mod.ImageUploader })),
+  { loading: () => <div className="w-full h-32 bg-muted rounded-lg animate-pulse" />, ssr: false }
+)
 import type { BackgroundSettings } from '@/types/profile-sections'
 import type { UploadedFile } from '@/types/image-upload'
 import { Check, Upload, Trash2 } from 'lucide-react'
@@ -31,6 +37,7 @@ interface BackgroundSelectorProps {
 export function BackgroundSelector({
   currentBackground,
 }: BackgroundSelectorProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [bgType, setBgType] = useState<'preset' | 'color' | 'image'>(
     currentBackground?.type || 'preset'
@@ -71,7 +78,7 @@ export function BackgroundSelector({
       if (result.success) {
         toast.success('背景設定を更新しました')
         // ページをリロードして変更を反映
-        window.location.reload()
+        router.refresh()
       } else {
         toast.error(result.error || '背景設定の更新に失敗しました')
       }
@@ -87,7 +94,7 @@ export function BackgroundSelector({
 
       if (result.success) {
         toast.success('背景画像を削除しました')
-        window.location.reload()
+        router.refresh()
       } else {
         toast.error(result.error || '背景画像の削除に失敗しました')
       }

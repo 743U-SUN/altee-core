@@ -1,17 +1,12 @@
 'use client'
 
-import { memo, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
   User,
-  Video,
-  HelpCircle,
   Gift,
   Mail,
   Bell,
-  Package,
-  Newspaper,
   Gamepad2,
   Pencil,
 } from 'lucide-react'
@@ -19,16 +14,17 @@ import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { usePathname } from 'next/navigation'
 import type { ThemeSettings } from '@/types/profile-sections'
 import type { CSSProperties } from 'react'
+import { getNavItems } from './nav-items'
 
 interface ProfileHeaderProps {
   handle: string
-  avatarImageUrl?: string | null // アイコン画像（1:1正方形、ヘッダー・ネームカード用）
+  avatarImageUrl?: string | null
   characterName?: string | null
   visibility: ThemeSettings['visibility']
   namecard?: ThemeSettings['namecard']
   isEditable?: boolean
-  inDashboard?: boolean // ダッシュボード内の場合はtop-17、公開ページの場合はtop-0
-  isManaged?: boolean // MANAGEDプロフィールの場合に公式バッジ表示
+  inDashboard?: boolean
+  isManaged?: boolean
   onImageEdit?: (type: 'banner' | 'character' | 'profile') => void
   onNotificationClick?: (type: 'gift' | 'mail' | 'bell') => void
 }
@@ -37,7 +33,7 @@ interface ProfileHeaderProps {
  * プロフィールページのヘッダー（PC表示のみ）
  * ナビゲーションタブ + アクションアイコン
  */
-export const ProfileHeader = memo(function ProfileHeader({
+export function ProfileHeader({
   handle,
   avatarImageUrl,
   characterName,
@@ -50,30 +46,9 @@ export const ProfileHeader = memo(function ProfileHeader({
   onNotificationClick,
 }: ProfileHeaderProps) {
   const pathname = usePathname()
+  const navItems = getNavItems(handle, inDashboard, visibility)
 
-  const navItems = useMemo(() => {
-    const items = inDashboard ? [
-      { label: 'Profile', href: '/dashboard/profile-editor', icon: User },
-      { label: 'Items', href: '/dashboard/items', icon: Package },
-      { label: 'News', href: '/dashboard/news', icon: Newspaper },
-      { label: 'Videos', href: '/dashboard/platforms', icon: Video },
-      { label: 'FAQs', href: '/dashboard/faqs', icon: HelpCircle },
-    ] : [
-      { label: 'Profile', href: `/@${handle}`, icon: User },
-      { label: 'Items', href: `/@${handle}/items`, icon: Package },
-      { label: 'News', href: `/@${handle}/news`, icon: Newspaper },
-      { label: 'Videos', href: `/@${handle}/videos`, icon: Video },
-      { label: 'FAQs', href: `/@${handle}/faqs`, icon: HelpCircle },
-    ]
-    // 公開ページ側のみ visibility で News を除外（ダッシュボードは常に表示）
-    if (!inDashboard && visibility.newsPage === false) {
-      return items.filter((item) => item.label !== 'News')
-    }
-    return items
-  }, [inDashboard, handle, visibility.newsPage])
-
-  // ネームカード背景スタイルを計算
-  const namecardStyle = useMemo((): CSSProperties => {
+  const namecardStyle: CSSProperties = (() => {
     if (!namecard) return {}
     if (namecard.type === 'color' && namecard.color) {
       return { backgroundColor: namecard.color }
@@ -86,42 +61,17 @@ export const ProfileHeader = memo(function ProfileHeader({
       }
     }
     return {}
-  }, [namecard])
-
-  const handleProfileEdit = useCallback(() => {
-    if (isEditable && onImageEdit) {
-      onImageEdit('profile')
-    }
-  }, [isEditable, onImageEdit])
-
-  const handleGiftClick = useCallback(() => {
-    if (isEditable && onNotificationClick) {
-      onNotificationClick('gift')
-    }
-  }, [isEditable, onNotificationClick])
-
-  const handleMailClick = useCallback(() => {
-    if (isEditable && onNotificationClick) {
-      onNotificationClick('mail')
-    }
-  }, [isEditable, onNotificationClick])
-
-  const handleBellClick = useCallback(() => {
-    if (isEditable && onNotificationClick) {
-      onNotificationClick('bell')
-    }
-  }, [isEditable, onNotificationClick])
+  })()
 
   return (
     <header className={`flex justify-center w-full sticky ${inDashboard ? 'top-17' : 'top-0'} z-40 bg-[var(--theme-header-bg)]/90 backdrop-blur-sm border-b border-[var(--theme-stat-bg)] max-[992px]:hidden`}>
       <div className="flex items-center justify-between w-full max-w-[1200px] h-16 px-6">
         <div className="flex items-center">
-          {/* Avatar + Name Card（編集時はクリック可能） */}
+          {/* Avatar + Name Card */}
           <div
             className={`flex items-center relative group ${isEditable ? 'cursor-pointer' : ''}`}
-            onClick={handleProfileEdit}
+            onClick={() => isEditable && onImageEdit?.('profile')}
           >
-            {/* Avatar Image (アイコン) */}
             <div className="w-14 h-14 rounded-l-sm rounded-r-none overflow-hidden shadow-[inset_2px_2px_4px_rgba(255,255,255,0.3)] border-0 border-r-0 border-white/50 bg-[var(--theme-card-bg)] z-10">
               {avatarImageUrl ? (
                 <Image
@@ -137,7 +87,6 @@ export const ProfileHeader = memo(function ProfileHeader({
                 </div>
               )}
             </div>
-            {/* Name Card */}
             <div
               className="h-14 w-56 px-4 flex items-center gap-2 bg-[var(--theme-card-bg)]/90 backdrop-blur-sm rounded-r-none rounded-l-none shadow-[4px_4px_8px_rgba(0,0,0,0.05)] border border-l-0 border-white/30"
               style={namecardStyle}
@@ -154,7 +103,6 @@ export const ProfileHeader = memo(function ProfileHeader({
                 </span>
               )}
             </div>
-            {/* 編集時ホバーオーバーレイ */}
             {isEditable && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-l-sm">
                 <Pencil className="w-5 h-5 text-white" />
@@ -187,7 +135,6 @@ export const ProfileHeader = memo(function ProfileHeader({
             )
           })}
 
-          {/* Game Button (セパレーターで区切って配置) */}
           {visibility.gameButton && (
             <>
               <div className="w-px h-6 bg-[var(--theme-stat-bg)] mx-2" />
@@ -206,7 +153,7 @@ export const ProfileHeader = memo(function ProfileHeader({
         <div className="flex items-center gap-3">
           <button
             className="p-2 rounded-full hover:bg-black/5 transition-colors"
-            onClick={handleGiftClick}
+            onClick={() => onNotificationClick?.('gift')}
             disabled={!isEditable}
             aria-label="Gift"
           >
@@ -214,7 +161,7 @@ export const ProfileHeader = memo(function ProfileHeader({
           </button>
           <button
             className="p-2 rounded-full hover:bg-black/5 transition-colors"
-            onClick={handleMailClick}
+            onClick={() => onNotificationClick?.('mail')}
             disabled={!isEditable}
             aria-label="Mail"
           >
@@ -222,7 +169,7 @@ export const ProfileHeader = memo(function ProfileHeader({
           </button>
           <button
             className="p-2 rounded-full hover:bg-black/5 transition-colors relative"
-            onClick={handleBellClick}
+            onClick={() => onNotificationClick?.('bell')}
             disabled={!isEditable}
             aria-label="Notifications"
           >
@@ -232,4 +179,4 @@ export const ProfileHeader = memo(function ProfileHeader({
       </div>
     </header>
   )
-})
+}

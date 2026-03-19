@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import type { BaseSectionProps, VideoGallerySectionData } from '@/types/profile-sections'
@@ -35,15 +35,12 @@ export function VideoGallerySection({ section, isEditable }: BaseSectionProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   // sortOrder順にソート
-  const sortedItems = useMemo(
-    () => [...data.items].sort((a, b) => a.sortOrder - b.sortOrder),
-    [data.items]
-  )
+  const sortedItems = [...data.items].sort((a, b) => a.sortOrder - b.sortOrder)
 
   // サムネイルクリックでメイン動画を切り替え
-  const handleSelectVideo = useCallback((index: number) => {
+  const handleSelectVideo = (index: number) => {
     setSelectedIndex(index)
-  }, [])
+  }
 
   // 選択中の動画（範囲外なら最初の動画にフォールバック）
   const currentMainVideo = sortedItems[selectedIndex] ?? sortedItems[0] ?? null

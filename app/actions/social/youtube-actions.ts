@@ -476,10 +476,12 @@ export async function updateYouTubeLatestSection(
 }
 
 /**
- * 公開用: YouTube RSS Feedを取得（認証不要）
+ * YouTube RSS Feedを取得（認証必須 - SSRF/帯域消費対策）
  */
 export async function fetchPublicYoutubeRss(channelId: string, limit: number) {
   try {
+    await requireAuth()
+
     if (!channelId || limit <= 0) {
       return { success: true as const, data: [] }
     }

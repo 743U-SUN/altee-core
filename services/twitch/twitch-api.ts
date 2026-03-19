@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * Twitch API サービス
  * Twitch API の呼び出しとEventSub管理を担当
@@ -59,7 +61,7 @@ export async function getTwitchUserId(username: string): Promise<{
       return { success: false, error: "Twitch API credentials not configured" }
     }
 
-    const response = await fetch(`https://api.twitch.tv/helix/users?login=${username}`, {
+    const response = await fetch(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(username)}`, {
       headers: {
         "Client-ID": clientId,
         Authorization: `Bearer ${accessToken}`,
@@ -106,10 +108,10 @@ export async function createTwitchEventSub(
 
     const callbackUrl = `https://${domain}/api/webhooks/twitch/eventsub`
 
-    // stream.online と stream.offline の2つのサブスクリプションを作成
+    // stream.online と stream.offline の2つのサブスクリプションを並列作成
     const subscriptionTypes = ["stream.online", "stream.offline"]
 
-    for (const type of subscriptionTypes) {
+    const results = await Promise.all(subscriptionTypes.map(async (type) => {
       const response = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
         method: "POST",
         headers: {
@@ -134,7 +136,7 @@ export async function createTwitchEventSub(
       if (!response.ok) {
         const errorText = await response.text()
         console.error(`[Twitch EventSub] Failed to create ${type} subscription:`, errorText)
-        return { success: false, error: `Failed to create EventSub subscription: ${response.status}` }
+        throw new Error(`Failed to create EventSub subscription: ${response.status}`)
       }
 
       const data = await response.json()
@@ -142,11 +144,10 @@ export async function createTwitchEventSub(
       const status = data.data[0]?.status
 
       if (!subscriptionId) {
-        return { success: false, error: "No subscription ID returned" }
+        throw new Error("No subscription ID returned")
       }
 
-      // データベースに保存
-      await prisma.twitchEventSubSubscription.create({
+      return prisma.twitchEventSubSubscription.create({
         data: {
           userId,
           subscriptionId,
@@ -154,8 +155,10 @@ export async function createTwitchEventSub(
           status: status || "unknown",
         },
       })
+    }))
 
-      console.log(`[Twitch EventSub] Created ${type} subscription: ${subscriptionId}`)
+    if (results.length !== subscriptionTypes.length) {
+      return { success: false, error: "Not all subscriptions were created" }
     }
 
     return { success: true }
@@ -185,10 +188,10 @@ export async function deleteTwitchEventSub(userId: string): Promise<{
       where: { userId },
     })
 
-    // 各サブスクリプションをTwitch APIから削除
-    for (const subscription of subscriptions) {
+    // 各サブスクリプションをTwitch APIから並列削除
+    await Promise.allSettled(subscriptions.map(async (subscription) => {
       const response = await fetch(
-        `https://api.twitch.tv/helix/eventsub/subscriptions?id=${subscription.subscriptionId}`,
+        `https://api.twitch.tv/helix/eventsub/subscriptions?id=${encodeURIComponent(subscription.subscriptionId)}`,
         {
           method: "DELETE",
           headers: {
@@ -200,10 +203,8 @@ export async function deleteTwitchEventSub(userId: string): Promise<{
 
       if (!response.ok) {
         console.error(`[Twitch EventSub] Failed to delete subscription ${subscription.subscriptionId}:`, response.status)
-      } else {
-        console.log(`[Twitch EventSub] Deleted subscription: ${subscription.subscriptionId}`)
       }
-    }
+    }))
 
     // データベースから削除
     await prisma.twitchEventSubSubscription.deleteMany({

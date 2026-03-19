@@ -416,17 +416,6 @@ export function getAllCategories(): Array<{
 }
 
 /**
- * 高優先度セクションをpreload
- *
- * Note: React.lazy()でラップされたコンポーネントは、
- * React 19のuse()やSuspenseによって自動的に適切なタイミングで読み込まれるため、
- * 明示的なpreloadは通常不要です。この関数は将来の最適化のために保持されています。
- */
-export async function preloadHighPrioritySections(): Promise<void> {
-  return Promise.resolve()
-}
-
-/**
  * ページ別にセクション定義を取得
  */
 export function getSectionsByPage(page: 'profile' | 'videos'): SectionDefinition[] {

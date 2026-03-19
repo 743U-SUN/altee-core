@@ -288,6 +288,13 @@ export async function updateSection(
       return { success: false, error: '権限がありません' }
     }
 
+    // data.data の基本構造バリデーション
+    if (data.data !== undefined) {
+      if (typeof data.data !== 'object' || data.data === null || Array.isArray(data.data)) {
+        return { success: false, error: 'セクションデータの形式が不正です' }
+      }
+    }
+
     await prisma.userSection.update({
       where: { id: sectionId },
       data: {

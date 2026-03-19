@@ -13,6 +13,9 @@ export const RESERVED_HANDLES = [
   'profile',
   'u',          // VTuber一覧ページ
   'g',          // グループ関連ページ
+  '_next',      // Next.js内部ルート
+  'serwist',    // PWA service worker route
+  'sw',         // Service worker
 
   // 機能系
   'demo',       // デモ・テストページ

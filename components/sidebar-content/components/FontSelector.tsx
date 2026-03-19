@@ -11,6 +11,7 @@ import {
 import { updateUserThemeSettings } from '@/app/actions/user/theme-actions'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 const FONT_OPTIONS = [
   { value: 'Inter', label: 'Inter' },
@@ -35,7 +36,7 @@ export function FontSelector({ currentFont }: FontSelectorProps) {
     if (result.success) {
       router.refresh()
     } else {
-      console.error('Failed to update font:', result.error)
+      toast.error('フォントの更新に失敗しました')
     }
   }
 

@@ -10,8 +10,7 @@ import { createHmac, timingSafeEqual } from "crypto"
 function verifyYoutubeSignature(request: NextRequest, body: string): boolean {
   const secret = process.env.YOUTUBE_WEBHOOK_SECRET
   if (!secret) {
-    // シークレット未設定の場合は検証をスキップ（後方互換性）
-    return true
+    return false
   }
 
   const signature = request.headers.get('x-hub-signature')
