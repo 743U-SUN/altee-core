@@ -20,27 +20,11 @@ import {
   updateFaqCategorySettings,
 } from '@/app/actions/content/faq-actions'
 import { FAQ_LIMITS } from '@/types/faq'
+import type { FaqCategoryBase, FaqQuestionBase } from '@/types/faq'
 import type { SectionSettings, SectionBackgroundPreset } from '@/types/profile-sections'
 
-interface FaqQuestion {
-  id: string
-  question: string
-  answer: string
-  sortOrder: number
-  categoryId: string
-  parentId?: string
-  isVisible: boolean
-}
-
-interface FaqCategory {
-  id: string
-  name: string
-  description: string | null
-  questions?: FaqQuestion[]
-  sortOrder: number
-  isVisible: boolean
-  settings: SectionSettings | null
-}
+type FaqQuestion = FaqQuestionBase & { parentId?: string }
+type FaqCategory = FaqCategoryBase & { questions?: FaqQuestion[] }
 
 interface FaqManagementSectionProps {
   initialFaqCategories: unknown[]
@@ -141,12 +125,18 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
   }, [mutate])
 
   const handleStyleSave = useCallback(async (categoryId: string, settings: SectionSettings | null) => {
-    const result = await updateFaqCategorySettings(categoryId, settings)
-    if (!result.success) throw new Error(result.error)
-    await mutate((current) => {
-      if (!current) return current
-      return current.map((cat) => cat.id === categoryId ? { ...cat, settings } : cat)
-    }, false)
+    try {
+      const result = await updateFaqCategorySettings(categoryId, settings)
+      if (!result.success) throw new Error(result.error)
+      await mutate((current) => {
+        if (!current) return current
+        return current.map((cat) => cat.id === categoryId ? { ...cat, settings } : cat)
+      }, false)
+      toast.success('スタイルを保存しました')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'スタイルの保存に失敗しました')
+      throw error
+    }
   }, [mutate])
 
   // ===== 質問操作 =====

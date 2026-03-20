@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  title: 'ニコニコ動画設定',
+  description: 'ニコニコ動画チャンネル統合',
+}
 
 export default async function NiconicoPlatformPage() {
   const session = await cachedAuth()

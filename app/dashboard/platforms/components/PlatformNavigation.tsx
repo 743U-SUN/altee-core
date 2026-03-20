@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Youtube } from 'lucide-react'
 
+// ニコニコ動画アイコン（lucide-reactにないためカスタム実装）
+function NiconicoIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <text x="2" y="18" fontSize="18" fontWeight="bold">ニ</text>
+    </svg>
+  )
+}
+
 // Twitch アイコン（lucide-reactにないためカスタム実装）
 function TwitchIcon({ className }: { className?: string }) {
   return (
@@ -49,11 +58,7 @@ const PLATFORM_TYPES: PlatformType[] = [
   {
     key: 'niconico',
     label: 'ニコニコ動画',
-    icon: ({ className }: { className?: string }) => (
-      <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-        <text x="2" y="18" fontSize="18" fontWeight="bold">ニ</text>
-      </svg>
-    ),
+    icon: NiconicoIcon,
     href: '/dashboard/platforms/niconico',
     description: 'ニコニコ動画チャンネル統合',
     isAvailable: false,

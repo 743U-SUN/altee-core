@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { getUserTwitchSettings, getTwitchEventSubSubscriptionStatus } from "@/app/actions/social/twitch-actions"
 import { TwitchTabContent } from "../components/TwitchTabContent"
+
+export const metadata: Metadata = {
+  title: 'Twitch設定',
+  description: 'Twitchチャンネル設定とライブ配信管理',
+}
 
 export default async function TwitchPlatformPage() {
   const session = await cachedAuth()

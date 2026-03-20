@@ -106,7 +106,6 @@ export function GiftSettings({ initialData, compact = false }: GiftSettingsProps
         throw new Error(result.error)
       }
     } catch (error) {
-      console.error('リンクURL保存エラー:', error)
       toast.error('リンクURLの保存に失敗しました')
       throw error
     }

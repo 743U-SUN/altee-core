@@ -9,14 +9,12 @@ import { deleteUserItem } from "@/app/actions/content/item-actions"
 
 interface DeleteUserItemButtonProps {
   userItemId: string
-  userId: string
   itemName: string
   onDelete: () => void
 }
 
 export function DeleteUserItemButton({
   userItemId,
-  userId: _userId,
   itemName,
   onDelete
 }: DeleteUserItemButtonProps) {

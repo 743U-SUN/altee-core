@@ -26,7 +26,6 @@ interface EditUserItemModalProps {
   isOpen: boolean
   onClose: () => void
   userItem: UserItemWithDetails
-  userId: string
   onUpdate: (updatedUserItem: UserItemWithDetails) => void
 }
 
@@ -34,7 +33,6 @@ export function EditUserItemModal({
   isOpen,
   onClose,
   userItem,
-  userId: _userId,
   onUpdate
 }: EditUserItemModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)

@@ -49,20 +49,11 @@ export function UserItemListSection({
   categories,
   brands
 }: UserItemListSectionProps) {
-  // データ管理（シンプル化）
+  // データ管理
   const [userItems, setUserItems] = useState(initialUserProducts)
 
-  const mutateUserItems = (newItems: UserItemWithDetails[]) => {
-    setUserItems(newItems)
-  }
-
-  const handleItemsChange = (newItems: UserItemWithDetails[]) => {
-    mutateUserItems(newItems)
-  }
-
   const handleItemAdded = (newItem: UserItemWithDetails) => {
-    const updatedItems = [...userItems, newItem].sort((a, b) => a.sortOrder - b.sortOrder)
-    mutateUserItems(updatedItems)
+    setUserItems(prev => [...prev, newItem].sort((a, b) => a.sortOrder - b.sortOrder))
   }
 
   return (
@@ -91,7 +82,7 @@ export function UserItemListSection({
         <DragDropItemList
           userItems={userItems}
           userId={userId}
-          onItemsChange={handleItemsChange}
+          onItemsChange={setUserItems}
         />
       )}
     </div>

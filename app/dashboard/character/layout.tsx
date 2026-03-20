@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { cachedAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { CharacterNavigation } from "./components/CharacterNavigation"
+
+export const metadata: Metadata = {
+  title: 'キャラクター情報',
+  description: 'キャラクターの基本情報や活動情報を設定します。',
+}
 
 export default async function CharacterLayout({
   children,

@@ -9,6 +9,16 @@ import { UserItemWithDetails } from "@/types/item"
 import { ItemImage } from "@/components/items/item-image"
 import { Badge } from "@/components/ui/badge"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   DndContext,
   DragEndEvent,
   DragOverlay,
@@ -42,6 +52,8 @@ interface DragDropItemListProps {
 export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropItemListProps) {
   const [activeItem, setActiveItem] = useState<UserItemWithDetails | null>(null)
   const [editingItem, setEditingItem] = useState<UserItemWithDetails | null>(null)
+  const [deletingItem, setDeletingItem] = useState<UserItemWithDetails | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // DnD センサー設定（モバイル対応）
   const sensors = useSensors(
@@ -99,17 +111,28 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
     }
   }
 
-  const handleDeleteItem = async (item: UserItemWithDetails) => {
-    if (!confirm(`${item.item.name}を削除しますか？`)) return
+  const handleDeleteItem = (item: UserItemWithDetails) => {
+    setDeletingItem(item)
+  }
 
-    const result = await deleteUserItem(item.id)
+  const handleDeleteConfirm = async () => {
+    if (!deletingItem) return
+    setIsDeleting(true)
+    try {
+      const result = await deleteUserItem(deletingItem.id)
 
-    if (result.success) {
-      const updatedItems = userItems.filter(p => p.id !== item.id)
-      onItemsChange(updatedItems)
-      toast.success("アイテムを削除しました")
-    } else {
+      if (result.success) {
+        const updatedItems = userItems.filter(p => p.id !== deletingItem.id)
+        onItemsChange(updatedItems)
+        toast.success("アイテムを削除しました")
+        setDeletingItem(null)
+      } else {
+        toast.error("アイテムの削除に失敗しました")
+      }
+    } catch {
       toast.error("アイテムの削除に失敗しました")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -157,10 +180,36 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
           isOpen={true}
           onClose={() => setEditingItem(null)}
           userItem={editingItem}
-          userId={userId}
           onUpdate={handleUpdate}
         />
       )}
+
+      <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>アイテムを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                <span className="font-medium">「{deletingItem?.item.name}」</span>
+                をマイアイテムから削除します。
+              </span>
+              <span className="block text-sm">
+                この操作は取り消せません。アイテム自体は削除されず、あなたの登録のみが削除されます。
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
@@ -275,7 +324,7 @@ function ItemCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => item.item.amazonUrl && window.open(item.item.amazonUrl, '_blank')}
+              onClick={() => item.item.amazonUrl && window.open(item.item.amazonUrl, '_blank', 'noopener,noreferrer')}
             >
               <ExternalLink className="h-4 w-4" />
             </Button>

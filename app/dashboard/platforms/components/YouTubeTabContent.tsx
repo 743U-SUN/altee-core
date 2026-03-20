@@ -18,7 +18,8 @@ import {
   updateYoutubeChannel,
   addRecommendedVideo,
   extractChannelIdFromUrl,
-  getMyRssFeedVideos
+  getMyRssFeedVideos,
+  toggleRecommendedVideosVisibility,
 } from "@/app/actions/social/youtube-actions"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
@@ -197,6 +198,7 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
                         <img
                           src={video.thumbnail}
                           alt={video.title}
+                          loading="lazy"
                           className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
                         />
                       )}
@@ -241,7 +243,14 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
               <Switch
                 id="showVideos"
                 checked={showVideos}
-                onCheckedChange={setShowVideos}
+                onCheckedChange={async (checked) => {
+                  setShowVideos(checked)
+                  const result = await toggleRecommendedVideosVisibility(checked)
+                  if (!result.success) {
+                    setShowVideos(!checked)
+                    toast.error("表示設定の更新に失敗しました")
+                  }
+                }}
               />
             </div>
           </div>

@@ -18,25 +18,10 @@ const SectionStylePanel = dynamic(
 import { resolvePreset } from '@/lib/sections/background-utils'
 import type { SectionSettings, SectionBackgroundPreset } from '@/types/profile-sections'
 import { FAQ_LIMITS } from '@/types/faq'
+import type { FaqCategoryBase, FaqQuestionBase } from '@/types/faq'
 
-interface FaqQuestion {
-  id: string
-  question: string
-  answer: string
-  sortOrder: number
-  categoryId: string
-  parentId?: string
-  isVisible: boolean
-}
-
-interface FaqCategory {
-  id: string
-  name: string
-  description: string | null
-  isVisible: boolean
-  settings: SectionSettings | null
-  questions?: FaqQuestion[]
-}
+type FaqQuestion = FaqQuestionBase & { parentId?: string }
+type FaqCategory = FaqCategoryBase & { questions?: FaqQuestion[] }
 
 interface FaqCategoryCardProps {
   category: FaqCategory
