@@ -18,6 +18,7 @@ import {
 import { Trash2, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { MediaType } from "@prisma/client"
+import { uploadTypeLabels } from "./upload-type-labels"
 
 interface MediaFile {
   id: string
@@ -28,7 +29,7 @@ interface MediaFile {
   fileSize: number
   mimeType: string
   uploadType: MediaType
-  createdAt: Date
+  createdAt: string
   uploader: {
     id: string
     name: string | null
@@ -85,6 +86,7 @@ export function MediaTableRow({
             src={`${storageUrl}/${file.storageKey}`}
             alt={file.originalName}
             className="h-full w-full object-cover"
+            loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement
               target.style.display = 'none'
@@ -102,7 +104,7 @@ export function MediaTableRow({
       </TableCell>
       <TableCell>
         <Badge variant={file.uploadType === 'THUMBNAIL' ? 'default' : 'secondary'}>
-          {file.uploadType === 'THUMBNAIL' ? 'サムネイル' : 'コンテンツ'}
+          {uploadTypeLabels[file.uploadType] ?? file.uploadType}
         </Badge>
       </TableCell>
       <TableCell>{formatFileSize(file.fileSize)}</TableCell>

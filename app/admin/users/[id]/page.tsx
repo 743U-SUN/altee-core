@@ -20,10 +20,15 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { id } = await params
 
   try {
-    const [user, userNews] = await Promise.all([
+    const [user, userNewsRaw] = await Promise.all([
       getUserDetail(id),
       adminGetUserNewsList(id),
     ])
+
+    const userNews = userNewsRaw.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+    }))
 
     return (
       <div className="container mx-auto p-6 flex flex-col gap-6">
@@ -237,7 +242,10 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
       </div>
     )
   } catch (error) {
-    console.error("UserDetail error:", error)
-    notFound()
+    const message = error instanceof Error ? error.message : ''
+    if (message.includes('ユーザーが見つかりません')) {
+      notFound()
+    }
+    throw error
   }
 }

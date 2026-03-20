@@ -32,9 +32,14 @@ export async function MediaTable({
     
     const { mediaFiles, pagination } = await getMediaFiles(filters)
 
+    const serializedFiles = mediaFiles.map((file) => ({
+      ...file,
+      createdAt: file.createdAt.toISOString(),
+    }))
+
     return (
       <MediaTableClient
-        mediaFiles={mediaFiles}
+        mediaFiles={serializedFiles}
         pagination={pagination}
         search={search}
         containerName={containerName}

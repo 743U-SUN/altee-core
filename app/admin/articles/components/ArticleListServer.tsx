@@ -7,5 +7,11 @@ interface ArticleListServerProps {
 
 export async function ArticleListServer({ currentPage }: ArticleListServerProps) {
   const { articles, pagination } = await getArticles(currentPage, 10)
-  return <ArticleList articles={articles} pagination={pagination} />
+  const serializedArticles = articles.map((article) => ({
+    ...article,
+    createdAt: article.createdAt.toISOString(),
+    updatedAt: article.updatedAt.toISOString(),
+    publishedAt: article.publishedAt?.toISOString() ?? null,
+  }))
+  return <ArticleList articles={serializedArticles} pagination={pagination} />
 }

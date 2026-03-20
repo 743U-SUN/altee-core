@@ -14,7 +14,7 @@ interface NewsItem {
   slug: string
   published: boolean
   adminHidden: boolean
-  createdAt: string | Date
+  createdAt: string
 }
 
 interface UserNewsAdminProps {

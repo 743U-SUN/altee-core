@@ -24,7 +24,7 @@ interface MediaFile {
   fileSize: number
   mimeType: string
   uploadType: MediaType
-  createdAt: Date
+  createdAt: string
   uploader: {
     id: string
     name: string | null

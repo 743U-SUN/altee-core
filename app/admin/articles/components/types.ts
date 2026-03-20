@@ -39,9 +39,9 @@ export interface ArticleSummary {
   slug: string
   excerpt: string | null
   published: boolean
-  publishedAt: Date | null
-  createdAt: Date
-  updatedAt: Date
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
   author: {
     id: string
     name: string | null

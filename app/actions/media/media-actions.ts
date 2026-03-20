@@ -117,6 +117,11 @@ export async function getMediaFiles(filter: MediaFilesFilter = {}) {
   }
 }
 
+export async function getMediaCount(): Promise<number> {
+  await requireAdmin()
+  return prisma.mediaFile.count({ where: { deletedAt: null } })
+}
+
 export async function getMediaStats() {
   await requireAdmin()
 

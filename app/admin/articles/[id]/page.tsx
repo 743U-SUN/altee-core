@@ -21,11 +21,18 @@ export default async function EditArticlePage({ params }: PageProps) {
   const { id } = await params
 
   try {
-    const [article, categories, tags] = await Promise.all([
+    const [articleRaw, categories, tags] = await Promise.all([
       getArticle(id),
       getAllCategories(),
       getAllTags(),
     ])
+
+    const article = {
+      ...articleRaw,
+      createdAt: articleRaw.createdAt.toISOString(),
+      updatedAt: articleRaw.updatedAt.toISOString(),
+      publishedAt: articleRaw.publishedAt?.toISOString() ?? null,
+    }
 
     return (
       <div className="container mx-auto p-6 pb-40 space-y-6">

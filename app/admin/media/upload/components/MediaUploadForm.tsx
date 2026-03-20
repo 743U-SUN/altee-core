@@ -4,14 +4,22 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import type { UploadedFile } from '@/types/image-upload'
+
+const ImageUploader = dynamic(
+  () => import('@/components/image-uploader/image-uploader').then((m) => m.ImageUploader),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse h-40 bg-muted rounded-md" />,
+  }
+)
 import { uploadMediaFileAction } from '@/app/actions/media/admin-media-upload-actions'
 import { MediaType } from '@prisma/client'
 import { toast } from 'sonner'
@@ -96,7 +104,6 @@ export function MediaUploadForm() {
         toast.error(result?.error || 'アップロードに失敗しました。')
       }
     } catch (error) {
-      console.error('Submit error:', error)
       toast.error(error instanceof Error ? error.message : 'アップロード中にエラーが発生しました。')
     } finally {
       setIsSubmitting(false)

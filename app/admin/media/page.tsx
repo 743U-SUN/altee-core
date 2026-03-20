@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getMediaFiles, getMediaStats } from '@/app/actions/media/media-actions'
+import { getMediaCount, getMediaStats } from '@/app/actions/media/media-actions'
 import { MediaTable } from './components/MediaTable'
 import { MediaFilters } from './components/MediaFilters'
 import { HardDrive, Image as ImageIcon, FileText, Calendar, Trash2, Upload } from 'lucide-react'
@@ -102,8 +102,8 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
 }
 
 async function MediaFiltersWrapper() {
-  const { pagination } = await getMediaFiles({ limit: 1 }) // 総数取得のみ
-  return <MediaFilters totalCount={pagination.total} />
+  const totalCount = await getMediaCount()
+  return <MediaFilters totalCount={totalCount} />
 }
 
 function MediaFiltersSkeleton() {
