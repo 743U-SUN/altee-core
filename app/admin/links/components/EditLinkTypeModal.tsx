@@ -128,9 +128,8 @@ export function EditLinkTypeModal({ linkType, onLinkTypeUpdated, onCancel }: Edi
             <MultipleIconUploadSection
               linkTypeId={linkType.id}
               initialIcons={linkType.icons}
-              onIconsChanged={(icons) => {
+              onIconsChanged={() => {
                 // アイコンが変更された場合の処理（必要に応じて）
-                console.log("Icons updated:", icons)
               }}
             />
 

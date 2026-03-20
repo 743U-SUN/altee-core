@@ -1,5 +1,6 @@
 import { getCategoriesAction } from '../actions'
 import { CategoryForm } from '../components/CategoryForm'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: '新規カテゴリ作成 | 管理画面',
@@ -7,6 +8,7 @@ export const metadata = {
 }
 
 export default async function NewCategoryPage() {
+  await requireAdmin()
   const result = await getCategoriesAction()
   const categories = result.success && result.data ? result.data : []
 

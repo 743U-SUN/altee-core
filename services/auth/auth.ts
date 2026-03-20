@@ -54,8 +54,9 @@ export async function updateUserImage(userId: string, newImageUrl: string): Prom
  * ブラックリストメールをチェック
  */
 export async function isEmailBlacklisted(email: string): Promise<boolean> {
+  const normalizedEmail = email.toLowerCase().trim()
   const blacklisted = await prisma.blacklistedEmail.findUnique({
-    where: { email }
+    where: { email: normalizedEmail }
   })
   return !!blacklisted
 }

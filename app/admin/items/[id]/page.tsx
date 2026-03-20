@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getItemByIdAction, getCategoriesAction } from '../actions'
 import { ItemForm } from '../components/ItemForm'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: 'アイテム編集 | 管理画面',
@@ -13,6 +14,7 @@ interface PageProps {
 }
 
 export default async function EditItemPage({ params }: PageProps) {
+  await requireAdmin()
   const { id } = await params
 
   const [itemResult, categoriesResult, brands] = await Promise.all([

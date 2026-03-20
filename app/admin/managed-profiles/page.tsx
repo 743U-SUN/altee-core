@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus } from "lucide-react"
 import { ManagedProfileList } from "./components/ManagedProfileList"
+import { requireAdmin } from "@/lib/auth"
 
 export const metadata: Metadata = {
   title: "公式プロフィール管理",
@@ -16,6 +17,7 @@ interface PageProps {
 }
 
 export default async function ManagedProfilesPage({ searchParams }: PageProps) {
+  await requireAdmin()
   const params = await searchParams
   const currentPage = Number(params.page) || 1
   const search = typeof params.search === "string" ? params.search : ""

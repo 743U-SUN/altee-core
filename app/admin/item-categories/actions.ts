@@ -11,6 +11,7 @@ import { revalidatePath } from 'next/cache'
 // ===== カテゴリ一覧取得 =====
 
 export async function getCategoriesAction() {
+  await requireAdmin()
   try {
     const categories = await prisma.itemCategory.findMany({
       include: {
@@ -39,6 +40,7 @@ export async function getCategoriesAction() {
 // ===== カテゴリ詳細取得 =====
 
 export async function getCategoryByIdAction(id: string) {
+  await requireAdmin()
   try {
     const category = await prisma.itemCategory.findUnique({
       where: { id },

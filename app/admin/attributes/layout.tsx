@@ -9,10 +9,15 @@ export default async function AttributesLayout({
   children: React.ReactNode
 }) {
   const session = await cachedAuth()
-  
+
   // 管理者権限チェック（Layout層）
   if (session?.user?.role !== 'ADMIN') {
     redirect('/unauthorized')
+  }
+
+  // アクティブユーザーチェック
+  if (!session?.user?.isActive) {
+    redirect('/auth/suspended')
   }
 
   return (

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { PlusCircle, FileUp } from 'lucide-react'
 import { ItemList } from './components/ItemList'
 import { Skeleton } from '@/components/ui/skeleton'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: 'アイテム管理 | 管理画面',
@@ -20,6 +21,7 @@ interface PageProps {
 }
 
 export default async function ItemsPage({ searchParams }: PageProps) {
+  await requireAdmin()
   const params = await searchParams
 
   return (

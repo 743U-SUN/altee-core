@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ExternalLink } from "lucide-react"
 import { getManagedProfileDetail } from "@/app/actions/admin/managed-profile-actions"
 import { BasicInfoTab } from "./components/BasicInfoTab"
+import { requireAdmin } from "@/lib/auth"
 
 export const metadata: Metadata = {
   title: "公式プロフィール編集",
@@ -18,6 +19,7 @@ interface PageProps {
 }
 
 export default async function ManagedProfileDetailPage({ params }: PageProps) {
+  await requireAdmin()
   const { id } = await params
 
   let profile

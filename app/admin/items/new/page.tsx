@@ -1,6 +1,7 @@
 import { getCategoriesAction } from '../actions'
 import { ItemForm } from '../components/ItemForm'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: '新規アイテム作成 | 管理画面',
@@ -8,6 +9,7 @@ export const metadata = {
 }
 
 export default async function NewItemPage() {
+  await requireAdmin()
   const [categoriesResult, brands] = await Promise.all([
     getCategoriesAction(),
     prisma.brand.findMany({

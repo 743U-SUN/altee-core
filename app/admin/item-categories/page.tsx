@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button'
 import { PlusCircle } from 'lucide-react'
 import { CategoryList } from './components/CategoryList'
 import { Skeleton } from '@/components/ui/skeleton'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: 'カテゴリ管理 | 管理画面',
   description: 'アイテムカテゴリの管理',
 }
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  await requireAdmin()
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center justify-between">

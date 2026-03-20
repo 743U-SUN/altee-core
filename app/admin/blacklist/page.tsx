@@ -1,10 +1,18 @@
 import { Suspense } from "react"
+import type { Metadata } from "next"
 import { BlacklistTable } from "./components/BlacklistTable"
 import { AddBlacklistForm } from "./components/AddBlacklistForm"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Shield } from "lucide-react"
+import { requireAdmin } from "@/lib/auth"
 
-export default function BlacklistPage() {
+export const metadata: Metadata = {
+  title: "ブラックリスト管理 | 管理画面",
+  robots: { index: false, follow: false },
+}
+
+export default async function BlacklistPage() {
+  await requireAdmin()
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">

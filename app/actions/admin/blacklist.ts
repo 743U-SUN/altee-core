@@ -1,7 +1,10 @@
 "use server"
 
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
+
+const emailSchema = z.string().email().max(254)
 
 /**
  * ブラックリスト登録済みメールアドレスの一覧を取得
@@ -34,7 +37,8 @@ export async function addBlacklistedEmail(email: string, reason?: string) {
   await requireAdmin()
 
   // バリデーション
-  if (!email || !email.includes("@")) {
+  const parseResult = emailSchema.safeParse(email)
+  if (!parseResult.success) {
     throw new Error("有効なメールアドレスを入力してください")
   }
 
@@ -124,7 +128,7 @@ export async function addBlacklistedEmailsBulk(
 
   const normalizedEmails = emails
     .map(email => email.toLowerCase().trim())
-    .filter(email => email && email.includes("@"))
+    .filter(email => emailSchema.safeParse(email).success)
 
   if (normalizedEmails.length === 0) {
     throw new Error("有効なメールアドレスがありません")
@@ -175,7 +179,8 @@ export async function addBlacklistedEmailsBulk(
 export async function checkEmailBlacklisted(email: string) {
   await requireAdmin()
 
-  if (!email || !email.includes("@")) {
+  const parseResult = emailSchema.safeParse(email)
+  if (!parseResult.success) {
     throw new Error("有効なメールアドレスを入力してください")
   }
 

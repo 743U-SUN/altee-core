@@ -1,11 +1,13 @@
 import { CSVImportForm } from './components/CSVImportForm'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: 'CSV一括登録 | 管理画面',
   description: 'CSVファイルからアイテムを一括登録',
 }
 
-export default function CSVImportPage() {
+export default async function CSVImportPage() {
+  await requireAdmin()
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">

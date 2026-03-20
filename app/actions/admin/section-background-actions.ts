@@ -201,8 +201,11 @@ export async function updatePresetSortOrderAction(
   try {
     await requireAdmin()
 
+    const itemsSchema = z.array(z.object({ id: cuidSchema, sortOrder: z.number().int() })).min(1).max(100)
+    const validatedItems = itemsSchema.parse(items)
+
     await prisma.$transaction(
-      items.map((item) =>
+      validatedItems.map((item) =>
         prisma.sectionBackgroundPreset.update({
           where: { id: item.id },
           data: { sortOrder: item.sortOrder },

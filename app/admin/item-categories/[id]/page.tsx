@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getCategoryByIdAction, getCategoriesAction } from '../actions'
 import { CategoryForm } from '../components/CategoryForm'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata = {
   title: 'カテゴリ編集 | 管理画面',
@@ -12,6 +13,7 @@ interface PageProps {
 }
 
 export default async function EditCategoryPage({ params }: PageProps) {
+  await requireAdmin()
   const { id } = await params
   const [categoryResult, categoriesResult] = await Promise.all([
     getCategoryByIdAction(id),
