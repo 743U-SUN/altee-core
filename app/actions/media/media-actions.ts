@@ -254,6 +254,10 @@ export async function bulkDeleteMediaFiles(fileIds: string[]) {
     throw new Error('削除するファイルが選択されていません')
   }
 
+  if (fileIds.length > 100) {
+    throw new Error('一度に削除できるファイルは最大100件です')
+  }
+
   const mediaFiles = await prisma.mediaFile.findMany({
     where: { id: { in: fileIds }, deletedAt: null },
     include: {

@@ -32,7 +32,7 @@ export async function adminToggleNewsHidden(newsId: string) {
   if (!news) throw new Error('記事が見つかりません')
 
   const updated = await prisma.userNews.update({
-    where: { id: newsId },
+    where: { id: validatedNewsId },
     data: { adminHidden: !news.adminHidden },
   })
 

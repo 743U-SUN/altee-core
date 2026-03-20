@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { cuidArraySchema } from '@/lib/validations/shared'
 
 // バリデーションスキーマ
 const articleSchema = z.object({
@@ -38,9 +39,11 @@ export async function createArticle(formData: FormData) {
     published: formData.get('published') === 'true',
   })
 
-  // カテゴリ・タグIDを取得
-  const categoryIds = formData.getAll('categoryIds') as string[]
-  const tagIds = formData.getAll('tagIds') as string[]
+  // カテゴリ・タグIDを取得・検証
+  const rawCategoryIds = formData.getAll('categoryIds') as string[]
+  const rawTagIds = formData.getAll('tagIds') as string[]
+  const categoryIds = rawCategoryIds.length > 0 ? cuidArraySchema.parse(rawCategoryIds) : []
+  const tagIds = rawTagIds.length > 0 ? cuidArraySchema.parse(rawTagIds) : []
 
   if (!validatedFields.success) {
     throw new Error(`バリデーションエラー: ${validatedFields.error.errors.map(e => e.message).join(', ')}`)
@@ -134,9 +137,11 @@ export async function updateArticle(id: string, formData: FormData) {
 
   const { title, slug, content, excerpt, thumbnailId: rawThumbnailId, published } = validatedFields.data
 
-  // カテゴリ・タグIDを取得
-  const categoryIds = formData.getAll('categoryIds') as string[]
-  const tagIds = formData.getAll('tagIds') as string[]
+  // カテゴリ・タグIDを取得・検証
+  const rawCategoryIds = formData.getAll('categoryIds') as string[]
+  const rawTagIds = formData.getAll('tagIds') as string[]
+  const categoryIds = rawCategoryIds.length > 0 ? cuidArraySchema.parse(rawCategoryIds) : []
+  const tagIds = rawTagIds.length > 0 ? cuidArraySchema.parse(rawTagIds) : []
 
   try {
     const existingArticle = await prisma.article.findUnique({
@@ -267,13 +272,16 @@ export async function deleteArticle(id: string) {
 export async function getArticles(page: number = 1, limit: number = 10) {
   await requireAdmin()
 
+  const safeLimit = Math.min(Math.max(1, limit), 100)
+  const safePage = Math.max(1, page)
+
   try {
-    const offset = (page - 1) * limit
+    const offset = (safePage - 1) * safeLimit
 
     const [articles, total] = await Promise.all([
       prisma.article.findMany({
         skip: offset,
-        take: limit,
+        take: safeLimit,
         include: {
           author: {
             select: { id: true, name: true, email: true }
@@ -304,10 +312,10 @@ export async function getArticles(page: number = 1, limit: number = 10) {
     return {
       articles,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / safeLimit)
       }
     }
   } catch (error) {

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
 import { UserRole, AccountType } from "@prisma/client"
-import { cuidArraySchema } from "@/lib/validations/shared"
+import { cuidSchema, cuidArraySchema } from "@/lib/validations/shared"
 import { handleSchema } from "@/lib/validations/user-setup"
 import { isReservedHandle } from "@/lib/reserved-handles"
 
@@ -106,10 +106,11 @@ export async function getUserList(
  */
 export async function getUserDetail(userId: string) {
   await requireAdmin()
+  const validatedUserId = cuidSchema.parse(userId)
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       include: {
         accounts: {
           select: {
@@ -155,6 +156,7 @@ export async function getUserDetail(userId: string) {
  */
 export async function updateUserRole(userId: string, newRole: UserRole) {
   await requireAdmin()
+  const validatedUserId = cuidSchema.parse(userId)
 
   if (!["USER", "ADMIN", "GUEST"].includes(newRole)) {
     throw new Error("無効なロールです")
@@ -162,7 +164,7 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
 
   try {
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: validatedUserId },
       data: { role: newRole },
       select: {
         id: true,
@@ -184,10 +186,11 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
  */
 export async function toggleUserActive(userId: string) {
   await requireAdmin()
+  const validatedUserId = cuidSchema.parse(userId)
 
   try {
     const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       select: { isActive: true, name: true },
     })
 
@@ -196,7 +199,7 @@ export async function toggleUserActive(userId: string) {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: validatedUserId },
       data: { isActive: !currentUser.isActive },
       select: {
         id: true,
@@ -218,6 +221,7 @@ export async function toggleUserActive(userId: string) {
  */
 export async function deleteUser(userId: string, reason: string) {
   await requireAdmin()
+  const validatedUserId = cuidSchema.parse(userId)
 
   if (!reason || reason.trim().length < 5) {
     throw new Error("削除理由は5文字以上で入力してください")
@@ -226,7 +230,7 @@ export async function deleteUser(userId: string, reason: string) {
   try {
     // ユーザーが存在するかチェック
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       select: { name: true, email: true },
     })
 
@@ -236,11 +240,8 @@ export async function deleteUser(userId: string, reason: string) {
 
     // 関連データを含めて削除（Cascadeで自動削除される）
     await prisma.user.delete({
-      where: { id: userId },
+      where: { id: validatedUserId },
     })
-
-    // 削除ログを記録（将来的に実装）
-    console.log(`User deleted: ${userId} - Reason: ${reason}`)
 
     return { success: true, deletedUser: user }
   } catch (error) {
@@ -254,10 +255,11 @@ export async function deleteUser(userId: string, reason: string) {
  */
 export async function forceLogout(userId: string) {
   await requireAdmin()
+  const validatedUserId = cuidSchema.parse(userId)
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       select: { name: true, email: true },
     })
 
@@ -267,7 +269,7 @@ export async function forceLogout(userId: string) {
 
     // 全セッションを削除
     const deletedSessions = await prisma.session.deleteMany({
-      where: { userId },
+      where: { userId: validatedUserId },
     })
 
     return {
@@ -409,6 +411,7 @@ export async function updateUserHandle(
   reason: string
 ) {
   await requireAdmin()
+  const validatedUserId = cuidSchema.parse(userId)
 
   // 変更理由のバリデーション
   if (!reason || reason.trim().length < 5) {
@@ -434,13 +437,13 @@ export async function updateUserHandle(
       select: { id: true },
     })
 
-    if (existingUser && existingUser.id !== userId) {
+    if (existingUser && existingUser.id !== validatedUserId) {
       throw new Error("このハンドルは既に使用されています")
     }
 
     // 現在のユーザー情報を取得
     const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       select: { handle: true, name: true, email: true },
     })
 
@@ -450,7 +453,7 @@ export async function updateUserHandle(
 
     // ハンドル更新
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: validatedUserId },
       data: { handle: normalizedHandle },
       select: {
         id: true,
@@ -459,13 +462,6 @@ export async function updateUserHandle(
         email: true,
       },
     })
-
-    // 監査ログ出力（将来的にデータベースに記録可能）
-    console.log(
-      `Handle updated by admin: ${userId} - ` +
-      `Old: ${currentUser.handle || "null"} -> New: ${normalizedHandle} - ` +
-      `Reason: ${reason.trim()}`
-    )
 
     return {
       success: true,

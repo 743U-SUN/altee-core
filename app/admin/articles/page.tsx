@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { ArticleListServer } from './components/ArticleListServer'
 import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
 
 export const metadata: Metadata = {
   title: '記事管理',
@@ -15,6 +16,7 @@ interface PageProps {
 }
 
 export default async function ArticlesPage({ searchParams }: PageProps) {
+  await requireAdmin()
   const { page } = await searchParams
   const currentPage = parseInt(page || '1', 10)
 

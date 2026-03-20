@@ -4,6 +4,11 @@ import { ListObjectsV2Command, DeleteObjectCommand, type ListObjectsV2CommandOut
 import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
+import { z } from 'zod'
+
+// S3キーのパターン: "bucket/folder/YYYY/MM/filename.ext" または "folder/YYYY/MM/filename.ext"
+const s3KeySchema = z.string().min(1).max(1024).regex(/^[a-zA-Z0-9!_.*'()\-/]+$/, '不正なS3キーフォーマットです')
+const orphanKeysSchema = z.array(s3KeySchema).min(1).max(500)
 
 // 全ストレージファイル一覧を取得（単一バケット構造に対応）
 export async function getAllStorageFiles() {
@@ -113,11 +118,13 @@ export async function detectOrphanFiles() {
 export async function cleanupOrphanFiles(orphanKeys: string[]) {
   await requireAdmin()
 
+  const validatedKeys = orphanKeysSchema.parse(orphanKeys)
+
   const deletedFiles: string[] = []
   const errors: string[] = []
 
   try {
-    for (const storageKey of orphanKeys) {
+    for (const storageKey of validatedKeys) {
       try {
         // storageKeyの形式を判定して適切なBucketとKeyを決定
         let bucket: string

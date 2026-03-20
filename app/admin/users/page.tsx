@@ -4,6 +4,7 @@ import { UserList } from "./components/UserList"
 import { UserSearch } from "./components/UserSearch"
 import { CsvExportButton } from "./components/CsvExportButton"
 import dynamic from "next/dynamic"
+import { requireAdmin } from "@/lib/auth"
 
 // Dynamic import for UserFilters to reduce initial bundle size
 const UserFilters = dynamic(() => import("./components/UserFilters").then(mod => ({ default: mod.UserFilters })), {
@@ -22,6 +23,7 @@ interface UsersPageProps {
 }
 
 export default async function UsersPage({ searchParams }: UsersPageProps) {
+  await requireAdmin()
   const params = await searchParams
   const currentPage = Number(params.page) || 1
   const search = typeof params.search === "string" ? params.search : ""
