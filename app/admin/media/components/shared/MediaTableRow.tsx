@@ -81,8 +81,8 @@ export function MediaTableRow({
       <TableCell>{formatFileSize(file.fileSize)}</TableCell>
       <TableCell>
         <div className="text-sm">
-          <div>{file.uploader.name || 'Unknown'}</div>
-          <div className="text-muted-foreground">{file.uploader.email}</div>
+          <div>{file.uploader?.name || 'Unknown'}</div>
+          <div className="text-muted-foreground">{file.uploader?.email}</div>
         </div>
       </TableCell>
       <TableCell>

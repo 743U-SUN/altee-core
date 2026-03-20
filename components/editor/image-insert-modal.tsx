@@ -35,7 +35,7 @@ interface MediaFile {
     id: string
     name: string | null
     email: string
-  }
+  } | null
   articles: {
     id: string
     title: string
