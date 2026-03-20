@@ -1,18 +1,37 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import type { PcPartType } from '@prisma/client'
+import { z } from 'zod'
 
-export interface GuestPcPart {
-  id: string
-  partType: PcPartType
-  name: string
-  price?: number | null
-  memo?: string | null
-  itemId?: string | null
-  specs?: Record<string, unknown> | null
-  tdp?: number | null
-}
+const pcPartTypeSchema = z.enum([
+  'CPU',
+  'GPU',
+  'MOTHERBOARD',
+  'RAM',
+  'STORAGE',
+  'PSU',
+  'CASE',
+  'COOLER',
+  'OTHER',
+])
+
+const guestPcPartSchema = z.object({
+  id: z.string(),
+  partType: pcPartTypeSchema,
+  name: z.string(),
+  price: z.number().nullable().optional(),
+  memo: z.string().nullable().optional(),
+  itemId: z.string().nullable().optional(),
+  specs: z.record(z.unknown()).nullable().optional(),
+  tdp: z.number().nullable().optional(),
+})
+
+const guestPcBuildSchema = z.object({
+  name: z.string(),
+  parts: z.array(guestPcPartSchema),
+})
+
+export type GuestPcPart = z.infer<typeof guestPcPartSchema>
 
 interface GuestPcBuild {
   name: string
@@ -33,7 +52,11 @@ function loadFromStorage(): GuestPcBuild {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
-      return JSON.parse(stored) as GuestPcBuild
+      const parsed = JSON.parse(stored)
+      const result = guestPcBuildSchema.safeParse(parsed)
+      if (result.success) {
+        return result.data
+      }
     }
   } catch {
     // ignore
@@ -51,19 +74,11 @@ function saveToStorage(build: GuestPcBuild) {
 }
 
 export function useGuestPcBuild() {
-  const [build, setBuild] = useState<GuestPcBuild>({ name: '', parts: [] })
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [build, setBuild] = useState<GuestPcBuild>(() => loadFromStorage())
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    setBuild(loadFromStorage())
-    setIsLoaded(true)
-  }, [])
 
   // デバウンス付き localStorage 保存
   useEffect(() => {
-    if (!isLoaded) return
-
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current)
     }
@@ -76,7 +91,7 @@ export function useGuestPcBuild() {
         clearTimeout(saveTimerRef.current)
       }
     }
-  }, [build, isLoaded])
+  }, [build])
 
   const addPart = (part: Omit<GuestPcPart, 'id'>) => {
     setBuild((prev) => ({
@@ -100,7 +115,7 @@ export function useGuestPcBuild() {
 
   return {
     build,
-    isLoaded,
+    isLoaded: true,
     addPart,
     removePart,
     clearBuild,

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Package, Plus, Trash2 } from 'lucide-react'
 import { pcPartTypeLabels } from '@/lib/validations/pc-build'
 import { partTypeIconComponents } from '@/constants/pc-build'
-import type { GuestPcPart } from '@/hooks/useGuestPcBuild'
+import type { GuestPcPart } from '@/hooks/use-guest-pc-build'
 
 interface PartsListCardProps {
   parts: GuestPcPart[]

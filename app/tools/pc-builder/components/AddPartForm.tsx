@@ -12,7 +12,7 @@ import { searchPcPartCatalog } from '@/app/actions/content/pc-build-actions'
 import { PC_PART_TYPES, pcPartTypeLabels } from '@/lib/validations/pc-build'
 import type { PcPartType } from '@prisma/client'
 import type { ItemWithPcPartSpec } from '@/types/pc-part-spec'
-import type { GuestPcPart } from '@/hooks/useGuestPcBuild'
+import type { GuestPcPart } from '@/hooks/use-guest-pc-build'
 
 interface AddPartFormProps {
   onAddPart: (part: Omit<GuestPcPart, 'id'>) => void

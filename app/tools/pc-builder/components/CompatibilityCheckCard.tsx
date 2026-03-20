@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react'
 import type { CompatibilityResult, PartWithSpecs } from '@/lib/pc-compatibility'
-import type { GuestPcPart } from '@/hooks/useGuestPcBuild'
+import type { GuestPcPart } from '@/hooks/use-guest-pc-build'
 
 interface CompatibilityCheckCardProps {
   parts: GuestPcPart[]

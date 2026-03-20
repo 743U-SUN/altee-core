@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { useGuestPcBuild } from '@/hooks/useGuestPcBuild'
+import { useGuestPcBuild } from '@/hooks/use-guest-pc-build'
 import { PartsListCard } from './components/PartsListCard'
 import { AddPartForm } from './components/AddPartForm'
 import { CompatibilityCheckCard } from './components/CompatibilityCheckCard'

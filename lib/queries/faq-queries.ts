@@ -7,7 +7,7 @@ import type { FaqActionResult } from '@/types/faq'
 /**
  * ダッシュボード用: ログインユーザーのFAQカテゴリー一覧取得
  */
-export async function getDashboardFaqCategories(userId: string) {
+export const getDashboardFaqCategories = cache(async (userId: string) => {
   return prisma.faqCategory.findMany({
     where: { userId },
     include: {
@@ -17,7 +17,7 @@ export async function getDashboardFaqCategories(userId: string) {
     },
     orderBy: { sortOrder: 'asc' },
   })
-}
+})
 
 /**
  * 公開FAQ取得（ハンドルから）
