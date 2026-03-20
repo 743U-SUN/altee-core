@@ -109,7 +109,7 @@ React 19 stable APIs (use alongside existing patterns based on complexity):
 - `useOptimistic()`: optimistic UI during actions → use when useSWR is not involved
 - `useFormStatus()`: submission status in child components
 - `ref` as prop directly (no forwardRef needed)
-- `'use cache'`: **experimental** (requires `dynamicIO` flag) — do not use in production yet
+- `'use cache'`: **stable** in Next.js 16 — declarative caching per function/component (requires `cacheComponents: true` in next.config.ts to enable)
 
 When to use which:
 - Client-centric forms (real-time validation, dynamic fields, conditional UI) → react-hook-form + Zod
