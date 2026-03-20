@@ -46,7 +46,7 @@ export interface ArticleSummary {
     id: string
     name: string | null
     email: string
-  }
+  } | null
   thumbnail: {
     id: string
     storageKey: string

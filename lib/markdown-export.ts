@@ -116,7 +116,7 @@ export function createExportDataFromArticle(article: {
   author?: {
     name?: string | null
     email: string
-  }
+  } | null
 }): ArticleData {
   return {
     title: article.title,
@@ -126,6 +126,6 @@ export function createExportDataFromArticle(article: {
     createdAt: article.createdAt,
     updatedAt: article.updatedAt,
     published: article.published,
-    author: article.author
+    author: article.author ?? undefined
   }
 }

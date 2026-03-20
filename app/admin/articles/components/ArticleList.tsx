@@ -237,7 +237,7 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
                   <div className="space-y-1 min-w-0 flex-1">
                     <CardTitle className="text-lg truncate">{article.title}</CardTitle>
                     <CardDescription className="text-xs">
-                      {article.author.name || article.author.email} •
+                      {article.author?.name || article.author?.email || '不明'} •
                       {new Date(article.createdAt).toLocaleDateString('ja-JP')}
                       {article.publishedAt && (
                         <> • 公開: {new Date(article.publishedAt).toLocaleDateString('ja-JP')}</>
