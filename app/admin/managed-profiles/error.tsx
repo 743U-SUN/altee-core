@@ -2,7 +2,7 @@
 
 import { AdminErrorFallback } from '@/components/admin/AdminErrorFallback'
 
-export default function LinksError({
+export default function ManagedProfilesError({
   error,
   reset,
 }: {

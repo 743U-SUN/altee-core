@@ -50,8 +50,7 @@ export default async function CategoriesPage({ searchParams }: PageProps) {
         />
       </div>
     )
-  } catch (error) {
-    console.error('Categories page error:', error)
+  } catch {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">

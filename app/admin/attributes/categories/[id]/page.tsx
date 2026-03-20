@@ -29,8 +29,7 @@ export default async function EditCategoryPage({ params }: PageProps) {
       })),
     }
     return <CategoryForm category={serializedCategory} mode="edit" />
-  } catch (error) {
-    console.error('Category fetch error:', error)
+  } catch {
     notFound()
   }
 }

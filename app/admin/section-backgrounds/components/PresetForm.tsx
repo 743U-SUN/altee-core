@@ -84,9 +84,16 @@ export function PresetForm({ preset }: PresetFormProps) {
     name: 'stops',
   })
 
-  // ライブプレビュー用データ構築
-  const watchedValues = form.watch()
-  const previewConfig = buildPreviewConfig(watchedValues)
+  // ライブプレビュー用データ構築（必要フィールドのみ watch）
+  const [watchedColor, watchedGradientType, watchedAngle, watchedStops] = form.watch([
+    'color' as never,
+    'gradientType' as never,
+    'angle' as never,
+    'stops' as never,
+  ] as const) as [string | undefined, string | undefined, number | undefined, { color: string; position: number }[] | undefined]
+  const previewConfig = category === 'solid'
+    ? { color: watchedColor }
+    : { type: watchedGradientType, angle: watchedAngle, stops: watchedStops }
 
   const onSubmit = (data: FormValues) => {
     startTransition(async () => {
@@ -403,17 +410,6 @@ function buildDefaultValues(preset?: SectionBackgroundPreset): FormValues {
     color: (config.color as string) || '#374151',
     isActive: preset.isActive,
     sortOrder: preset.sortOrder,
-  }
-}
-
-function buildPreviewConfig(values: FormValues): Record<string, unknown> {
-  if (values.category === 'solid') {
-    return { color: values.color }
-  }
-  return {
-    type: values.gradientType,
-    angle: values.angle,
-    stops: values.stops,
   }
 }
 

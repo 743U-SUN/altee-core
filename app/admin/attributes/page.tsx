@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { AttributeDashboard } from "./components/AttributeDashboard"
 import { prisma } from "@/lib/prisma"
+
+export const metadata: Metadata = {
+  title: '属性管理',
+}
 
 export default async function AttributesPage() {
   const session = await cachedAuth()

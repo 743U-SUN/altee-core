@@ -7,6 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { PAGE_SIZE } from "./constants"
 
 interface ManagedProfilePaginationProps {
   currentPage: number
@@ -59,8 +60,8 @@ export function ManagedProfilePagination({
   }
 
   const visiblePages = getVisiblePages()
-  const startItem = (currentPage - 1) * 20 + 1
-  const endItem = Math.min(currentPage * 20, totalCount)
+  const startItem = (currentPage - 1) * PAGE_SIZE + 1
+  const endItem = Math.min(currentPage * PAGE_SIZE, totalCount)
 
   return (
     <div className="flex items-center justify-between px-2">

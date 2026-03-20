@@ -29,8 +29,7 @@ export default async function EditTagPage({ params }: PageProps) {
       })),
     }
     return <TagForm tag={serializedTag} mode="edit" />
-  } catch (error) {
-    console.error('Tag fetch error:', error)
+  } catch {
     notFound()
   }
 }

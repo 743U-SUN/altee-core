@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getAdminStats } from "@/app/actions/admin/stats"
 import { getSidebarContent } from "@/lib/sidebar-content-registry"
 import { getUserNavData } from "@/lib/user-data"
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Admin',
+    default: '管理画面',
+  },
+}
 
 export default async function AdminLayout({
   children,

@@ -2,6 +2,7 @@ import { getManagedProfiles } from "@/app/actions/admin/managed-profile-actions"
 import { resolveAvatarUrl } from "@/lib/avatar-utils"
 import { ManagedProfileListClient } from "./ManagedProfileListClient"
 import { ManagedProfilePagination } from "./ManagedProfilePagination"
+import { PAGE_SIZE } from "./constants"
 
 interface ManagedProfileListProps {
   currentPage: number
@@ -16,7 +17,7 @@ export async function ManagedProfileList({ currentPage, search }: ManagedProfile
 
     const { profiles: rawProfiles, totalCount, totalPages } = await getManagedProfiles(
       filters,
-      { page: currentPage, limit: 20 }
+      { page: currentPage, limit: PAGE_SIZE }
     )
 
     const profiles = rawProfiles.map((p) => ({
@@ -40,8 +41,7 @@ export async function ManagedProfileList({ currentPage, search }: ManagedProfile
         }
       />
     )
-  } catch (error) {
-    console.error("ManagedProfileList error:", { page: currentPage, search, error })
+  } catch {
     return (
       <div className="text-center py-8 text-red-500">
         プロフィール一覧の読み込みに失敗しました

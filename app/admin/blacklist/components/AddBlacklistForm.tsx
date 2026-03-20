@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -24,7 +24,7 @@ const blacklistSchema = z.object({
 type BlacklistFormData = z.infer<typeof blacklistSchema>
 
 export function AddBlacklistForm() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const form = useForm<BlacklistFormData>({
@@ -35,19 +35,17 @@ export function AddBlacklistForm() {
     }
   })
 
-  const onSubmit = async (data: BlacklistFormData) => {
-    setIsLoading(true)
-    try {
-      await addBlacklistedEmail(data.email, data.reason || undefined)
-      toast.success("ブラックリストに追加しました")
-      form.reset()
-      router.refresh()
-    } catch (error) {
-      console.error("ブラックリスト追加エラー:", error)
-      toast.error("追加に失敗しました")
-    } finally {
-      setIsLoading(false)
-    }
+  const onSubmit = (data: BlacklistFormData) => {
+    startTransition(async () => {
+      try {
+        await addBlacklistedEmail(data.email, data.reason || undefined)
+        toast.success("ブラックリストに追加しました")
+        form.reset()
+        router.refresh()
+      } catch {
+        toast.error("追加に失敗しました")
+      }
+    })
   }
 
   return (
@@ -93,12 +91,12 @@ export function AddBlacklistForm() {
           )}
         />
 
-        <Button 
-          type="submit" 
-          disabled={isLoading}
+        <Button
+          type="submit"
+          disabled={isPending}
           className="w-full"
         >
-          {isLoading ? "追加中..." : "ブラックリストに追加"}
+          {isPending ? "追加中..." : "ブラックリストに追加"}
         </Button>
       </form>
     </Form>

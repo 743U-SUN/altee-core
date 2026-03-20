@@ -50,8 +50,7 @@ export default async function TagsPage({ searchParams }: PageProps) {
         />
       </div>
     )
-  } catch (error) {
-    console.error('Tags page error:', error)
+  } catch {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
