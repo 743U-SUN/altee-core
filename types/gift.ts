@@ -1,5 +1,7 @@
 // ギフト設定機能関連の型定義
 
+import type { AttachedImage } from "@/types/media"
+
 /**
  * ユーザーギフト設定データ
  */
@@ -11,12 +13,7 @@ export interface UserGift {
   linkUrl?: string | null
   createdAt: Date | string
   updatedAt: Date | string
-  image?: {
-    id: string
-    storageKey: string
-    originalName: string
-    mimeType: string
-  } | null
+  image?: AttachedImage | null
 }
 
 /**
@@ -25,24 +22,6 @@ export interface UserGift {
 export interface GiftInput {
   isEnabled: boolean
   imageId?: string
-  linkUrl?: string
-}
-
-/**
- * APIレスポンス用の型
- */
-export interface GiftApiResponse {
-  success: boolean
-  data?: UserGift
-  error?: string
-}
-
-/**
- * ギフト設定表示用の型（フロントエンド表示用）
- */
-export interface GiftDisplay {
-  isEnabled: boolean
-  imageUrl?: string
   linkUrl?: string
 }
 

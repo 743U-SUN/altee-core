@@ -16,7 +16,7 @@ import { pcPartSchema } from '@/lib/validations/pc-build'
 import type { PcPartInput } from '@/lib/validations/pc-build'
 import type { UserPcBuildPart } from '@prisma/client'
 import type { ItemWithPcPartSpec } from '@/types/pc-part-spec'
-import { useCatalogSearch } from '@/hooks/useCatalogSearch'
+import { useCatalogSearch } from '@/hooks/use-catalog-search'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { PcPartFormFields } from './PcPartFormFields'
 

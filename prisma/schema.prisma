@@ -45,8 +45,9 @@ model User {
   twitchUserId           String? // Twitch User ID（EventSub用）
   livePriority           String  @default("youtube") // "youtube" | "twitch"
 
-  youtubeRecommendedVideos YouTubeRecommendedVideo[]
-  twitchLiveStatus         TwitchLiveStatus?
+  youtubeRecommendedVideos    YouTubeRecommendedVideo[]
+  twitchLiveStatus            TwitchLiveStatus?
+  twitchEventSubSubscriptions TwitchEventSubSubscription[]
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -114,11 +115,11 @@ model Article {
   content     String     // Markdown
   excerpt     String?    // 要約
   thumbnailId String?    // MediaFileのID
-  thumbnail   MediaFile? @relation(fields: [thumbnailId], references: [id])
+  thumbnail   MediaFile? @relation(fields: [thumbnailId], references: [id], onDelete: SetNull)
   published   Boolean    @default(false)
   publishedAt DateTime?
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id])
+  authorId    String?
+  author      User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -145,8 +146,8 @@ model MediaFile {
   fileSize            Int
   mimeType            String
   uploadType          MediaType      @default(THUMBNAIL)
-  uploaderId          String         // 管理者ID（必須）
-  uploader            User           @relation(fields: [uploaderId], references: [id])
+  uploaderId          String?        // 管理者ID
+  uploader            User?          @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
   articles            Article[]      // サムネイル用リレーション
   characterImages     UserProfile[]  @relation("CharacterImage") // キャラクター画像（9:16縦長）
   notificationImages  UserNotification[] @relation("NotificationImage")
@@ -367,8 +368,7 @@ model FaqCategory {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   questions   FaqQuestion[]
 
-  @@index([userId])
-  @@index([sortOrder])
+  @@index([userId, sortOrder])
   @@map("faq_categories")
 }
 
@@ -384,8 +384,7 @@ model FaqQuestion {
   
   category     FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
-  @@index([categoryId])
-  @@index([sortOrder])
+  @@index([categoryId, sortOrder])
   @@map("faq_questions")
 }
 
@@ -520,6 +519,7 @@ model TwitchLiveStatus {
 model TwitchEventSubSubscription {
   id                String   @id @default(cuid())
   userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptionId    String   @unique // Twitch Subscription ID
   type              String   // "stream.online", "stream.offline"
   status            String   // "enabled", "webhook_callback_verification_pending"
@@ -650,7 +650,7 @@ model UserNews {
   bodyImage MediaFile? @relation("UserNewsBodyImage", fields: [bodyImageId], references: [id])
 
   @@unique([userId, slug])
-  @@index([userId, sortOrder])
+  @@index([userId, published, sortOrder])
   @@index([thumbnailId])
   @@index([bodyImageId])
   @@map("user_news")

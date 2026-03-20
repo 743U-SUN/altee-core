@@ -1,5 +1,7 @@
 // 通知機能関連の型定義
 
+import type { AttachedImage } from "@/types/media"
+
 /**
  * ユーザー通知データ
  */
@@ -14,12 +16,7 @@ export interface UserNotification {
   imageId?: string | null
   createdAt: Date | string
   updatedAt: Date | string
-  image?: {
-    id: string
-    storageKey: string
-    originalName: string
-    mimeType: string
-  } | null
+  image?: AttachedImage | null
 }
 
 /**
@@ -32,28 +29,6 @@ export interface NotificationInput {
   linkUrl?: string
   buttonText?: string
   imageId?: string
-}
-
-/**
- * APIレスポンス用の型
- */
-export interface NotificationApiResponse {
-  success: boolean
-  data?: UserNotification
-  error?: string
-}
-
-/**
- * 通知表示用の型（フロントエンド表示用）
- */
-export interface NotificationDisplay {
-  isEnabled: boolean
-  title?: string
-  content?: string
-  linkUrl?: string
-  buttonText?: string
-  imageUrl?: string
-  hasUnread: boolean
 }
 
 /**
@@ -73,8 +48,3 @@ export const NOTIFICATION_CONSTRAINTS = {
   URL_PATTERN: /^https:\/\/.+/,
   COOKIE_EXPIRES_DAYS: 30,
 } as const
-
-/**
- * 通知状態の型
- */
-export type NotificationStatus = 'loading' | 'success' | 'error'

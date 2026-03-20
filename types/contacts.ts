@@ -1,5 +1,7 @@
 // 連絡方法機能関連の型定義
 
+import type { AttachedImage } from "@/types/media"
+
 /**
  * ユーザー連絡方法データ
  */
@@ -14,12 +16,7 @@ export interface UserContact {
   imageId?: string | null
   createdAt: Date | string
   updatedAt: Date | string
-  image?: {
-    id: string
-    storageKey: string
-    originalName: string
-    mimeType: string
-  } | null
+  image?: AttachedImage | null
 }
 
 /**
@@ -35,27 +32,6 @@ export interface ContactInput {
 }
 
 /**
- * APIレスポンス用の型
- */
-export interface ContactApiResponse {
-  success: boolean
-  data?: UserContact
-  error?: string
-}
-
-/**
- * 連絡方法表示用の型（フロントエンド表示用）
- */
-export interface ContactDisplay {
-  isEnabled: boolean
-  title?: string
-  content?: string
-  linkUrl?: string
-  buttonText?: string
-  imageUrl?: string
-}
-
-/**
  * バリデーション制約
  */
 export const CONTACT_CONSTRAINTS = {
@@ -63,8 +39,3 @@ export const CONTACT_CONSTRAINTS = {
   CONTENT_MAX_LENGTH: 1000,
   URL_PATTERN: /^https:\/\/.+/,
 } as const
-
-/**
- * 連絡方法状態の型
- */
-export type ContactStatus = 'loading' | 'success' | 'error'

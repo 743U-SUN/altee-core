@@ -19,10 +19,10 @@ import { Trash2, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { uploadTypeLabels } from "./upload-type-labels"
 import { formatFileSize } from "@/lib/format-utils"
-import type { MediaFile } from "@/types/media"
+import type { AdminMediaFileView } from "@/types/media"
 
 interface MediaTableRowProps {
-  file: MediaFile
+  file: AdminMediaFileView
   storageUrl: string
   isSelected: boolean
   onSelectChange: (checked: boolean) => void

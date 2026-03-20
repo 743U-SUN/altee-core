@@ -67,7 +67,7 @@ export function useVideoListEditor({
           sortOrder: items.length,
         }
 
-        setItems([...items, newItem])
+        setItems((prev) => [...prev, newItem])
         setNewUrl('')
       } else {
         toast.error(result.error || '動画情報の取得に失敗しました')

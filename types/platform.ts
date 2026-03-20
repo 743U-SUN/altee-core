@@ -11,12 +11,6 @@ export interface YouTubeRecommendedVideo {
   isVisible: boolean
 }
 
-export interface VideoCardData {
-  videoId: string
-  title: string
-  thumbnail?: string
-}
-
 export interface TwitchLiveStatus {
   isLive: boolean
   streamId: string | null
@@ -27,16 +21,3 @@ export interface TwitchLiveStatus {
 }
 
 export type Platform = "youtube" | "twitch"
-
-export type LivePriority = "youtube" | "twitch"
-
-export interface LiveStreamData {
-  platform: Platform
-  isLive: boolean
-  // YouTube fields
-  videoId?: string
-  // Twitch fields
-  twitchUsername?: string
-  streamTitle?: string | null
-  viewerCount?: number | null
-}

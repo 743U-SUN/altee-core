@@ -125,7 +125,7 @@ export async function createFaqCategory(data: z.infer<typeof createFaqCategorySc
       })
     })
 
-    revalidatePath("/dashboard/faq")
+    revalidatePath("/dashboard/faqs")
     return { success: true, data: category }
   } catch (error) {
     console.error("FAQカテゴリー作成エラー:", error)
@@ -168,7 +168,7 @@ export async function updateFaqCategory(categoryId: string, data: z.infer<typeof
       }
     })
 
-    revalidatePath("/dashboard/faq")
+    revalidatePath("/dashboard/faqs")
     return { success: true, data: updatedCategory }
   } catch (error) {
     console.error("FAQカテゴリー更新エラー:", error)
@@ -202,7 +202,7 @@ export async function deleteFaqCategory(categoryId: string): Promise<FaqActionRe
       where: { id: categoryId }
     })
 
-    revalidatePath("/dashboard/faq")
+    revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
     console.error("FAQカテゴリー削除エラー:", error)
@@ -241,6 +241,7 @@ export async function reorderFaqCategories(data: z.infer<typeof reorderCategorie
       )
     )
 
+    revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
     console.error("FAQカテゴリー並び替えエラー:", error)
@@ -298,7 +299,7 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
       })
     })
 
-    revalidatePath("/dashboard/faq")
+    revalidatePath("/dashboard/faqs")
     return { success: true, data: question }
   } catch (error) {
     console.error("FAQ質問作成エラー:", error)
@@ -336,7 +337,7 @@ export async function updateFaqQuestion(questionId: string, data: z.infer<typeof
       data: validatedData
     })
 
-    revalidatePath("/dashboard/faq")
+    revalidatePath("/dashboard/faqs")
     return { success: true, data: updatedQuestion }
   } catch (error) {
     console.error("FAQ質問更新エラー:", error)
@@ -370,7 +371,7 @@ export async function deleteFaqQuestion(questionId: string): Promise<FaqActionRe
       where: { id: questionId }
     })
 
-    revalidatePath("/dashboard/faq")
+    revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
     console.error("FAQ質問削除エラー:", error)
@@ -468,6 +469,7 @@ export async function reorderFaqQuestions(categoryId: string, data: z.infer<type
       )
     )
 
+    revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
     console.error("FAQ質問並び替えエラー:", error)

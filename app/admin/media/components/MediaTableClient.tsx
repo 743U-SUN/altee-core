@@ -14,10 +14,10 @@ import { useMediaDeletion } from "./hooks/useMediaDeletion"
 import { BulkActionBar } from "./shared/BulkActionBar"
 import { MediaTableRow } from "./shared/MediaTableRow"
 import { MediaPagination } from "./shared/MediaPagination"
-import type { MediaFile, MediaPaginationData } from "@/types/media"
+import type { AdminMediaFileView, MediaPaginationData } from "@/types/media"
 
 interface MediaTableClientProps {
-  mediaFiles: MediaFile[]
+  mediaFiles: AdminMediaFileView[]
   pagination: MediaPaginationData
   search?: string
   containerName?: string

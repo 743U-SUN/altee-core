@@ -1,6 +1,13 @@
 import { MediaType } from "@prisma/client"
 
-export interface MediaFile {
+export interface AttachedImage {
+  id: string
+  storageKey: string
+  originalName: string
+  mimeType: string
+}
+
+export interface AdminMediaFileView {
   id: string
   storageKey: string
   containerName: string
