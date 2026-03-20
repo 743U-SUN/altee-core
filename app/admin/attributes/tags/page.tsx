@@ -40,8 +40,12 @@ export default async function TagsPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <TagList 
-          tags={tags} 
+        <TagList
+          tags={tags.map((t) => ({
+            ...t,
+            createdAt: t.createdAt.toISOString(),
+            updatedAt: t.updatedAt.toISOString(),
+          }))}
           pagination={pagination}
         />
       </div>

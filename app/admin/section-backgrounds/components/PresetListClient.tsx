@@ -1,153 +1,51 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash2, GripVertical } from 'lucide-react'
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
-import {
-  DndContext,
-  DragEndEvent,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import {
   togglePresetActiveAction,
   deletePresetAction,
   updatePresetSortOrderAction,
 } from '@/app/actions/admin/section-background-actions'
-import { PresetPreview } from './PresetPreview'
-import type { SectionBackgroundPreset } from '@prisma/client'
+import type { DragEndEvent } from '@dnd-kit/core'
 
-interface PresetListClientProps {
-  presets: SectionBackgroundPreset[]
+// dnd-kitを含むテーブルをlazy loading
+const PresetDndTable = dynamic(
+  () => import('./PresetDndTable').then((mod) => mod.PresetDndTable),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse h-48 bg-muted rounded" />,
+  }
+)
+
+// シリアライズ済みPreset型
+export interface SerializedPreset {
+  id: string
+  name: string
+  category: string
+  config: unknown
+  cssString: string | null
+  isActive: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
 }
 
-// ===== ソート可能な行コンポーネント =====
-
-function SortablePresetRow({
-  preset,
-  onToggleActive,
-  onDelete,
-}: {
-  preset: SectionBackgroundPreset
-  onToggleActive: (id: string, isActive: boolean) => void
-  onDelete: (id: string) => void
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: preset.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
-  const categoryLabel: Record<string, string> = {
-    solid: '単色',
-    gradient: 'グラデーション',
-    pattern: 'パターン',
-    animated: 'アニメーション',
-  }
-
-  return (
-    <TableRow ref={setNodeRef} style={style}>
-      <TableCell>
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <GripVertical className="h-4 w-4" />
-        </div>
-      </TableCell>
-      <TableCell>
-        <PresetPreview
-          category={preset.category}
-          config={preset.config as Record<string, unknown>}
-          size="sm"
-        />
-      </TableCell>
-      <TableCell>
-        <div>
-          <div className="font-medium">{preset.name}</div>
-          <div className="text-xs text-muted-foreground">
-            {categoryLabel[preset.category] || preset.category}
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <Badge variant={preset.isActive ? 'default' : 'secondary'}>
-          {preset.isActive ? '公開' : '非公開'}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <span className="text-sm text-muted-foreground">{preset.sortOrder}</span>
-      </TableCell>
-      <TableCell>
-        <Switch
-          checked={preset.isActive}
-          onCheckedChange={(checked) => onToggleActive(preset.id, checked)}
-        />
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/admin/section-backgrounds/${preset.id}`}>
-                <Edit className="mr-2 h-4 w-4" />
-                編集
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onDelete(preset.id)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              削除
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  )
+interface PresetListClientProps {
+  presets: SerializedPreset[]
 }
 
 // ===== メインコンポーネント =====
@@ -155,13 +53,7 @@ function SortablePresetRow({
 export function PresetListClient({ presets: initialPresets }: PresetListClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 },
-    })
-  )
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const handleToggleActive = (id: string, isActive: boolean) => {
     startTransition(async () => {
@@ -175,8 +67,11 @@ export function PresetListClient({ presets: initialPresets }: PresetListClientPr
     })
   }
 
-  const handleDelete = (id: string) => {
-    if (!confirm('このプリセットを削除しますか？')) return
+  const handleDeleteConfirm = () => {
+    if (!deleteTargetId) return
+
+    const id = deleteTargetId
+    setDeleteTargetId(null)
 
     startTransition(async () => {
       const result = await deletePresetAction(id)
@@ -221,53 +116,52 @@ export function PresetListClient({ presets: initialPresets }: PresetListClientPr
   const allPresets = [...solidPresets, ...gradientPresets]
 
   return (
-    <div className="space-y-4" data-pending={isPending ? '' : undefined}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            プリセット一覧（{initialPresets.length}件）
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {allPresets.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>プリセットがまだ作成されていません</p>
-              <p className="text-sm">「プリセット追加」から設定を始めましょう</p>
-            </div>
-          ) : (
-            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-              <SortableContext
-                items={allPresets.map((p) => p.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]"></TableHead>
-                      <TableHead className="w-[80px]">プレビュー</TableHead>
-                      <TableHead>名前</TableHead>
-                      <TableHead>ステータス</TableHead>
-                      <TableHead>順序</TableHead>
-                      <TableHead>有効</TableHead>
-                      <TableHead className="w-[70px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allPresets.map((preset) => (
-                      <SortablePresetRow
-                        key={preset.id}
-                        preset={preset}
-                        onToggleActive={handleToggleActive}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </TableBody>
-                </Table>
-              </SortableContext>
-            </DndContext>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <div className="space-y-4" data-pending={isPending ? '' : undefined}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">
+              プリセット一覧（{initialPresets.length}件）
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {allPresets.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>プリセットがまだ作成されていません</p>
+                <p className="text-sm">「プリセット追加」から設定を始めましょう</p>
+              </div>
+            ) : (
+              <PresetDndTable
+                presets={allPresets}
+                onToggleActive={handleToggleActive}
+                onDelete={setDeleteTargetId}
+                onDragEnd={handleDragEnd}
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 削除確認ダイアログ */}
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>プリセットを削除</AlertDialogTitle>
+            <AlertDialogDescription>
+              このプリセットを削除しますか？この操作は元に戻せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

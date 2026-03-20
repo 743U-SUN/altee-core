@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { getPresetByIdAction } from '@/app/actions/admin/section-background-actions'
+import { prisma } from '@/lib/prisma'
 import { PresetForm } from '../components/PresetForm'
 
 export const metadata: Metadata = {
@@ -14,16 +14,20 @@ export default async function EditPresetPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const session = await cachedAuth()
+  const [session, { id }] = await Promise.all([
+    cachedAuth(),
+    params,
+  ])
 
   if (!session?.user?.id || session.user.role !== 'ADMIN') {
     redirect('/unauthorized')
   }
 
-  const { id } = await params
-  const result = await getPresetByIdAction(id)
+  const preset = await prisma.sectionBackgroundPreset.findUnique({
+    where: { id },
+  })
 
-  if (!result.success || !result.data) {
+  if (!preset) {
     notFound()
   }
 
@@ -32,11 +36,11 @@ export default async function EditPresetPage({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">背景プリセット編集</h1>
         <p className="text-muted-foreground">
-          「{result.data.name}」を編集します
+          「{preset.name}」を編集します
         </p>
       </div>
 
-      <PresetForm preset={result.data} />
+      <PresetForm preset={preset} />
     </div>
   )
 }

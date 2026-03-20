@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { getPresetsAction } from '@/app/actions/admin/section-background-actions'
+import { prisma } from '@/lib/prisma'
 import { PresetListClient } from './components/PresetListClient'
 
 export const metadata: Metadata = {
@@ -19,7 +20,15 @@ export default async function AdminSectionBackgroundsPage() {
     redirect('/unauthorized')
   }
 
-  const result = await getPresetsAction()
+  const presets = await prisma.sectionBackgroundPreset.findMany({
+    orderBy: { sortOrder: 'asc' },
+  })
+
+  const serializedPresets = presets.map((p) => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  }))
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -38,15 +47,9 @@ export default async function AdminSectionBackgroundsPage() {
         </Button>
       </div>
 
-      {result.success && result.data ? (
-        <PresetListClient presets={result.data} />
-      ) : (
-        <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-          <p className="text-sm text-destructive">
-            {result.error || 'プリセットの取得に失敗しました'}
-          </p>
-        </div>
-      )}
+      <Suspense fallback={<div className="animate-pulse h-48 bg-muted rounded" />}>
+        <PresetListClient presets={serializedPresets} />
+      </Suspense>
     </div>
   )
 }

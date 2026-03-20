@@ -7,8 +7,8 @@ export interface Category {
   description: string | null
   color: string | null
   order: number
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   _count: {
     articles: number
   }
@@ -19,7 +19,7 @@ export interface CategoryWithArticles extends Category {
     id: string
     articleId: string
     categoryId: string
-    createdAt: Date
+    createdAt: string
     article: {
       id: string
       title: string

@@ -19,7 +19,16 @@ export default async function EditTagPage({ params }: PageProps) {
 
   try {
     const tag = await getTag(id)
-    return <TagForm tag={tag} mode="edit" />
+    const serializedTag = {
+      ...tag,
+      createdAt: tag.createdAt.toISOString(),
+      updatedAt: tag.updatedAt.toISOString(),
+      articles: tag.articles.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+      })),
+    }
+    return <TagForm tag={serializedTag} mode="edit" />
   } catch (error) {
     console.error('Tag fetch error:', error)
     notFound()

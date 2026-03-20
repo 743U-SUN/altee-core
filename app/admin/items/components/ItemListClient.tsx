@@ -1,6 +1,6 @@
 'use client'
 
-import { Item, ItemCategory, Brand } from '@prisma/client'
+import { ItemCategory, Brand } from '@prisma/client'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -25,7 +25,14 @@ import { DeleteItemButton } from './DeleteItemButton'
 import { useState } from 'react'
 import Image from 'next/image'
 
-type ItemWithRelations = Item & {
+type ItemWithRelations = {
+  id: string
+  name: string
+  description: string | null
+  asin: string | null
+  customImageUrl: string | null
+  amazonImageUrl: string | null
+  createdAt: string
   category: ItemCategory
   brand: Brand | null
   _count: {

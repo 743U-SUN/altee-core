@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -21,8 +22,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { ImageUploader } from "@/components/image-uploader/image-uploader"
 import { PRESET_ICON } from "@/lib/image-uploader/image-processing-presets"
+
+const ImageUploader = dynamic(
+  () => import("@/components/image-uploader/image-uploader").then((mod) => mod.ImageUploader),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse h-24 w-24 bg-muted rounded-full" />,
+  }
+)
 import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import { adminUpdateCharacterInfo } from "@/app/actions/admin/managed-profile-actions"
 import {
@@ -63,7 +71,7 @@ export function BasicInfoTab({ userId, initialData }: BasicInfoTabProps) {
           url: getPublicUrl(initialData.iconImageKey),
           size: 0,
           type: "image/png",
-          uploadedAt: new Date().toISOString(),
+          uploadedAt: "1970-01-01T00:00:00.000Z",
         }]
       : []
   )

@@ -310,6 +310,27 @@ export async function setDefaultLinkTypeIcon(iconId: string) {
   }
 }
 
+// 管理者用: リンクタイプの一括並び替え
+export async function reorderLinkTypes(items: { id: string; sortOrder: number }[]) {
+  try {
+    await requireAdmin()
+
+    await prisma.$transaction(
+      items.map((item) =>
+        prisma.linkType.update({
+          where: { id: item.id },
+          data: { sortOrder: item.sortOrder },
+        })
+      )
+    )
+
+    revalidatePath("/admin/links")
+    return { success: true as const }
+  } catch {
+    return { success: false as const, error: "並び替えに失敗しました" }
+  }
+}
+
 // 管理者用: アイコンの並び替え
 export async function reorderLinkTypeIcons(linkTypeId: string, iconIds: string[]) {
   try {

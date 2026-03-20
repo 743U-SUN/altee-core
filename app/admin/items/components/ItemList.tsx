@@ -38,9 +38,14 @@ export async function ItemList({
       ? categoriesResult.data
       : []
 
+  const serializedItems = itemsResult.data.items.map((item) => ({
+    ...item,
+    createdAt: item.createdAt.toISOString(),
+  }))
+
   return (
     <ItemListClient
-      items={itemsResult.data.items}
+      items={serializedItems}
       total={itemsResult.data.total}
       page={itemsResult.data.page}
       totalPages={itemsResult.data.totalPages}

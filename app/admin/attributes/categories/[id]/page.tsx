@@ -19,7 +19,16 @@ export default async function EditCategoryPage({ params }: PageProps) {
 
   try {
     const category = await getCategory(id)
-    return <CategoryForm category={category} mode="edit" />
+    const serializedCategory = {
+      ...category,
+      createdAt: category.createdAt.toISOString(),
+      updatedAt: category.updatedAt.toISOString(),
+      articles: category.articles.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+      })),
+    }
+    return <CategoryForm category={serializedCategory} mode="edit" />
   } catch (error) {
     console.error('Category fetch error:', error)
     notFound()

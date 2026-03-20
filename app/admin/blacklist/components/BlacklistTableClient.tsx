@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   Table,
@@ -31,7 +31,7 @@ interface BlacklistedEmail {
   id: string
   email: string
   reason: string | null
-  createdAt: Date
+  createdAt: string
 }
 
 interface BlacklistTableClientProps {
@@ -40,20 +40,22 @@ interface BlacklistTableClientProps {
 
 export function BlacklistTableClient({ blacklistedEmails }: BlacklistTableClientProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
   const router = useRouter()
 
-  const handleDelete = async (id: string, email: string) => {
+  const handleDelete = (id: string, email: string) => {
     setDeletingId(id)
-    try {
-      await removeBlacklistedEmail(id)
-      toast.success(`${email}をブラックリストから削除しました`)
-      router.refresh()
-    } catch (error) {
-      console.error("ブラックリスト削除エラー:", error)
-      toast.error("削除に失敗しました")
-    } finally {
-      setDeletingId(null)
-    }
+    startTransition(async () => {
+      try {
+        await removeBlacklistedEmail(id)
+        toast.success(`${email}をブラックリストから削除しました`)
+        router.refresh()
+      } catch {
+        toast.error("削除に失敗しました")
+      } finally {
+        setDeletingId(null)
+      }
+    })
   }
 
   if (blacklistedEmails.length === 0) {
@@ -70,7 +72,7 @@ export function BlacklistTableClient({ blacklistedEmails }: BlacklistTableClient
       <div className="text-sm text-muted-foreground">
         {blacklistedEmails.length}件のメールアドレスがブラックリストに登録されています
       </div>
-      
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>

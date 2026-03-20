@@ -40,8 +40,12 @@ export default async function CategoriesPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <CategoryList 
-          categories={categories} 
+        <CategoryList
+          categories={categories.map((c) => ({
+            ...c,
+            createdAt: c.createdAt.toISOString(),
+            updatedAt: c.updatedAt.toISOString(),
+          }))}
           pagination={pagination}
         />
       </div>

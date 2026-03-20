@@ -1,166 +1,36 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table"
+import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash2, ExternalLink, GripVertical } from "lucide-react"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
-import Image from "next/image"
-import { updateLinkType, deleteLinkType } from "@/app/actions/admin/link-type-actions"
+import { updateLinkType, deleteLinkType, reorderLinkTypes } from "@/app/actions/admin/link-type-actions"
 import { EditLinkTypeModal } from "./EditLinkTypeModal"
 import { AddLinkTypeModal } from "./AddLinkTypeModal"
-import {
-  DndContext,
-  DragEndEvent,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  arrayMove,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { arrayMove } from "@dnd-kit/sortable"
 import useSWR from "swr"
 
 import type { LinkType } from "@/types/link-type"
+import type { DragEndEvent } from "@dnd-kit/core"
 
-// ソート可能な行コンポーネント
-function SortableTableRow({ linkType, onEdit, onToggleActive, onDelete }: {
-  linkType: LinkType
-  onEdit: (linkType: LinkType) => void
-  onToggleActive: (id: string, isActive: boolean) => void
-  onDelete: (id: string) => void
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: linkType.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+// dnd-kitを含むテーブルをlazy loading
+const LinkTypeDndTable = dynamic(
+  () => import('./LinkTypeDndTable').then((mod) => mod.LinkTypeDndTable),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse h-48 bg-muted rounded" />,
   }
-
-  const getIconUrl = () => {
-    if (linkType.icons && linkType.icons.length > 0) {
-      // デフォルトアイコンを探す
-      const defaultIcon = linkType.icons.find(icon => icon.isDefault)
-      if (defaultIcon) {
-        return getPublicUrl(defaultIcon.iconKey)
-      }
-      // デフォルトがない場合は最初のアイコンを使用
-      return getPublicUrl(linkType.icons[0].iconKey)
-    }
-
-    return null
-  }
-
-  return (
-    <TableRow ref={setNodeRef} style={style}>
-      <TableCell>
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <GripVertical className="h-4 w-4" />
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 flex items-center justify-center">
-            {getIconUrl() ? (
-              <Image
-                src={getIconUrl()!}
-                alt={linkType.displayName}
-                width={24}
-                height={24}
-                className="object-contain dark:brightness-0 dark:invert"
-              />
-            ) : (
-              <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
-                <ExternalLink className="h-3 w-3 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="font-medium">{linkType.displayName}</div>
-            <div className="text-sm text-muted-foreground">{linkType.name}</div>
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          {linkType.isCustom && (
-            <Badge variant="secondary">カスタム</Badge>
-          )}
-          {!linkType.isActive && (
-            <Badge variant="destructive">無効</Badge>
-          )}
-        </div>
-      </TableCell>
-      <TableCell>
-        <code className="text-xs bg-muted px-2 py-1 rounded">
-          {linkType.urlPattern || "なし"}
-        </code>
-      </TableCell>
-      <TableCell>
-        <Switch
-          checked={linkType.isActive}
-          onCheckedChange={(checked) => onToggleActive(linkType.id, checked)}
-        />
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(linkType)}>
-              <Edit className="mr-2 h-4 w-4" />
-              編集
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onDelete(linkType.id)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              削除
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  )
-}
+)
 
 // SWR fetcher関数
 const fetcher = async (url: string) => {
@@ -171,18 +41,8 @@ const fetcher = async (url: string) => {
 
 export function LinkTypeTable() {
   const [editingLinkType, setEditingLinkType] = useState<LinkType | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
-
-  // dnd-kit sensors設定（モバイル対応）
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    })
-  )
 
   // useSWRでデータ取得
   const { data: linkTypes = [], isLoading, mutate } = useSWR<LinkType[]>(
@@ -212,11 +72,9 @@ export function LinkTypeTable() {
 
         if (result.success) {
           toast.success(isActive ? "リンクタイプを有効にしました" : "リンクタイプを無効にしました")
-          // 再検証して最新データを取得
           mutate()
         } else {
           toast.error(result.error || "更新に失敗しました")
-          // エラー時は元に戻す
           mutate()
         }
       } catch {
@@ -226,9 +84,17 @@ export function LinkTypeTable() {
     })
   }
 
-  // 削除処理
-  const handleDelete = (id: string) => {
-    if (!confirm("このリンクタイプを削除しますか？")) return
+  // 削除確認ダイアログを開く
+  const handleDeleteRequest = (id: string) => {
+    setDeleteTargetId(id)
+  }
+
+  // 削除確認
+  const handleDeleteConfirm = () => {
+    if (!deleteTargetId) return
+
+    const id = deleteTargetId
+    setDeleteTargetId(null)
 
     startTransition(async () => {
       try {
@@ -246,8 +112,7 @@ export function LinkTypeTable() {
           toast.error(result.error || "削除に失敗しました")
           mutate()
         }
-      } catch (error) {
-        console.error('Delete error:', error)
+      } catch {
         toast.error("削除に失敗しました")
         mutate()
       }
@@ -275,18 +140,18 @@ export function LinkTypeTable() {
       // 楽観的更新
       await mutate(newLinkTypes, false)
 
-      // サーバーに並び順を保存
-      try {
-        const updatePromises = newLinkTypes.map((linkType, index) =>
-          updateLinkType(linkType.id, { sortOrder: index })
-        )
+      // バッチreorderアクションで一括更新
+      const items = newLinkTypes.map((linkType, index) => ({
+        id: linkType.id,
+        sortOrder: index,
+      }))
 
-        await Promise.all(updatePromises)
+      const result = await reorderLinkTypes(items)
+      if (result.success) {
         toast.success("並び順を更新しました")
         mutate()
-      } catch {
-        // エラーの場合は元に戻す
-        toast.error("並び替えに失敗しました")
+      } else {
+        toast.error(result.error || "並び替えに失敗しました")
         mutate()
       }
     })
@@ -330,36 +195,13 @@ export function LinkTypeTable() {
               <p className="text-sm">「リンクタイプを追加」から設定を始めましょう</p>
             </div>
           ) : (
-            <DndContext
-              sensors={sensors}
+            <LinkTypeDndTable
+              linkTypes={linkTypes}
+              onEdit={setEditingLinkType}
+              onToggleActive={handleToggleActive}
+              onDelete={handleDeleteRequest}
               onDragEnd={handleDragEnd}
-            >
-              <SortableContext items={linkTypes.map(lt => lt.id)} strategy={verticalListSortingStrategy}>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]"></TableHead>
-                      <TableHead>サービス</TableHead>
-                      <TableHead>ステータス</TableHead>
-                      <TableHead>URLパターン</TableHead>
-                      <TableHead>有効</TableHead>
-                      <TableHead className="w-[70px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {linkTypes.map((linkType) => (
-                      <SortableTableRow
-                        key={linkType.id}
-                        linkType={linkType}
-                        onEdit={setEditingLinkType}
-                        onToggleActive={handleToggleActive}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </TableBody>
-                </Table>
-              </SortableContext>
-            </DndContext>
+            />
           )}
         </CardContent>
       </Card>
@@ -372,6 +214,27 @@ export function LinkTypeTable() {
           onCancel={() => setEditingLinkType(null)}
         />
       )}
+
+      {/* 削除確認ダイアログ */}
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>リンクタイプを削除</AlertDialogTitle>
+            <AlertDialogDescription>
+              このリンクタイプを削除しますか？この操作は元に戻せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
