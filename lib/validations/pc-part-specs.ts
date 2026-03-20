@@ -104,9 +104,9 @@ export type PcPartSpecsByType = {
 
 export const pcPartSpecInputSchema = z.object({
   partType: z.enum(['CPU', 'GPU', 'MOTHERBOARD', 'RAM', 'STORAGE', 'PSU', 'CASE', 'COOLER', 'OTHER']),
-  chipMakerId: z.string().optional().nullable(),
-  tdp: z.number().int().nonnegative().optional().nullable(),
-  releaseDate: z.string().optional().nullable(), // ISO date string
+  chipMakerId: z.string().nullish(),
+  tdp: z.number().int().nonnegative().nullish(),
+  releaseDate: z.string().nullish(), // ISO date string
   specs: z.record(z.unknown()), // 実際のバリデーションは partType に応じて動的に行う
 })
 

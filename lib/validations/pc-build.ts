@@ -35,15 +35,15 @@ const AMAZON_DOMAINS = [
 ]
 
 export const pcBuildSchema = z.object({
-  name: z.string().max(100, 'ビルド名は100文字以内にしてください').optional().nullable(),
+  name: z.string().max(100, 'ビルド名は100文字以内にしてください').nullish(),
   imageKey: z
     .string()
     .max(500, '画像キーが長すぎます')
     .regex(/^[a-zA-Z0-9/_-]+(\.[a-zA-Z0-9]+)?$/, '不正な画像キーです')
     .optional()
     .nullable(),
-  description: z.string().max(500, '説明は500文字以内にしてください').optional().nullable(),
-  totalBudget: z.number().int().nonnegative().optional().nullable(),
+  description: z.string().max(500, '説明は500文字以内にしてください').nullish(),
+  totalBudget: z.number().int().nonnegative().nullish(),
   isPublic: z.boolean(),
 })
 
@@ -55,7 +55,7 @@ export const pcPartSchema = z.object({
     .string()
     .min(1, 'パーツ名は必須です')
     .max(200, 'パーツ名は200文字以内にしてください'),
-  price: z.number().int().nonnegative().optional().nullable(),
+  price: z.number().int().nonnegative().nullish(),
   amazonUrl: z
     .string()
     .url('正しいURLを入力してください')
@@ -73,9 +73,9 @@ export const pcPartSchema = z.object({
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),
-  memo: z.string().max(500, 'メモは500文字以内にしてください').optional().nullable(),
+  memo: z.string().max(500, 'メモは500文字以内にしてください').nullish(),
   sortOrder: z.number().int().nonnegative().optional(),
-  itemId: z.string().optional().nullable(), // カタログアイテムへの参照（オプション）
+  itemId: z.string().nullish(), // カタログアイテムへの参照（オプション）
 })
 
 export type PcPartInput = z.infer<typeof pcPartSchema>

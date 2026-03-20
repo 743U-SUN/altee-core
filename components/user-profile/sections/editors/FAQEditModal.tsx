@@ -23,6 +23,16 @@ import {
 } from 'lucide-react'
 import { getLucideIcon } from '@/lib/lucide-icons'
 import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type { FAQData } from '@/types/profile-sections'
 import type { OldFAQData } from '@/lib/faq-compat'
 import { normalizeQuestions } from '@/lib/faq-compat'
@@ -68,7 +78,10 @@ export function FAQEditModal({
     handleToggleEdit: rawHandleToggleEdit,
     handleFieldChange,
     handleEscapeEdit: rawHandleEscapeEdit,
-    handleDelete: handleDeleteQuestion,
+    deleteTargetId,
+    requestDelete: handleDeleteQuestion,
+    confirmDelete,
+    cancelDelete,
     handleMove: handleMoveOrder,
   } = useEditableList<EditingQuestion>({
     initialItems: normalizeQuestions(currentData as FAQData | OldFAQData),
@@ -346,6 +359,26 @@ export function FAQEditModal({
           </p>
         )}
       </div>
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && cancelDelete()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>この項目を削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は保存前であれば取り消せます。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </EditModal>
   )
 }

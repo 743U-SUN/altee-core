@@ -14,6 +14,7 @@ interface UseEditableListOptions<T extends EditableItem> {
 /**
  * 7エディタ共通のリスト管理ロジック
  * 追加・削除・移動・編集トグル・Escapeキャンセル・フィールド変更を提供
+ * 削除は AlertDialog 連携用のコールバックパターン（requestDelete → confirmDelete / cancelDelete）
  */
 export function useEditableList<T extends EditableItem>({
   initialItems,
@@ -22,6 +23,7 @@ export function useEditableList<T extends EditableItem>({
   const [items, setItems] = useState<T[]>(initialItems)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editingBackup, setEditingBackup] = useState<T | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const handleAdd = () => {
     const newItem = {
@@ -74,11 +76,23 @@ export function useEditableList<T extends EditableItem>({
     setEditingBackup(null)
   }
 
-  const handleDelete = (itemId: string) => {
-    if (!confirm('この項目を削除しますか？')) return
-    const filtered = items.filter((i) => i.id !== itemId)
+  /** AlertDialog を開く（削除対象を設定） */
+  const requestDelete = (itemId: string) => {
+    setDeleteTargetId(itemId)
+  }
+
+  /** AlertDialog の「削除する」で呼ぶ */
+  const confirmDelete = () => {
+    if (!deleteTargetId) return
+    const filtered = items.filter((i) => i.id !== deleteTargetId)
     const updatedItems = filtered.map((i, idx) => ({ ...i, sortOrder: idx }))
     setItems(updatedItems)
+    setDeleteTargetId(null)
+  }
+
+  /** AlertDialog の「キャンセル」で呼ぶ */
+  const cancelDelete = () => {
+    setDeleteTargetId(null)
   }
 
   const handleMove = (itemId: string, direction: 'up' | 'down') => {
@@ -101,12 +115,15 @@ export function useEditableList<T extends EditableItem>({
     items,
     setItems,
     editingItemId,
+    deleteTargetId,
     handleAdd,
     handleCloseEdit,
     handleToggleEdit,
     handleFieldChange,
     handleEscapeEdit,
-    handleDelete,
+    requestDelete,
+    confirmDelete,
+    cancelDelete,
     handleMove,
   }
 }

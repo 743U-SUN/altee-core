@@ -30,9 +30,9 @@ export const itemCategorySchema = z.object({
   sortOrder: z.number().int().nonnegative(),
   itemType: z.enum(ITEM_TYPES),
   requiresCompatibilityCheck: z.boolean(),
-  description: z.string().max(2000, '説明は2000文字以内にしてください').optional().nullable(),
-  icon: z.string().optional().nullable(),
-  parentId: z.string().optional().nullable(),
+  description: z.string().max(2000, '説明は2000文字以内にしてください').nullish(),
+  icon: z.string().nullish(),
+  parentId: z.string().nullish(),
 })
 
 export type ItemCategoryInput = z.infer<typeof itemCategorySchema>
@@ -53,9 +53,9 @@ export const itemSchema = z.object({
     .string()
     .min(1, 'アイテム名は必須です')
     .max(200, 'アイテム名は200文字以内にしてください'),
-  description: z.string().max(2000, '説明は2000文字以内にしてください').optional().nullable(),
+  description: z.string().max(2000, '説明は2000文字以内にしてください').nullish(),
   categoryId: z.string().min(1, 'カテゴリは必須です'),
-  brandId: z.string().optional().nullable(),
+  brandId: z.string().nullish(),
 
   // 画像関連
   amazonUrl: z
@@ -68,18 +68,18 @@ export const itemSchema = z.object({
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),
-  amazonImageUrl: z.string().url().optional().nullable().or(z.literal('')).transform((val) => (val === '' ? undefined : val)),
+  amazonImageUrl: z.string().url().nullish().or(z.literal('')).transform((val) => (val === '' ? undefined : val)),
   customImageUrl: z
     .string()
     .url('正しいURLを入力してください')
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),
-  imageStorageKey: z.string().optional().nullable(),
+  imageStorageKey: z.string().nullish(),
 
   // OG情報
-  ogTitle: z.string().optional().nullable(),
-  ogDescription: z.string().optional().nullable(),
+  ogTitle: z.string().nullish(),
+  ogDescription: z.string().nullish(),
 
   // Amazon固有
   asin: z
@@ -131,7 +131,7 @@ export interface CSVImportResult {
 
 export const userItemSchema = z.object({
   itemId: z.string().min(1, 'アイテムIDは必須です'),
-  review: z.string().optional().nullable(),
+  review: z.string().nullish(),
   isPublic: z.boolean().default(true),
   sortOrder: z.number().int().nonnegative().optional(),
 })

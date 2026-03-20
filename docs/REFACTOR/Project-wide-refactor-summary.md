@@ -839,3 +839,248 @@
 | `2220953` | refactor(admin-ext): Phase 1 - structure refactor |
 | `6fc70f0` | refactor(admin-ext): Phase 2 - data layer refactor |
 | `1d4a1d3` | refactor(admin-ext): Phase 3 - quality fixes |
+
+---
+
+# Tier 5 キャップストーン リファクタリングサマリー
+
+実施日: 2026-03-20
+対象: `types/`, `hooks/`, `constants/`, `prisma/schema.prisma`（型定義・フック・定数・スキーマ）
+ソース: 1レビュードキュメント（Session 23）— CRITICAL 4件 / HIGH 12件 / MEDIUM 17件
+
+---
+
+## Phase 1: Structure Refactor（6ファイル変更、3ファイル新規作成）
+
+### `'use client'` ディレクティブ追加 (CRITICAL ×3)
+- `hooks/use-mobile.ts`, `hooks/use-debounce.ts`, `hooks/use-custom-icons.ts` — いずれもクライアント専用フック（useState/useEffect/useSWR 使用）にディレクティブ欠落
+
+### use-mobile.ts — Layout thrashing 修正 (HIGH)
+- `window.innerWidth` → `MediaQueryListEvent.matches` に変更
+- 初期値も `mql.matches` 使用に統一
+
+### constants/pc-build — JSX → コンポーネント参照マップ (HIGH)
+- `partTypeIcons: Record<PcPartType, React.ReactNode>`（JSX 定数）→ `partTypeIconComponents: Record<PcPartType, LucideIcon>`
+- `.tsx` → `.ts` にリネーム、`'use client'` 不要に
+- call site 3箇所（`PcPartsList`, `PcBuildManagementSection`, `PartsListCard`）更新
+
+### types/faq.ts — レイヤー逆転解消 + 型統一 (HIGH ×3)
+- `@/components/sortable-list/types` → `types/sortable.ts` に型移動（逆依存解消）
+- `createdAt`/`updatedAt` を `Date` → `Date | string` に統一
+- デッドタイプ削除: `FaqCategory`, `FaqQuestion`, `FaqValidationFunction`
+
+### types/profile-sections.ts — 型統一 + 重複解消 (HIGH + MEDIUM ×2)
+- `UserSection.createdAt/updatedAt` を `Date | string` に統一
+- `YouTubeRecommendedData` + `NiconicoRecommendedData` → `VideoRecommendedData` に統合
+- `DEFAULT_THEME_SETTINGS` のコメント/実値不一致を修正
+
+### CustomIcon 型分離 (MEDIUM)
+- `types/icon.ts` 新規作成 — admin actions への不適切な型依存を解消
+
+---
+
+## Phase 2: Data Layer Refactor（2ファイル変更）
+
+### useGuestPcBuild — Zod バリデーション + kebab-case (HIGH ×3)
+- `JSON.parse(stored) as GuestPcBuild` → `guestPcBuildSchema.safeParse()` でバリデーション（localStorage 改ざん対策）
+- `useGuestPcBuild.ts` → `use-guest-pc-build.ts` にリネーム（命名規則統一）
+- ※遅延初期化はハイドレーション問題により元の useEffect パターンを維持
+
+### faq-queries.ts — React.cache() 追加 (MEDIUM)
+- `getDashboardFaqCategories` を `cache()` でラップ（他の公開クエリと統一）
+
+---
+
+## Phase 3: Quality Fixes（9ファイル変更）
+
+### faq-actions.ts — revalidatePath 修正 (CRITICAL)
+- `"/dashboard/faq"` → `"/dashboard/faqs"` に修正（6箇所）
+- `reorderFaqCategories`, `reorderFaqQuestions` に `revalidatePath` 追加（2箇所）
+
+### prisma/schema.prisma — onDelete + FK + インデックス (HIGH ×3 + MEDIUM ×2)
+- `Article.author`: `authorId` nullable 化 + `onDelete: SetNull`
+- `Article.thumbnail`: `onDelete: SetNull`
+- `MediaFile.uploader`: `uploaderId` nullable 化 + `onDelete: SetNull`
+- `TwitchEventSubSubscription`: `user User @relation(onDelete: Cascade)` 追加
+- FAQ 複合インデックス: `@@index([userId, sortOrder])`, `@@index([categoryId, sortOrder])`
+- UserNews インデックス: `@@index([userId, published, sortOrder])`
+
+### 共有型 AttachedImage 作成 + デッドタイプ削除 (MEDIUM)
+- `types/media.ts` に `AttachedImage` 追加 — contacts, gift, notifications の画像インライン型を統合
+- `MediaFile` → `AdminMediaFileView` リネーム（Prisma 名前衝突回避）
+- contacts.ts: `ContactApiResponse`, `ContactDisplay`, `ContactStatus` 削除
+- gift.ts: `GiftApiResponse`, `GiftDisplay` 削除
+- notifications.ts: `NotificationApiResponse`, `NotificationDisplay`, `NotificationStatus` 削除
+- platform.ts: `VideoCardData`, `LiveStreamData`, `LivePriority` 削除
+
+### use-video-list-editor.ts — stale closure 修正 (MEDIUM)
+- `setItems([...items, newItem])` → `setItems((prev) => [...prev, newItem])`
+
+### useCatalogSearch.ts → use-catalog-search.ts (HIGH)
+- kebab-case リネーム + import パス更新
+
+---
+
+## スキップ項目（4件）
+
+| 指摘事項 | スキップ理由 |
+|---------|------------|
+| `types/next-auth.d.ts` JWT isActive | セッション無効化は認証アーキテクチャの大規模変更が必要 |
+| `types/media.ts` email 露出 | 型変更では対応不可、運用レベルの確認が必要 |
+| `types/link-type.ts` ReDoS リスク | 正規表現複雑度チェックは型ファイルの範囲外 |
+| `types/profile-sections.ts` CSS injection | サーバーサイドのホワイトリスト検証が必要 |
+
+---
+
+## 新規作成ファイル一覧
+
+| ファイル | 目的 |
+|---------|------|
+| `types/icon.ts` | `CustomIcon` 型（admin 依存解消） |
+| `types/sortable.ts` | `SortableParentItem` / `SortableChildItem`（レイヤー逆転解消） |
+| `constants/pc-build.ts` | コンポーネント参照マップ（`.tsx` → `.ts`） |
+
+## 削除ファイル一覧
+
+| ファイル | 理由 |
+|---------|------|
+| `constants/pc-build.tsx` | `.ts` に置換（JSX 不要に） |
+
+---
+
+## 検証結果
+
+### ビルド検証（各 Phase 完了時 — 計3回 + 修正1回）
+- `npx tsc --noEmit` — エラーゼロ ✓
+- `npm run build` — ビルド成功 ✓
+- `npx prisma validate` — スキーマ有効 ✓
+
+### ブラウザ検証（MCP Playwright）
+
+| ページ | 結果 | 確認内容 |
+|--------|------|----------|
+| `/tools/pc-builder` | PASS | ハイドレーションエラー検出→修正→再検証 OK |
+| `/dashboard/faqs` | PASS | FAQ 管理、コンソールエラーゼロ |
+| `/admin/media` | PASS（既存） | テーブル正常表示、日付 TZ エラーは既存 |
+| `/dashboard/items` | PASS | アイテム管理、PC Specs タブ正常 |
+
+### コミット一覧
+
+| コミット | 内容 |
+|---------|------|
+| `c66d55d` | refactor(types-hooks-constants): Phase 1 - structure refactor |
+| `dfd4cbd` | refactor(types-hooks-constants): Phase 2 - data layer refactor |
+| `177e67a` | refactor(types-hooks-constants): Phase 3 - quality fixes |
+| `5af09cd` | fix(types-hooks-constants): browser verification fix |
+
+## 未対応（要別対応）
+
+- Prisma マイグレーション実行（onDelete + FK + インデックス変更分）: `DATABASE_URL="..." npm run db:migrate -- --name add_ondelte_fk_indexes`
+
+---
+
+# スキップ項目精査 & 残修正
+
+実施日: 2026-03-20
+対象: Tier 1〜5 全23セッションでスキップされた36件を精査し、対応要の6件を修正
+
+---
+
+## 精査結果
+
+| 判定 | 件数 |
+|------|------|
+| **FIX（対応済み）** | 6件 |
+| **DEFER（将来対応）** | 7件 |
+| **SKIP（対応不要）** | 15件 |
+| **NON-ISSUE（問題なし）** | 8件 |
+
+---
+
+## Phase 1: バグ修正 & セキュリティ
+
+### 1-1. characterName max 不一致修正
+- `lib/validations/character.ts` — `characterName` の `max(50)` を `max(30)` に変更
+- 他3箇所（setup, profile-actions, managed-profiles）で `max(30)` だったものと統一
+
+### 1-2. Prisma マイグレーション
+- Tier 1（インデックス追加）+ Tier 5（onDelete, FK, インデックス追加）のスキーマ変更は `schema.prisma` に反映済み
+- マイグレーション生成は DB 接続が必要なため手動実行: `docker compose -f compose.dev.yaml up -d && DATABASE_URL="postgresql://postgres:password@localhost:5433/altee_dev?schema=public" npm run db:migrate -- --name add_indexes_and_ondelete_policies`
+
+---
+
+## Phase 2: UX 改善
+
+### 2-1. confirm() → AlertDialog（useEditableList + 7エディタ）
+- `useEditableList.ts` — `confirm()` を削除し、コールバックパターンに変更:
+  - `deleteTargetId` state 追加
+  - `requestDelete(id)` — AlertDialog を開く
+  - `confirmDelete()` — 実際の削除を実行
+  - `cancelDelete()` — AlertDialog を閉じる
+- 7エディタに AlertDialog JSX を追加:
+  - `FAQEditModal.tsx`
+  - `LinkListEditModal.tsx`
+  - `LinksEditModal.tsx`
+  - `CircularStatEditModal.tsx`
+  - `IconLinksEditModal.tsx`
+  - `TimelineEditModal.tsx`
+  - `BarGraphEditModal.tsx`
+- 既存パターン（`DragDropItemList.tsx` の AlertDialog）を踏襲
+
+---
+
+## Phase 3: コード品質 & パフォーマンス
+
+### 3-1. layout-config.ts 分解（445行 → 3ファイル）
+- `lib/config/layout-types.ts` — 型定義 + iconMap + IconName + getBrandIcon（117行）
+- `lib/config/layout-defaults.ts` — デフォルト設定値 + mergeLayoutConfig（56行）
+- `lib/config/layout-variants.ts` — ナビゲーション定義 + layoutConfigs + getLayoutConfig（262行）
+- `lib/layout-config.ts` — 後方互換 re-export（7コンシューマの import パス変更不要）
+
+### 3-2. validations .optional().nullable() → .nullish()
+- 4ファイル × 計40箇所を一括置換:
+  - `lib/validations/character.ts` — 21箇所
+  - `lib/validations/pc-build.ts` — 6箇所
+  - `lib/validations/item.ts` — 10箇所
+  - `lib/validations/pc-part-specs.ts` — 3箇所
+- `.nullish()` は `.optional().nullable()` とセマンティクス同一（`undefined | null` を許容）
+
+### 3-3. YouTube preconnect 追加
+- `app/layout.tsx` — `<head>` に `<link rel="preconnect">` 追加:
+  - `https://www.youtube.com`（YouTube 埋め込み iframe）
+  - `https://i.ytimg.com`（YouTube サムネイル画像）
+
+---
+
+## 新規作成ファイル一覧
+
+| ファイル | 目的 |
+|---------|------|
+| `lib/config/layout-types.ts` | レイアウト型定義 + アイコンマッピング |
+| `lib/config/layout-defaults.ts` | デフォルト設定値 + マージ関数 |
+| `lib/config/layout-variants.ts` | レイアウトバリアント定義 + 取得関数 |
+
+---
+
+## DEFER（将来対応）7件
+
+| 項目 | 理由 |
+|------|------|
+| `lib/lucide-icons.ts` tree-shaking | 112行・48アイコン・10コンシューマ。ROI 低 |
+| dnd-kit dynamic import（残り18ファイル） | 高価値の2件は Tier 4 で完了。残りは共有コンポーネントで影響大 |
+| NamecardEditTab 分割（411行） | 自己完結したタブ。新機能追加時に検討 |
+| ImageSection/ImageSectionModal 削除 | 参照ゼロだが将来用か不明 |
+| PresetForm `as never` casting | スキーマ再設計が必要 |
+| @deprecated アノテーション追加 | 非推奨コンポーネント判明時に個別対応 |
+| `useMediaFilters` nuqs 移行 | 検索 UX 改善時に検討 |
+
+---
+
+## 検証結果
+
+- `npx tsc --noEmit` — エラーゼロ ✓
+- `npm run build` — ビルド成功 ✓
+
+## 未対応（要別対応）
+
+- Prisma マイグレーション実行: `DATABASE_URL="..." npm run db:migrate -- --name add_indexes_and_ondelete_policies`
