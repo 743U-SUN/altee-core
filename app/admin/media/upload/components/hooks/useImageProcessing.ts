@@ -22,8 +22,8 @@ export async function processImageFile(file: File): Promise<File> {
         type: 'image/webp'
       })
     }
-  } catch (error) {
-    console.warn('Image processing failed, using original file:', error)
+  } catch {
+    // 処理失敗時は元のファイルを使用
   }
 
   // 処理に失敗した場合は元のファイルを返す

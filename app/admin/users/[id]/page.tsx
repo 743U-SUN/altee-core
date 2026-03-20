@@ -113,8 +113,9 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                     <span className="text-sm">
                       {new Date(user.createdAt).toLocaleDateString("ja-JP", {
                         year: "numeric",
-                        month: "long", 
-                        day: "numeric"
+                        month: "long",
+                        day: "numeric",
+                        timeZone: "Asia/Tokyo"
                       })}
                     </span>
                   </div>

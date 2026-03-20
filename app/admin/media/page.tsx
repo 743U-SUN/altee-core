@@ -9,6 +9,7 @@ import { getMediaCount, getMediaStats } from '@/app/actions/media/media-actions'
 import { MediaTable } from './components/MediaTable'
 import { MediaFilters } from './components/MediaFilters'
 import { HardDrive, Image as ImageIcon, FileText, Calendar, Trash2, Upload } from 'lucide-react'
+import { formatFileSize } from '@/lib/format-utils'
 import { Suspense } from 'react'
 import { MediaType } from '@prisma/client'
 import Link from 'next/link'
@@ -129,14 +130,6 @@ function MediaFiltersSkeleton() {
 
 async function MediaStatistics() {
   const stats = await getMediaStats()
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
 
   return (
     <div className="space-y-6">

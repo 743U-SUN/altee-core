@@ -14,39 +14,11 @@ import { useMediaDeletion } from "./hooks/useMediaDeletion"
 import { BulkActionBar } from "./shared/BulkActionBar"
 import { MediaTableRow } from "./shared/MediaTableRow"
 import { MediaPagination } from "./shared/MediaPagination"
-
-interface MediaFile {
-  id: string
-  storageKey: string
-  containerName: string
-  originalName: string
-  fileName: string
-  fileSize: number
-  mimeType: string
-  uploadType: MediaType
-  createdAt: string
-  uploader: {
-    id: string
-    name: string | null
-    email: string
-  }
-  articles: {
-    id: string
-    title: string
-    slug: string
-  }[]
-}
-
-interface Pagination {
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+import type { MediaFile, MediaPaginationData } from "@/types/media"
 
 interface MediaTableClientProps {
   mediaFiles: MediaFile[]
-  pagination: Pagination
+  pagination: MediaPaginationData
   search?: string
   containerName?: string
   uploadType?: MediaType

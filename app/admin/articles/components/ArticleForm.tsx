@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -52,7 +52,7 @@ interface ArticleFormProps {
 }
 
 export function ArticleForm({ article, initialCategories, initialTags }: ArticleFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [thumbnail, setThumbnail] = useState<UploadedFile[]>(
     article?.thumbnail ? [thumbnailToUploadedFile(article.thumbnail)] : []
   )
@@ -106,43 +106,41 @@ export function ArticleForm({ article, initialCategories, initialTags }: Article
     }
   }
 
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true)
+  const onSubmit = (values: FormValues) => {
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        formData.append('title', values.title)
+        formData.append('slug', values.slug)
+        formData.append('content', values.content)
+        formData.append('excerpt', values.excerpt || '')
+        formData.append('published', values.published.toString())
 
-    try {
-      const formData = new FormData()
-      formData.append('title', values.title)
-      formData.append('slug', values.slug)
-      formData.append('content', values.content)
-      formData.append('excerpt', values.excerpt || '')
-      formData.append('published', values.published.toString())
+        if (thumbnail.length > 0) {
+          formData.append('thumbnailId', thumbnail[0].id)
+        }
 
-      if (thumbnail.length > 0) {
-        formData.append('thumbnailId', thumbnail[0].id)
+        selectedCategoryIds.forEach(categoryId => {
+          formData.append('categoryIds', categoryId)
+        })
+        selectedTagIds.forEach(tagId => {
+          formData.append('tagIds', tagId)
+        })
+
+        if (article) {
+          await updateArticle(article.id, formData)
+          toast.success('記事が更新されました')
+        } else {
+          await createArticle(formData)
+          toast.success('記事が作成されました')
+        }
+
+        router.push('/admin/articles')
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '操作に失敗しました')
       }
-
-      selectedCategoryIds.forEach(categoryId => {
-        formData.append('categoryIds', categoryId)
-      })
-      selectedTagIds.forEach(tagId => {
-        formData.append('tagIds', tagId)
-      })
-
-      if (article) {
-        await updateArticle(article.id, formData)
-        toast.success('記事が更新されました')
-      } else {
-        await createArticle(formData)
-        toast.success('記事が作成されました')
-      }
-
-      router.push('/admin/articles')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '操作に失敗しました')
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -236,7 +234,7 @@ export function ArticleForm({ article, initialCategories, initialTags }: Article
           </Card>
 
           {/* 本文 */}
-          <ContentEditor isSubmitting={isSubmitting} />
+          <ContentEditor isSubmitting={isPending} />
 
           {/* カテゴリ・タグ選択 */}
           <CategoryTagSelector
@@ -250,9 +248,9 @@ export function ArticleForm({ article, initialCategories, initialTags }: Article
 
           {/* アクションボタン */}
           <div className="flex gap-3">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isPending}>
               <Save className="mr-2 h-4 w-4" />
-              {isSubmitting ? '保存中...' : article ? '更新' : '作成'}
+              {isPending ? '保存中...' : article ? '更新' : '作成'}
             </Button>
 
             <Button

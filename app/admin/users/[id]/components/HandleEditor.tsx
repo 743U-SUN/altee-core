@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,12 +32,12 @@ interface HandleEditorProps {
 
 export function HandleEditor({ user }: HandleEditorProps) {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [newHandle, setNewHandle] = useState("")
   const [reason, setReason] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     if (!newHandle.trim()) {
       toast.error("新しいハンドルを入力してください")
       return
@@ -48,22 +48,20 @@ export function HandleEditor({ user }: HandleEditorProps) {
       return
     }
 
-    setIsLoading(true)
-    try {
-      const result = await updateUserHandle(user.id, newHandle.trim(), reason.trim())
-      toast.success(
-        `ハンドルを更新しました: ${result.oldHandle || "(未設定)"} → ${result.newHandle}`
-      )
-      setNewHandle("")
-      setReason("")
-      setIsDialogOpen(false)
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "ハンドルの更新に失敗しました")
-      console.error("Handle update error:", error)
-    } finally {
-      setIsLoading(false)
-    }
+    startTransition(async () => {
+      try {
+        const result = await updateUserHandle(user.id, newHandle.trim(), reason.trim())
+        toast.success(
+          `ハンドルを更新しました: ${result.oldHandle || "(未設定)"} → ${result.newHandle}`
+        )
+        setNewHandle("")
+        setReason("")
+        setIsDialogOpen(false)
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "ハンドルの更新に失敗しました")
+      }
+    })
   }
 
   const handleCancel = () => {
@@ -155,7 +153,7 @@ export function HandleEditor({ user }: HandleEditorProps) {
                     placeholder="例: myhandle123"
                     value={newHandle}
                     onChange={(e) => setNewHandle(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isPending}
                     className="font-mono"
                   />
                 </div>
@@ -172,7 +170,7 @@ export function HandleEditor({ user }: HandleEditorProps) {
                   placeholder="変更理由を入力してください（5文字以上必須）"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isPending}
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -182,14 +180,14 @@ export function HandleEditor({ user }: HandleEditorProps) {
             </div>
 
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleCancel} disabled={isLoading}>
+              <AlertDialogCancel onClick={handleCancel} disabled={isPending}>
                 キャンセル
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleUpdate}
-                disabled={isLoading || !newHandle.trim() || !reason.trim()}
+                disabled={isPending || !newHandle.trim() || !reason.trim()}
               >
-                {isLoading ? (
+                {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     更新中...

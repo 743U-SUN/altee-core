@@ -53,7 +53,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
 
   const monthOptions = generateMonthOptions()
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       applyFilters()
     }
@@ -90,7 +90,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
                 placeholder="ファイル名で検索"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 className="pl-10"
               />
             </div>
@@ -157,7 +157,7 @@ export function MediaFilters({ totalCount }: MediaFiltersProps) {
               placeholder="タグをカンマ区切りで入力"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
             />
           </div>
 

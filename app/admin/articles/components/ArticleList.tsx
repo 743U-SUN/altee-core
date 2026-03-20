@@ -6,6 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import {
+  Pagination as PaginationRoot,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Edit, Trash2, FileX, Download, ImageOff } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -15,6 +24,74 @@ import { toast } from "sonner"
 import { downloadMarkdownFile, createExportDataFromArticle } from "@/lib/markdown-export"
 import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import type { ArticleSummary, Pagination } from './types'
+
+// --- ArticlePagination ---
+
+function ArticlePagination({ pagination }: { pagination: Pagination }) {
+  const getVisiblePages = (): (number | 'ellipsis')[] => {
+    const delta = 2
+    const pages: (number | 'ellipsis')[] = []
+
+    pages.push(1)
+
+    const start = Math.max(2, pagination.page - delta)
+    const end = Math.min(pagination.totalPages - 1, pagination.page + delta)
+
+    if (start > 2) pages.push('ellipsis')
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+
+    if (end < pagination.totalPages - 1) pages.push('ellipsis')
+
+    if (pagination.totalPages > 1) pages.push(pagination.totalPages)
+
+    return pages
+  }
+
+  const visiblePages = getVisiblePages()
+  const startItem = (pagination.page - 1) * pagination.limit + 1
+  const endItem = Math.min(pagination.page * pagination.limit, pagination.total)
+
+  return (
+    <div className="flex items-center justify-between pt-4">
+      <div className="text-sm text-muted-foreground">
+        {pagination.total}件中 {startItem}-{endItem}件を表示
+      </div>
+      <PaginationRoot>
+        <PaginationContent>
+          {pagination.page > 1 && (
+            <PaginationItem>
+              <PaginationPrevious href={`/admin/articles?page=${pagination.page - 1}`} />
+            </PaginationItem>
+          )}
+
+          {visiblePages.map((page, index) => (
+            <PaginationItem key={index}>
+              {page === 'ellipsis' ? (
+                <PaginationEllipsis />
+              ) : (
+                <PaginationLink
+                  href={`/admin/articles?page=${page}`}
+                  isActive={page === pagination.page}
+                >
+                  {page}
+                </PaginationLink>
+              )}
+            </PaginationItem>
+          ))}
+
+          {pagination.page < pagination.totalPages && (
+            <PaginationItem>
+              <PaginationNext href={`/admin/articles?page=${pagination.page + 1}`} />
+            </PaginationItem>
+          )}
+        </PaginationContent>
+      </PaginationRoot>
+    </div>
+  )
+}
 
 // --- DeleteArticleDialog ---
 
@@ -238,24 +315,7 @@ export function ArticleList({ articles, pagination }: ArticleListProps) {
 
       {/* ページネーション */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 pt-4">
-          <div className="flex items-center space-x-2">
-            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-              <Link key={page} href={`/admin/articles?page=${page}`}>
-                <Button
-                  variant={page === pagination.page ? "default" : "outline"}
-                  size="sm"
-                >
-                  {page}
-                </Button>
-              </Link>
-            ))}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {pagination.total}件中 {((pagination.page - 1) * pagination.limit) + 1}-
-            {Math.min(pagination.page * pagination.limit, pagination.total)}件を表示
-          </div>
-        </div>
+        <ArticlePagination pagination={pagination} />
       )}
 
       <DeleteArticleDialog

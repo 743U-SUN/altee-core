@@ -53,8 +53,7 @@ export function CsvExportButton({
 
       toast.success(`${userCount}件のユーザーデータをエクスポートしました`)
     } catch (error) {
-      console.error("CSV export error:", error)
-      toast.error("CSVエクスポートに失敗しました")
+      toast.error(error instanceof Error ? error.message : "CSVエクスポートに失敗しました")
     } finally {
       setIsExporting(false)
     }

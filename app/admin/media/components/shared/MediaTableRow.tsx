@@ -17,30 +17,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Trash2, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import { MediaType } from "@prisma/client"
 import { uploadTypeLabels } from "./upload-type-labels"
-
-interface MediaFile {
-  id: string
-  storageKey: string
-  containerName: string
-  originalName: string
-  fileName: string
-  fileSize: number
-  mimeType: string
-  uploadType: MediaType
-  createdAt: string
-  uploader: {
-    id: string
-    name: string | null
-    email: string
-  }
-  articles: {
-    id: string
-    title: string
-    slug: string
-  }[]
-}
+import { formatFileSize } from "@/lib/format-utils"
+import type { MediaFile } from "@/types/media"
 
 interface MediaTableRowProps {
   file: MediaFile
@@ -49,14 +28,6 @@ interface MediaTableRowProps {
   onSelectChange: (checked: boolean) => void
   onDelete: (fileId: string) => void
   isDeleting: boolean
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 export function MediaTableRow({

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -43,46 +43,44 @@ interface BulkActionsBarProps {
 }
 
 export function BulkActionsBar({ selectedUserIds, selectedUsers, onComplete }: BulkActionsBarProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [selectedRole, setSelectedRole] = useState<UserRole | "">("")
   const [selectedActiveState, setSelectedActiveState] = useState<"active" | "inactive" | "">("")
   const router = useRouter()
 
-  const handleBulkRoleChange = async () => {
+  const handleBulkRoleChange = () => {
     if (!selectedRole || selectedUserIds.length === 0) return
 
-    setIsLoading(true)
-    try {
-      await bulkUpdateUserRole(selectedUserIds, selectedRole)
-      toast.success(`${selectedUserIds.length}人のユーザーのロールを${selectedRole}に変更しました`)
-      router.refresh()
-      onComplete()
-    } catch (error) {
-      console.error("Bulk role change error:", error)
-      toast.error("一括ロール変更に失敗しました")
-    } finally {
-      setIsLoading(false)
-      setSelectedRole("")
-    }
+    startTransition(async () => {
+      try {
+        await bulkUpdateUserRole(selectedUserIds, selectedRole)
+        toast.success(`${selectedUserIds.length}人のユーザーのロールを${selectedRole}に変更しました`)
+        router.refresh()
+        onComplete()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "一括ロール変更に失敗しました")
+      } finally {
+        setSelectedRole("")
+      }
+    })
   }
 
-  const handleBulkActiveToggle = async () => {
+  const handleBulkActiveToggle = () => {
     if (!selectedActiveState || selectedUserIds.length === 0) return
 
     const isActive = selectedActiveState === "active"
-    setIsLoading(true)
-    try {
-      await bulkToggleUserActive(selectedUserIds, isActive)
-      toast.success(`${selectedUserIds.length}人のユーザーを${isActive ? "アクティブ" : "非アクティブ"}にしました`)
-      router.refresh()
-      onComplete()
-    } catch (error) {
-      console.error("Bulk active toggle error:", error)
-      toast.error("一括状態変更に失敗しました")
-    } finally {
-      setIsLoading(false)
-      setSelectedActiveState("")
-    }
+    startTransition(async () => {
+      try {
+        await bulkToggleUserActive(selectedUserIds, isActive)
+        toast.success(`${selectedUserIds.length}人のユーザーを${isActive ? "アクティブ" : "非アクティブ"}にしました`)
+        router.refresh()
+        onComplete()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "一括状態変更に失敗しました")
+      } finally {
+        setSelectedActiveState("")
+      }
+    })
   }
 
   const roleStats = selectedUsers.reduce((acc, user) => {
@@ -145,7 +143,7 @@ export function BulkActionsBar({ selectedUserIds, selectedUsers, onComplete }: B
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={!selectedRole || isLoading}
+                    disabled={!selectedRole || isPending}
                   >
                     実行
                   </Button>
@@ -185,7 +183,7 @@ export function BulkActionsBar({ selectedUserIds, selectedUsers, onComplete }: B
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={!selectedActiveState || isLoading}
+                    disabled={!selectedActiveState || isPending}
                   >
                     実行
                   </Button>
