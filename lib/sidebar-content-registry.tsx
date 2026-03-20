@@ -1,6 +1,6 @@
 import React from "react"
 import { AdminSidebarContent } from "@/components/sidebar-content/AdminSidebarContent"
-import { AdminStats } from "@/app/actions/admin-stats"
+import { AdminStats } from "@/app/actions/admin/stats"
 
 // サイドバーコンテンツのレジストリ
 export const sidebarContentRegistry = {

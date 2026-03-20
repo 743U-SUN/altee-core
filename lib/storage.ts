@@ -1,4 +1,11 @@
+import 'server-only'
 import { S3Client } from '@aws-sdk/client-s3'
+
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.STORAGE_ACCESS_KEY || !process.env.STORAGE_SECRET_KEY) {
+    throw new Error('STORAGE_ACCESS_KEY and STORAGE_SECRET_KEY are required in production')
+  }
+}
 
 // 環境変数から設定を取得（ビルド時はデフォルト値使用）
 const config = {

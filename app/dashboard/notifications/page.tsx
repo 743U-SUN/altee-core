@@ -1,11 +1,36 @@
+import type { Metadata } from 'next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getUserNotification } from "@/app/actions/notification-actions"
-import { getUserContact } from "@/app/actions/contact-actions"
+import { getUserNotification } from "@/app/actions/user/notification-actions"
+import { getUserContact } from "@/app/actions/user/contact-actions"
+import { cachedAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import { prisma } from "@/lib/prisma"
+
+export const metadata: Metadata = {
+  title: '通知・連絡設定',
+  robots: { index: false, follow: false },
+}
 import { NotificationSettings } from "./notification-settings"
 import { ContactSettings } from "./contact-settings"
 import { Bell, Mail } from "lucide-react"
 
 export default async function NotificationsPage() {
+  const session = await cachedAuth()
+
+  if (!session?.user?.id) {
+    redirect('/auth/signin')
+  }
+
+  // プロフィール未設定の場合はセットアップへリダイレクト
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { profile: { select: { userId: true } } },
+  })
+
+  if (!user?.profile) {
+    redirect('/dashboard/setup')
+  }
+
   // Server Componentでデータフェッチ
   const [notificationResult, contactResult] = await Promise.all([
     getUserNotification(),

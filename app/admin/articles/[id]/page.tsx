@@ -1,6 +1,9 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect, notFound } from "next/navigation"
-import { getArticle } from "@/app/actions/article-actions"
+import { isRedirectError } from "next/dist/client/components/redirect-error"
+import { getArticle } from "@/app/actions/content/article-actions"
+import { getAllCategories } from "@/app/actions/content/category-actions"
+import { getAllTags } from "@/app/actions/content/tag-actions"
 import { ArticleForm } from "../components/ArticleForm"
 
 interface PageProps {
@@ -8,8 +11,8 @@ interface PageProps {
 }
 
 export default async function EditArticlePage({ params }: PageProps) {
-  const session = await auth()
-  
+  const session = await cachedAuth()
+
   // 最終権限チェック（3層目）
   if (session?.user?.role !== 'ADMIN') {
     redirect('/unauthorized')
@@ -18,22 +21,37 @@ export default async function EditArticlePage({ params }: PageProps) {
   const { id } = await params
 
   try {
-    const article = await getArticle(id)
-    
+    const [articleRaw, categories, tags] = await Promise.all([
+      getArticle(id),
+      getAllCategories(),
+      getAllTags(),
+    ])
+
+    const article = {
+      ...articleRaw,
+      createdAt: articleRaw.createdAt.toISOString(),
+      updatedAt: articleRaw.updatedAt.toISOString(),
+      publishedAt: articleRaw.publishedAt?.toISOString() ?? null,
+    }
+
     return (
-      <div className="space-y-6">
-        <div>
+      <div className="container mx-auto p-6 pb-40 space-y-6">
+        <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold tracking-tight">記事編集</h1>
           <p className="text-muted-foreground">
             「{article.title}」を編集します。
           </p>
         </div>
 
-        <ArticleForm article={article} />
+        <ArticleForm
+          article={article}
+          initialCategories={categories}
+          initialTags={tags}
+        />
       </div>
     )
   } catch (error) {
-    console.error('Article fetch error:', error)
+    if (isRedirectError(error)) throw error
     notFound()
   }
 }

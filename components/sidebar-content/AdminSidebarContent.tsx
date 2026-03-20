@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { UserStatsCard } from "./UserStatsCard"
-import { AdminStats } from "@/app/actions/admin-stats"
+import { AdminStats } from "@/app/actions/admin/stats"
 import { 
   Server, 
   Users, 

@@ -1,25 +1,24 @@
 'use client'
 
 import { Suspense, useRef, useState } from 'react'
-import { Control, useFormContext } from 'react-hook-form'
+import { useFormContext } from 'react-hook-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MarkdownPreview } from '@/components/ui/markdown-preview'
-import { MarkdownToolbar } from '@/components/ui/markdown-toolbar'
-import { ImageInsertModal } from '@/components/ui/image-insert-modal'
+import { MarkdownPreview } from '@/components/editor/markdown-preview'
+import { MarkdownToolbar } from '@/components/editor/markdown-toolbar'
+import { ImageInsertModal } from '@/components/editor/image-insert-modal'
 import { Edit, Eye } from 'lucide-react'
 import type { FormValues } from './types'
 
 interface ContentEditorProps {
-  control: Control<FormValues>
   isSubmitting: boolean
 }
 
-export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
+export function ContentEditor({ isSubmitting }: ContentEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const form = useFormContext<FormValues>()
+  const { control, getValues, setValue } = useFormContext<FormValues>()
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
 
   const handleMarkdownInsert = (text: string, type: 'wrap' | 'insert' = 'insert') => {
@@ -28,34 +27,30 @@ export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
 
     const start = textarea.selectionStart
     const end = textarea.selectionEnd
-    const currentValue = form.getValues('content')
+    const currentValue = getValues('content')
     const selectedText = currentValue.slice(start, end)
 
     let newText = ''
     let newCursorPosition = start
 
     if (type === 'wrap' && selectedText) {
-      // 選択テキストを囲む
       newText = text + selectedText + text
       newCursorPosition = start + text.length + selectedText.length + text.length
     } else if (type === 'wrap') {
-      // 選択なしの場合、カーソル位置にwrap用テキストを挿入
       newText = text + text
       newCursorPosition = start + text.length
     } else {
-      // 通常の挿入
       newText = text
       newCursorPosition = start + text.length
     }
 
-    const newValue = 
-      currentValue.slice(0, start) + 
-      newText + 
+    const newValue =
+      currentValue.slice(0, start) +
+      newText +
       currentValue.slice(end)
-      
-    form.setValue('content', newValue, { shouldValidate: true })
-    
-    // カーソル位置を設定
+
+    setValue('content', newValue, { shouldValidate: true })
+
     setTimeout(() => {
       textarea.focus()
       textarea.setSelectionRange(newCursorPosition, newCursorPosition)
@@ -95,17 +90,17 @@ export function ContentEditor({ control, isSubmitting }: ContentEditorProps) {
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                
+
                 <TabsContent value="edit" className="mt-0">
                   <div className="sticky top-[120px] z-4 bg-card">
-                    <MarkdownToolbar 
+                    <MarkdownToolbar
                       onInsert={handleMarkdownInsert}
                       onImageInsert={handleImageInsert}
                       disabled={isSubmitting}
                     />
                   </div>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="# 記事タイトル
 
 記事の内容をMarkdown形式で記述してください。
@@ -138,7 +133,7 @@ console.log('Hello, World!');
                     />
                   </FormControl>
                 </TabsContent>
-                
+
                 <TabsContent value="preview" className="mt-0">
                   <div className="min-h-[400px] border rounded-md p-4 bg-muted/30">
                     {field.value ? (
@@ -164,7 +159,6 @@ console.log('Hello, World!');
         />
       </CardContent>
 
-      {/* 画像挿入モーダル */}
       <ImageInsertModal
         open={isImageModalOpen}
         onOpenChange={setIsImageModalOpen}

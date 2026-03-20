@@ -1,6 +1,6 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
-import { getCategories } from "@/app/actions/category-actions"
+import { getCategories } from "@/app/actions/content/category-actions"
 import { CategoryList } from "./components/CategoryList"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function CategoriesPage({ searchParams }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   if (session?.user?.role !== 'ADMIN') {
     redirect('/unauthorized')
@@ -40,14 +40,17 @@ export default async function CategoriesPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <CategoryList 
-          categories={categories} 
+        <CategoryList
+          categories={categories.map((c) => ({
+            ...c,
+            createdAt: c.createdAt.toISOString(),
+            updatedAt: c.updatedAt.toISOString(),
+          }))}
           pagination={pagination}
         />
       </div>
     )
-  } catch (error) {
-    console.error('Categories page error:', error)
+  } catch {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">

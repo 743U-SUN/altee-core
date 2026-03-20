@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Edit, Trash2, Tag, ChevronLeft, ChevronRight } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Tag } from "lucide-react"
 import Link from "next/link"
-import { deleteTag } from "@/app/actions/tag-actions"
+import { deleteTag } from "@/app/actions/content/tag-actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { Tag as TagType, Pagination } from './types'
+import { AttributePagination } from '../../components/AttributePagination'
 
 interface TagListProps {
   tags: TagType[]
@@ -134,51 +135,10 @@ export function TagList({ tags, pagination }: TagListProps) {
       </div>
 
       {/* ページネーション */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4">
-          <div className="text-sm text-muted-foreground">
-            {pagination.total}件中 {((pagination.page - 1) * pagination.limit) + 1}-
-            {Math.min(pagination.page * pagination.limit, pagination.total)}件を表示
-          </div>
-          <div className="flex items-center space-x-2">
-            <Link href={`/admin/attributes/tags?page=${pagination.page - 1}`}>
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={pagination.page <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                前へ
-              </Button>
-            </Link>
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const page = i + 1
-                return (
-                  <Link key={page} href={`/admin/attributes/tags?page=${page}`}>
-                    <Button 
-                      variant={page === pagination.page ? "default" : "outline"}
-                      size="sm"
-                    >
-                      {page}
-                    </Button>
-                  </Link>
-                )
-              })}
-            </div>
-            <Link href={`/admin/attributes/tags?page=${pagination.page + 1}`}>
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-              >
-                次へ
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      )}
+      <AttributePagination
+        pagination={pagination}
+        basePath="/admin/attributes/tags"
+      />
 
       {/* 削除確認ダイアログ */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

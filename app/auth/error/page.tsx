@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+
+export const metadata: Metadata = {
+  title: '認証エラー',
+  robots: { index: false, follow: false },
+}
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import Link from "next/link"
 

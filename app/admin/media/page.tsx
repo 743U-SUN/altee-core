@@ -1,16 +1,23 @@
-import { auth } from '@/auth'
+import type { Metadata } from 'next'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getMediaFiles, getMediaStats } from '@/app/actions/media-actions'
+import { getMediaCount, getMediaStats } from '@/app/actions/media/media-actions'
 import { MediaTable } from './components/MediaTable'
 import { MediaFilters } from './components/MediaFilters'
 import { HardDrive, Image as ImageIcon, FileText, Calendar, Trash2, Upload } from 'lucide-react'
+import { formatFileSize } from '@/lib/format-utils'
 import { Suspense } from 'react'
 import { MediaType } from '@prisma/client'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'メディア管理',
+  robots: { index: false, follow: false },
+}
 
 interface MediaPageProps {
   searchParams: Promise<{
@@ -25,7 +32,7 @@ interface MediaPageProps {
 }
 
 export default async function MediaPage({ searchParams }: MediaPageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
 
   // 3層認証アーキテクチャ：Page層での最終権限チェック
   if (!session?.user?.id || session.user.role !== 'ADMIN') {
@@ -96,8 +103,8 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
 }
 
 async function MediaFiltersWrapper() {
-  const { pagination } = await getMediaFiles({ limit: 1 }) // 総数取得のみ
-  return <MediaFilters totalCount={pagination.total} />
+  const totalCount = await getMediaCount()
+  return <MediaFilters totalCount={totalCount} />
 }
 
 function MediaFiltersSkeleton() {
@@ -123,14 +130,6 @@ function MediaFiltersSkeleton() {
 
 async function MediaStatistics() {
   const stats = await getMediaStats()
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
 
   return (
     <div className="space-y-6">

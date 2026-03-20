@@ -1,8 +1,10 @@
 import { Suspense } from "react"
+import type { Metadata } from "next"
 import { UserList } from "./components/UserList"
 import { UserSearch } from "./components/UserSearch"
 import { CsvExportButton } from "./components/CsvExportButton"
 import dynamic from "next/dynamic"
+import { requireAdmin } from "@/lib/auth"
 
 // Dynamic import for UserFilters to reduce initial bundle size
 const UserFilters = dynamic(() => import("./components/UserFilters").then(mod => ({ default: mod.UserFilters })), {
@@ -11,11 +13,17 @@ const UserFilters = dynamic(() => import("./components/UserFilters").then(mod =>
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserRole } from "@prisma/client"
 
+export const metadata: Metadata = {
+  title: 'ユーザー管理',
+  robots: { index: false, follow: false },
+}
+
 interface UsersPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function UsersPage({ searchParams }: UsersPageProps) {
+  await requireAdmin()
   const params = await searchParams
   const currentPage = Number(params.page) || 1
   const search = typeof params.search === "string" ? params.search : ""
@@ -23,8 +31,8 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
     ? params.role as UserRole 
     : undefined
   const isActive = params.isActive === "true" ? true : params.isActive === "false" ? false : undefined
-  const createdFrom = typeof params.createdFrom === "string" ? new Date(params.createdFrom) : undefined
-  const createdTo = typeof params.createdTo === "string" ? new Date(params.createdTo) : undefined
+  const createdFrom = typeof params.createdFrom === "string" ? params.createdFrom : undefined
+  const createdTo = typeof params.createdTo === "string" ? params.createdTo : undefined
 
   return (
     <div className="container mx-auto p-6 flex flex-col gap-6">
@@ -43,8 +51,12 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
               createdFrom={createdFrom}
               createdTo={createdTo}
             />
-            <UserSearch />
-            <UserFilters />
+            <Suspense fallback={<div className="h-9 w-32 bg-muted rounded-md animate-pulse" />}>
+              <UserSearch />
+            </Suspense>
+            <Suspense fallback={<div className="h-9 w-20 bg-muted rounded-md animate-pulse" />}>
+              <UserFilters />
+            </Suspense>
           </div>
         </CardHeader>
         <CardContent>

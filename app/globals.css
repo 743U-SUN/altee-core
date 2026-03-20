@@ -42,6 +42,38 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* ========================================
+   * テーマシステム用カスタムカラー
+   * UserThemeProviderがインラインスタイルで--theme-*変数を注入
+   * Tailwindユーティリティクラスで参照可能:
+   *   bg-theme-bg, bg-theme-card-bg, text-theme-primary, etc.
+   * ======================================== */
+
+  /* 背景色 */
+  --color-theme-bg: var(--theme-bg);
+  --color-theme-card-bg: var(--theme-card-bg);
+  --color-theme-stat-bg: var(--theme-stat-bg);
+  --color-theme-bar-bg: var(--theme-bar-bg);
+  --color-theme-header-bg: var(--theme-header-bg);
+  --color-theme-accent-bg: var(--theme-accent-bg);
+
+  /* テキスト色 */
+  --color-theme-primary: var(--theme-text-primary);
+  --color-theme-secondary: var(--theme-text-secondary);
+  --color-theme-accent: var(--theme-text-accent);
+  --color-theme-header-text: var(--theme-header-text);
+
+  /* ボーダー色 */
+  --color-theme-accent-border: var(--theme-accent-border);
+
+  /* 角丸 */
+  --radius-theme: var(--theme-card-radius, 16px);
+
+  /* シャドウ */
+  --shadow-theme: var(--theme-card-shadow);
+  --shadow-theme-stat: var(--theme-stat-shadow);
+  --shadow-theme-header: var(--theme-header-shadow);
 }
 
 :root {
@@ -120,4 +152,42 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* プロフィールページのサイドバー背景を透過 */
+  [data-slot='sidebar-inset'],
+  [data-slot='sidebar-inset'] > main {
+    background: transparent !important;
+  }
+
+  /* セクションバンドのレスポンシブパディング (CSS Custom Properties) */
+  [data-section-band] {
+    padding-top: var(--spt, 8px);
+    padding-bottom: var(--spb, 8px);
+  }
+  @media (min-width: 768px) {
+    [data-section-band] {
+      padding-top: var(--spt-md, var(--spt, 8px));
+      padding-bottom: var(--spb-md, var(--spb, 8px));
+    }
+  }
+  @media (min-width: 1024px) {
+    [data-section-band] {
+      padding-top: var(--spt-lg, var(--spt-md, var(--spt, 8px)));
+      padding-bottom: var(--spb-lg, var(--spb-md, var(--spb, 8px)));
+    }
+  }
+}
+
+/* セリフコンテナアニメーション */
+@keyframes speech-bubble-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-speech-bubble {
+  animation: speech-bubble-in 0.2s ease-out forwards;
 }

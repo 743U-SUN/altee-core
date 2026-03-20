@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -12,26 +11,43 @@ model User {
   email                  String       @unique
   name                   String?
   handle                 String?      @unique // ユーザー固有のハンドル名
-  characterName          String?      // 表示用キャラクター名
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
-  customImageKey         String?
   emailVerified          DateTime?
-  image                  String?
+  image                  String?      // OAuthアバター（フォールバック用）
   isActive               Boolean      @default(true)
-  preferredImageProvider String?
   role                   UserRole     @default(USER)
   accounts               Account[]
   sessions               Session[]
   articles               Article[]    // 記事の著者
   mediaFiles             MediaFile[]  // アップロードしたメディアファイル
   profile                UserProfile? // プロフィール情報
-  userLinks              UserLink[]   // ユーザーのSNSリンク
   faqCategories          FaqCategory[] // FAQカテゴリー
-  userData               UserData[]   // ユーザーデータ
+  userSections           UserSection[] // ユーザープロフィールセクション
   notification           UserNotification? // お知らせ（1対1）
   contact                UserContact?  // 連絡方法（1対1）
-  userDevices            UserDevice[] // ユーザー所有デバイス
+  gift                   UserGift?     // ギフト設定（1対1）
+  // userDevices removed (Device system deleted in Phase 10)
+  userItems              UserItem[] // ユーザー所有アイテム
+  userNews               UserNews[] // ユーザーニュース記事
+  pcBuild                UserPcBuild? // PCビルド（1対1）
+  characterInfo          CharacterInfo? // キャラクター情報（1対1）
+
+  // 管理者によるプロフィール管理
+  accountType            AccountType @default(SELF)
+  managedBy              String?     // 作成した管理者のID
+  claimedAt              DateTime?   // VTuber本人がアカウントを引き取った日時
+
+  // プラットフォーム管理（YouTube/Twitch等）
+  youtubeChannelId       String? // YouTube Channel ID (UC...)
+  youtubeRssFeedLimit    Int     @default(6) // RSS Feed表示数 (1-15)
+  twitchUsername         String? // Twitch ユーザー名
+  twitchUserId           String? // Twitch User ID（EventSub用）
+  livePriority           String  @default("youtube") // "youtube" | "twitch"
+
+  youtubeRecommendedVideos    YouTubeRecommendedVideo[]
+  twitchLiveStatus            TwitchLiveStatus?
+  twitchEventSubSubscriptions TwitchEventSubSubscription[]
 
   // Performance optimization indexes
   @@index([createdAt])
@@ -39,6 +55,9 @@ model User {
   @@index([role])
   @@index([email, name])
   @@index([handle])
+  @@index([accountType])
+  @@index([youtubeChannelId])
+  @@index([twitchUserId])
   @@map("users")
 }
 
@@ -96,11 +115,11 @@ model Article {
   content     String     // Markdown
   excerpt     String?    // 要約
   thumbnailId String?    // MediaFileのID
-  thumbnail   MediaFile? @relation(fields: [thumbnailId], references: [id])
+  thumbnail   MediaFile? @relation(fields: [thumbnailId], references: [id], onDelete: SetNull)
   published   Boolean    @default(false)
   publishedAt DateTime?
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id])
+  authorId    String?
+  author      User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -113,6 +132,8 @@ model Article {
   @@index([publishedAt])
   @@index([createdAt])
   @@index([slug])
+  @@index([authorId])
+  @@index([thumbnailId])
   @@map("articles")
 }
 
@@ -125,13 +146,15 @@ model MediaFile {
   fileSize            Int
   mimeType            String
   uploadType          MediaType      @default(THUMBNAIL)
-  uploaderId          String         // 管理者ID（必須）
-  uploader            User           @relation(fields: [uploaderId], references: [id])
+  uploaderId          String?        // 管理者ID
+  uploader            User?          @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
   articles            Article[]      // サムネイル用リレーション
-  profileImages       UserProfile[]  @relation("ProfileImage")
-  linkIcons           UserLink[]     @relation("LinkIcon")
+  characterImages     UserProfile[]  @relation("CharacterImage") // キャラクター画像（9:16縦長）
   notificationImages  UserNotification[] @relation("NotificationImage")
   contactImages       UserContact[]  @relation("ContactImage")
+  giftImages          UserGift[]     @relation("GiftImage")
+  userNewsThumbnails  UserNews[]     @relation("UserNewsThumbnail")
+  userNewsBodyImages  UserNews[]     @relation("UserNewsBodyImage")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   
@@ -217,21 +240,15 @@ model ArticleTag {
   @@map("article_tags")
 }
 
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  price       Int
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("products")
-}
-
 enum UserRole {
   USER
   ADMIN
   GUEST
+}
+
+enum AccountType {
+  SELF      // OAuth登録ユーザー（既存）
+  MANAGED   // 管理者が作成した公式プロフィール
 }
 
 enum MediaType {
@@ -244,6 +261,7 @@ enum MediaType {
   ICON         // カスタムアイコン
   NOTIFICATION // 通知画像
   CONTACT      // 連絡方法画像
+  USER_NEWS    // ユーザーニュース画像
 }
 
 model UserProfile {
@@ -251,14 +269,54 @@ model UserProfile {
   userId             String     @unique
   user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                String?
-  profileImageId     String?
-  profileImage       MediaFile? @relation("ProfileImage", fields: [profileImageId], references: [id])
+  characterImageId   String?    // キャラクター画像（9:16縦長、プロフィール左カラム用）
+  characterImage     MediaFile? @relation("CharacterImage", fields: [characterImageId], references: [id])
   backgroundImageKey String?    // 管理者用意の背景画像ファイル名
+  themePreset        String?    @default("claymorphic") // テーマプリセット名
+  themeSettings      Json?      // テーマ設定（visibility等）
+  bannerImageKey     String?    // バナー画像キー
+  characterBackgroundKey String? // CharacterColumn専用背景画像キー
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
   @@index([userId])
   @@map("user_profiles")
+}
+
+model UserSection {
+  id          String   @id @default(cuid())
+  userId      String
+  sectionType String   // 'profile-card' | 'faq' | 'links' | 'bar-graph' | ...
+  title       String?
+  page        String   @default("profile") // 'profile' | 'videos'
+  sortOrder   Int
+  isVisible   Boolean  @default(true)
+  data        Json     // セクション固有データ
+  settings    Json?    // SectionSettings - バンドの見た目設定（背景・パディング）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sortOrder])
+  @@index([userId, page, sortOrder])
+  @@map("user_sections")
+}
+
+model SectionBackgroundPreset {
+  id           String   @id @default(cuid())
+  name         String   // 管理UI表示名 "Midnight Blue"
+  category     String   // "solid" | "gradient" | "pattern" | "animated"
+  config       Json     // 背景の詳細設定（カテゴリごとに異なる）
+  thumbnailKey String?  // R2上のサムネイル画像キー（プレビュー表示用）
+  cssString    String?  // CSSに直接使える文字列（グラデ等）
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("section_background_presets")
 }
 
 model LinkType {
@@ -271,10 +329,9 @@ model LinkType {
   sortOrder    Int @default(0) // 管理画面での表示順序
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
-  userLinks    UserLink[]
+
   icons        LinkTypeIcon[] // 複数アイコンオプション
-  
+
   @@index([isActive])
   @@index([sortOrder])
   @@map("link_types")
@@ -291,34 +348,10 @@ model LinkTypeIcon {
   updatedAt    DateTime @updatedAt
   
   linkType     LinkType @relation(fields: [linkTypeId], references: [id], onDelete: Cascade)
-  userLinks    UserLink[] // このアイコンを選択したユーザーリンク
-  
+
   @@index([linkTypeId])
   @@index([sortOrder])
   @@map("link_type_icons")
-}
-
-model UserLink {
-  id                     String @id @default(cuid())
-  userId                 String
-  linkTypeId             String
-  url                    String
-  customLabel            String? // カスタムリンクのラベル（最大10文字）
-  customIconId           String? // ユーザーアップロードアイコン
-  selectedLinkTypeIconId String? // 選択されたプリセットアイコン
-  sortOrder              Int @default(0) // ユーザー内での表示順序
-  isVisible              Boolean @default(true) // 表示/非表示
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  
-  user                   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  linkType               LinkType @relation(fields: [linkTypeId], references: [id])
-  customIcon             MediaFile? @relation("LinkIcon", fields: [customIconId], references: [id])
-  selectedLinkTypeIcon   LinkTypeIcon? @relation(fields: [selectedLinkTypeIconId], references: [id])
-  
-  @@index([userId])
-  @@index([sortOrder])
-  @@map("user_links")
 }
 
 model FaqCategory {
@@ -328,14 +361,14 @@ model FaqCategory {
   description String?      // カテゴリ説明（最大200文字、オプション）
   sortOrder   Int          @default(0) // 表示順序
   isVisible   Boolean      @default(true) // 表示/非表示
+  settings    Json?        // SectionSettings (背景・padding)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  
+
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   questions   FaqQuestion[]
-  
-  @@index([userId])
-  @@index([sortOrder])
+
+  @@index([userId, sortOrder])
   @@map("faq_categories")
 }
 
@@ -351,27 +384,8 @@ model FaqQuestion {
   
   category     FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
-  @@index([categoryId])
-  @@index([sortOrder])
+  @@index([categoryId, sortOrder])
   @@map("faq_questions")
-}
-
-model UserData {
-  id          String   @id @default(cuid())
-  userId      String   // 所有者のユーザーID
-  icon        String   // Lucideアイコン名（例: "User", "Heart", "Star"）
-  field       String   // 項目名（例: "身長", "体重", "好きなもの"）
-  value       String   // 値（例: "175cm", "65kg", "読書"）
-  sortOrder   Int      @default(0) // 表示順序
-  isVisible   Boolean  @default(true) // 表示/非表示
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([sortOrder])
-  @@map("user_data")
 }
 
 model UserNotification {
@@ -405,12 +419,28 @@ model UserContact {
   imageId     String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  
+
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   image       MediaFile? @relation("ContactImage", fields: [imageId], references: [id])
-  
+
   @@index([userId])
   @@map("user_contacts")
+}
+
+model UserGift {
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  isEnabled   Boolean    @default(false)
+  imageId     String?
+  linkUrl     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  image       MediaFile? @relation("GiftImage", fields: [imageId], references: [id])
+
+  @@index([userId])
+  @@map("user_gifts")
 }
 
 // ===== Device System =====
@@ -425,126 +455,348 @@ model Brand {
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+
   // リレーション
-  devices     Device[]
-  
+  // devices removed (Device system deleted in Phase 10)
+  items       Item[] @relation("ItemBrand")
+  chipSpecs   PcPartSpec[] @relation("ChipMaker") // チップメーカーとしてのリレーション
+
   @@index([sortOrder])
   @@index([name])
   @@map("brands")
 }
 
-model DeviceCategory {
-  id          String    @id @default(cuid())
-  name        String    @unique // マウス、キーボード、ヘッドセット等
-  slug        String    @unique
-  icon        String?   // Lucideアイコン名
-  description String?
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // リレーション
-  attributes  CategoryAttribute[]
-  devices     Device[]
-  
-  @@index([sortOrder])
-  @@map("device_categories")
+// Device system removed in Phase 10 (Product-to-Item migration)
+// Previous models: DeviceCategory, CategoryAttribute, Device, UserDevice, DeviceAttribute
+// Previous enum: AttributeType
+
+// ===== Platform Management System =====
+
+// YouTubeおすすめ動画テーブル
+model YouTubeRecommendedVideo {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  videoId     String   // YouTube Video ID (11文字)
+  title       String?  // キャッシュ用（オプション）
+  thumbnail   String?  // キャッシュ用（オプション）
+
+  sortOrder   Int      // 表示順序
+  isVisible   Boolean  @default(true) // 表示/非表示トグル（全体）
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, videoId])
+  @@index([userId, sortOrder])
+  @@map("youtube_recommended_videos")
 }
 
-model CategoryAttribute {
-  id           String          @id @default(cuid())
-  categoryId   String
-  name         String          // DPI、ボタン数、接続方式等
-  type         AttributeType   // SELECT, NUMBER, TEXT, BOOLEAN
-  unit         String?         // グラム、Hz等の単位
-  options      Json?           // SELECT型の選択肢配列
-  required     Boolean         @default(false)
-  sortOrder    Int             @default(0)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  
-  category     DeviceCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  // リレーション
-  deviceAttributes DeviceAttribute[]
-  
-  @@index([categoryId])
-  @@index([sortOrder])
-  @@map("category_attributes")
+// Twitchライブ配信ステータステーブル
+model TwitchLiveStatus {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isLive            Boolean   @default(false) // 現在ライブ配信中か
+  streamId          String?   // Twitch Stream ID
+  streamTitle       String?   // 配信タイトル
+  streamThumbnail   String?   // サムネイル
+  viewerCount       Int?      // 視聴者数
+
+  startedAt         DateTime? // 配信開始時刻
+  lastCheckedAt     DateTime  @default(now()) // 最終確認時刻
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([isLive])
+  @@map("twitch_live_status")
 }
 
-model Device {
-  id               String         @id @default(cuid())
-  asin             String         @unique // Amazon商品識別番号
-  name             String         // 商品名
-  description      String?        // 商品説明
-  categoryId       String
-  brandId          String?        // ブランドID（オプショナル）
-  amazonUrl        String         // 元のAmazon URL
-  amazonImageUrl   String?        // Amazon OG画像URL（直リンク）
-  customImageUrl   String?        // カスタム画像URL（手動指定）
-  imageStorageKey  String?        // R2に保存された画像のキー（device-images/xxx）
-  ogTitle          String?        // OG情報から取得したタイトル
-  ogDescription    String?        // OG情報から取得した説明
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  
-  category         DeviceCategory @relation(fields: [categoryId], references: [id])
-  brand            Brand?         @relation(fields: [brandId], references: [id])
-  
+// Twitch EventSub Subscriptionテーブル
+model TwitchEventSubSubscription {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId    String   @unique // Twitch Subscription ID
+  type              String   // "stream.online", "stream.offline"
+  status            String   // "enabled", "webhook_callback_verification_pending"
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@map("twitch_eventsub_subscriptions")
+}
+
+// ===== Unified Item Management System =====
+
+// アイテムタイプ（大分類）
+enum ItemType {
+  PC_PART      // PCパーツ
+  PERIPHERAL   // 周辺機器（デバイス）
+  FOOD         // 食品
+  BOOK         // 本
+  MICROPHONE   // マイク
+  GENERAL      // その他
+}
+
+// アイテムカテゴリ（階層構造）
+model ItemCategory {
+  id                         String       @id @default(cuid())
+  name                       String       // "CPU", "飲料", "マウス"
+  slug                       String       @unique
+  parentId                   String?      // 親カテゴリID（階層構造用）
+  itemType                   ItemType     @default(GENERAL) // アイテムタイプ
+  requiresCompatibilityCheck Boolean      @default(false)   // 互換性チェック必要か（PC_PARTならtrue）
+  icon                       String?      // Lucideアイコン名
+  description                String?
+  sortOrder                  Int          @default(0)
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
+
   // リレーション
-  userDevices      UserDevice[]
-  attributes       DeviceAttribute[]
-  
-  @@index([asin])
+  parent       ItemCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     ItemCategory[] @relation("CategoryHierarchy")
+  items        Item[]
+
+  @@index([itemType])
+  @@index([sortOrder])
+  @@map("item_categories")
+}
+
+// ブランド（既存のBrandモデルを共用）
+// 既存のBrandモデルは維持し、Item.brandIdで参照
+
+// アイテムマスタ
+model Item {
+  id             String        @id @default(cuid())
+  name           String        // アイテム名
+  description    String?       // アイテム説明
+  categoryId     String        // カテゴリID
+  brandId        String?       // ブランドID（オプショナル）
+
+  // 画像管理
+  amazonUrl          String?   // Amazon URL
+  amazonImageUrl     String?   // Amazon OG画像URL
+  customImageUrl     String?   // カスタム画像URL（手動指定）
+  imageStorageKey    String?   // R2保存画像キー
+
+  // OG情報
+  ogTitle        String?       // OG情報から取得したタイトル
+  ogDescription  String?       // OG情報から取得した説明
+
+  // Amazon固有情報
+  asin           String?       @unique // Amazon商品識別番号
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // リレーション
+  category       ItemCategory @relation(fields: [categoryId], references: [id])
+  brand          Brand?       @relation("ItemBrand", fields: [brandId], references: [id])
+  userItems      UserItem[]
+  pcPartSpec     PcPartSpec?              // PCパーツスペック（1:1）
+  buildParts     UserPcBuildPart[]        // このアイテムを使用しているビルドパーツ
+
   @@index([categoryId])
   @@index([brandId])
   @@index([createdAt])
-  @@map("devices")
+  @@map("items")
 }
 
-model UserDevice {
+// ユーザー所有アイテム
+model UserItem {
   id             String    @id @default(cuid())
   userId         String
-  deviceId       String
+  itemId         String
   isPublic       Boolean   @default(true)  // 公開/非公開設定
   review         String?   // ユーザーレビュー
   sortOrder      Int       @default(0)     // 表示順序
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  
+
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device         Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, deviceId]) // 同じユーザーが同じデバイスを複数登録可能（複数のマウス等）
+  item           Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
   @@index([userId])
-  @@index([deviceId])
+  @@index([itemId])
   @@index([isPublic])
   @@index([sortOrder])
-  @@map("user_devices")
+  @@map("user_items")
 }
 
-model DeviceAttribute {
-  id                   String            @id @default(cuid())
-  deviceId             String
-  categoryAttributeId  String
-  value                String            // 属性値（文字列として保存）
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  
-  device               Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  categoryAttribute    CategoryAttribute @relation(fields: [categoryAttributeId], references: [id], onDelete: Cascade)
-  
-  @@unique([deviceId, categoryAttributeId]) // 1つのデバイスに対して1つの属性につき1つの値
-  @@index([deviceId])
-  @@index([categoryAttributeId])
-  @@map("device_attributes")
+// ===== User News System =====
+
+model UserNews {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String     // 最大100文字
+  slug        String     // ユーザー単位でユニーク
+  excerpt     String     @default("") // 要約（最大200文字）
+  content     String     // Markdown本文（最大10000文字）
+  thumbnailId String?    // サムネイル画像 → MediaFile
+  bodyImageId String?    // 本文内画像（1枚） → MediaFile
+  published   Boolean    @default(false)
+  sortOrder   Int        @default(0)
+  adminHidden Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thumbnail MediaFile? @relation("UserNewsThumbnail", fields: [thumbnailId], references: [id])
+  bodyImage MediaFile? @relation("UserNewsBodyImage", fields: [bodyImageId], references: [id])
+
+  @@unique([userId, slug])
+  @@index([userId, published, sortOrder])
+  @@index([thumbnailId])
+  @@index([bodyImageId])
+  @@map("user_news")
 }
 
-enum AttributeType {
-  SELECT   // 選択肢から選択
-  NUMBER   // 数値入力
-  TEXT     // 自由入力
-  BOOLEAN  // Yes/No
+// ===== PC Build System =====
+
+enum PcPartType {
+  CPU
+  GPU
+  MOTHERBOARD
+  RAM
+  STORAGE
+  PSU
+  CASE
+  COOLER
+  OTHER
+
+  @@map("pc_part_type")
+}
+
+model UserPcBuild {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?
+  imageKey    String?
+  description String?
+  totalBudget Int?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parts       UserPcBuildPart[]
+
+  @@map("user_pc_builds")
+}
+
+model UserPcBuildPart {
+  id        String      @id @default(cuid())
+  buildId   String
+  build     UserPcBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  partType  PcPartType
+  name      String
+  price     Int?
+  amazonUrl String?
+  memo      String?
+  sortOrder Int         @default(0)
+  itemId    String?                  // カタログアイテムへの参照（オプション）
+  item      Item?       @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([buildId, sortOrder])
+  @@index([itemId])
+  @@map("user_pc_build_parts")
+}
+
+// ===== PC Part Spec System =====
+
+model PcPartSpec {
+  id          String     @id @default(cuid())
+  itemId      String     @unique
+  item        Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  partType    PcPartType
+  chipMakerId String?
+  chipMaker   Brand?     @relation("ChipMaker", fields: [chipMakerId], references: [id])
+  tdp         Int?                   // 消費電力(W) - 相性チェックで使用
+  releaseDate DateTime?
+  specs       Json                   // カテゴリ別のZodバリデーション済みJSON
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([partType])
+  @@index([chipMakerId])
+  @@map("pc_part_specs")
+}
+
+// ===== Character Info System =====
+
+model CharacterInfo {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // === 基本情報 ===
+  iconImageKey      String?   // アイコン画像（R2 storageKey）
+  characterName     String?   // キャラクターネーム
+  nameReading       String?   // 読み方（ひらがな/カタカナ）
+  gender            String?   // 男性 / 女性 / 不明 / その他
+  birthdayMonth     Int?      // 誕生日（月）
+  birthdayDay       Int?      // 誕生日（日）
+  species           String?   // 種族（人間、悪魔、エルフ等）
+  element           String?   // 属性（火、水、闇等）
+  debutDate         DateTime? // デビュー日
+  fanName           String?   // ファンネーム
+  fanMark           String?   // 推しマーク（絵文字）
+  illustrator       String?   // ママ（イラストレーター）
+  modeler           String?   // パパ（モデラー）
+  affiliation       String?   // 所属名（事務所名 or 個人）
+  affiliationType   String?   // "individual" | "agency"
+
+  // === 活動情報 ===
+  streamingStyles      String[]  // 配信スタイル: ["ゲーム実況", "歌枠", "雑談", "ASMR", ...]
+  streamingTimezones   String[]  // 活動時間帯: ["朝", "昼", "夕方", "夜", "深夜"]
+  streamingFrequency   String?   // 配信頻度: "毎日" | "週4-6回" | "週2-3回" | "週1回" | "不定期"
+  languages            String[]  // 使用言語: ["日本語", "英語", ...]
+  activityStatus       String?   // 活動状態: "active" | "hiatus" | "retired"
+
+  // === ゲーム ===
+  gamePlatforms     String[]  // ["PC", "PS5", "Switch", "XBOX", "スマホ", "その他"]
+  gameGenres        String[]  // ["RPG", "FPS", "TPS", "アクション", ...]
+  nowPlaying        String?   // 今プレイ中のゲーム
+
+  // === コラボ ===
+  collabStatus      String?   // "open" | "same_gender" | "closed"
+  collabComment     String?   // コラボ条件や一言（自由テキスト）
+
+  // === リレーション ===
+  platformAccounts  CharacterPlatformAccount[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // フィルタリング用インデックス
+  @@index([gender])
+  @@index([species])
+  @@index([element])
+  @@index([collabStatus])
+  @@index([affiliationType])
+  @@index([activityStatus])
+  @@map("character_info")
+}
+
+model CharacterPlatformAccount {
+  id            String        @id @default(cuid())
+  characterId   String
+  character     CharacterInfo @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  platform      String        // "youtube", "twitch", "niconico", "twicas", ...
+  url           String?       // チャンネル/ユーザーページURL
+  isActive      Boolean       @default(true)
+  sortOrder     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([characterId, platform])
+  @@index([platform])
+  @@map("character_platform_accounts")
 }

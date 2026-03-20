@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Accordion } from '@/components/ui/accordion';
 import { Plus, Loader2, MessageCircleQuestion } from 'lucide-react';
@@ -35,7 +35,7 @@ interface SortableChildListProps<TParent extends SortableParentItem, TChild exte
   onUpdateChildState: (parentId: string, newState: Partial<ItemState>) => void;
 }
 
-function SortableChildListComponent<TParent extends SortableParentItem, TChild extends SortableChildItem>({
+export function SortableChildList<TParent extends SortableParentItem, TChild extends SortableChildItem>({
   parentId,
   childItems,
   config,
@@ -43,6 +43,8 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
   onUpdateChildState,
 }: SortableChildListProps<TParent, TChild>) {
   const [isAdding, setIsAdding] = useState(false);
+  const prevChildItemsCountRef = useRef(childItems.length);
+  const processingNewItemRef = useRef(false);
 
   // ドラッグアンドドロップ用センサー設定
   const sensors = useSensors(
@@ -53,25 +55,68 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     })
   );
 
-  // 子アイテムが変更されたときに一時データを初期化
+  // 子アイテムのアコーディオン開閉を切り替え
+  const handleChildAccordionChange = (value: string) => {
+    // valueが空文字列の場合は閉じる、それ以外は開く
+    const newAccordionState: { [itemId: string]: boolean } = {};
+
+    // 親のIDが存在する場合は保持（Q&A管理全体のアコーディオンを開いたまま）
+    if (childState.accordionOpen[parentId]) {
+      newAccordionState[parentId] = true;
+    }
+
+    // 子アイテムのアコーディオンを開く
+    if (value && value !== '') {
+      newAccordionState[value] = true;
+    }
+
+    onUpdateChildState(parentId, {
+      accordionOpen: newAccordionState
+    });
+  };
+
+  const accordionOpenRef = useRef(childState.accordionOpen);
+  accordionOpenRef.current = childState.accordionOpen;
+
+  // 新しいアイテムが追加されたときに自動的にアコーディオンを開く
   useEffect(() => {
-    const tempValues: { [itemId: string]: { [fieldKey: string]: string } } = {};
-    
-    childItems.forEach(item => {
-      if (!childState.tempValues[item.id]) {
-        tempValues[item.id] = {};
-        config.childConfig.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
+    const currentCount = childItems.length;
+    const prevCount = prevChildItemsCountRef.current;
+
+    // アイテムが増えた場合（新規追加）
+    if (currentCount > prevCount && !processingNewItemRef.current) {
+      processingNewItemRef.current = true;
+
+      // sortOrderでソートして最後のアイテム（新しく追加されたアイテム）を取得
+      const sortedItems = childItems.toSorted((a, b) => a.sortOrder - b.sortOrder);
+      const newItem = sortedItems[sortedItems.length - 1];
+
+      if (newItem) {
+        // 新しいアイテムのアコーディオンを開く
+        // 重要: 親のID（Q&A管理全体のアコーディオン状態）は保持する
+        const newAccordionState: { [itemId: string]: boolean } = {};
+
+        // 親のIDが存在する場合は保持（Q&A管理全体のアコーディオンを開いたまま）
+        if (accordionOpenRef.current[parentId]) {
+          newAccordionState[parentId] = true;
+        }
+
+        // 新しいアイテムのアコーディオンを開く
+        newAccordionState[newItem.id] = true;
+
+        onUpdateChildState(parentId, {
+          accordionOpen: newAccordionState
         });
       }
-    });
-    
-    if (Object.keys(tempValues).length > 0) {
-      onUpdateChildState(parentId, {
-        tempValues: { ...childState.tempValues, ...tempValues }
-      });
+
+      // 次のフレームでフラグをリセット
+      setTimeout(() => {
+        processingNewItemRef.current = false;
+      }, 0);
     }
-  }, [childItems, config.childConfig.editableFields, childState.tempValues, onUpdateChildState, parentId]);
+
+    prevChildItemsCountRef.current = currentCount;
+  }, [childItems, parentId, onUpdateChildState]);
 
   // 子アイテムを追加
   const handleAddChildItem = async () => {
@@ -85,8 +130,7 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     try {
       setIsAdding(true);
       await config.childConfig.onAdd(parentId);
-    } catch (error) {
-      console.error('Add child item error:', error);
+    } catch {
       toast.error('子アイテムの追加に失敗しました');
     } finally {
       setIsAdding(false);
@@ -98,24 +142,11 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     if (!config.childConfig.onEdit) return;
 
     try {
-      onUpdateChildState(parentId, {
-        isSaving: { ...childState.isSaving, [itemId]: true }
-      });
-      
       await config.childConfig.onEdit(parentId, itemId, updates);
-      
-      onUpdateChildState(parentId, {
-        isEditing: { ...childState.isEditing, [itemId]: false },
-        isSaving: { ...childState.isSaving, [itemId]: false }
-      });
-      
       toast.success('保存しました');
     } catch (error) {
-      console.error('Edit child item error:', error);
       toast.error('保存に失敗しました');
-      onUpdateChildState(parentId, {
-        isSaving: { ...childState.isSaving, [itemId]: false }
-      });
+      throw error; // InlineEditが元に戻すためにthrow
     }
   };
 
@@ -127,24 +158,15 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
       onUpdateChildState(parentId, {
         isDeleting: { ...childState.isDeleting, [itemId]: true }
       });
-      
+
       await config.childConfig.onDelete(parentId, itemId);
-      
-      // 一時データも削除
-      const newTempValues = { ...childState.tempValues };
-      delete newTempValues[itemId];
-      const newIsEditing = { ...childState.isEditing };
-      delete newIsEditing[itemId];
-      
+
       onUpdateChildState(parentId, {
-        tempValues: newTempValues,
-        isEditing: newIsEditing,
         isDeleting: { ...childState.isDeleting, [itemId]: false }
       });
-      
+
       toast.success('削除しました');
-    } catch (error) {
-      console.error('Delete child item error:', error);
+    } catch {
       toast.error('削除に失敗しました');
       onUpdateChildState(parentId, {
         isDeleting: { ...childState.isDeleting, [itemId]: false }
@@ -175,34 +197,21 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     try {
       await config.childConfig.onReorder(parentId, updatedItems);
       toast.success('並び順を更新しました');
-    } catch (error) {
-      console.error('Reorder child error:', error);
+    } catch {
       toast.error('並び順の更新に失敗しました');
     }
   };
 
-  // 子アイテムの編集状態を切り替え
-  const toggleChildEdit = (itemId: string) => {
-    onUpdateChildState(parentId, {
-      isEditing: { ...childState.isEditing, [itemId]: !childState.isEditing[itemId] }
-    });
-  };
-
-  // 子アイテムの一時値を更新
-  const updateChildTempValue = (itemId: string, fieldKey: string, value: string) => {
-    onUpdateChildState(parentId, {
-      tempValues: {
-        ...childState.tempValues,
-        [itemId]: {
-          ...childState.tempValues[itemId],
-          [fieldKey]: value
-        }
-      }
-    });
-  };
-
   // sortOrderでソートされた子アイテムリストを取得
-  const sortedChildItems = [...childItems].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedChildItems = childItems.toSorted((a, b) => a.sortOrder - b.sortOrder);
+
+  // 子アイテムのIDのセットを作成
+  const childItemIds = new Set(childItems.map(item => item.id));
+
+  // 現在開いているアコーディオンのIDを取得（子アイテムのIDのみ）
+  const openAccordionId = Object.keys(childState.accordionOpen).find(
+    id => childState.accordionOpen[id] === true && childItemIds.has(id)
+  );
 
   return (
     <div className="space-y-3">
@@ -216,7 +225,13 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
           items={sortedChildItems.map(item => item.id)}
           strategy={verticalListSortingStrategy}
         >
-          <Accordion type="single" collapsible className="w-full space-y-0 border-b-1">
+          <Accordion
+            type="single"
+            collapsible
+            className="w-full space-y-0 border-b-1"
+            value={openAccordionId || ''}
+            onValueChange={handleChildAccordionChange}
+          >
             {sortedChildItems.map((item, index) => (
               <SortableChildItemComponent
                 key={item.id}
@@ -226,8 +241,6 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
                 childState={childState}
                 onEdit={handleEditChildItem}
                 onDelete={handleDeleteChildItem}
-                onToggleEdit={toggleChildEdit}
-                onUpdateTempValue={updateChildTempValue}
               />
             ))}
           </Accordion>
@@ -268,8 +281,3 @@ function SortableChildListComponent<TParent extends SortableParentItem, TChild e
     </div>
   );
 }
-
-// React.memoでメモ化して不要な再レンダリングを防ぐ
-export const SortableChildList = React.memo(SortableChildListComponent) as <TParent extends SortableParentItem, TChild extends SortableChildItem>(
-  props: SortableChildListProps<TParent, TChild>
-) => React.ReactElement;

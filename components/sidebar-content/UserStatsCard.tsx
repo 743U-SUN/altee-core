@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Users } from "lucide-react"
-import { AdminStats } from "@/app/actions/admin-stats"
+import { AdminStats } from "@/app/actions/admin/stats"
 
 interface UserStatsCardProps {
   stats: AdminStats

@@ -1,24 +1,44 @@
-import { auth } from '@/auth';
+import type { Metadata } from 'next'
+import { cachedAuth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getUserNavData } from "@/lib/user-data"
+import { DashboardSidebarContent } from "@/components/sidebar-content/DashboardSidebarContent"
+import { CharacterSidebarContent } from "@/components/sidebar-content/CharacterSidebarContent"
+import { DashboardLayoutClient } from "@/components/layout/DashboardLayoutClient"
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | ダッシュボード',
+    default: 'ダッシュボード',
+  },
+}
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth();
-  
+  const session = await cachedAuth();
+
   if (!session?.user) {
     redirect('/auth/signin');
+  }
+
+  if (!session.user.isActive) {
+    redirect('/auth/suspended');
   }
 
   const user = await getUserNavData();
 
   return (
-    <BaseLayout variant="dashboard" user={user}>
+    <DashboardLayoutClient
+      user={user}
+      sidebarContent={<DashboardSidebarContent userId={session.user.id} />}
+      sidebarRoutes={[
+        { path: '/dashboard/character', content: <CharacterSidebarContent /> },
+      ]}
+    >
       {children}
-    </BaseLayout>
+    </DashboardLayoutClient>
   )
 }

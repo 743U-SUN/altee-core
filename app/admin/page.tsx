@@ -1,4 +1,10 @@
+import type { Metadata } from 'next'
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: '管理画面',
+  robots: { index: false, follow: false },
+}
 
 export default function AdminPage() {
   return (
@@ -16,7 +22,12 @@ export default function AdminPage() {
           <p className="text-sm text-muted-foreground">SNSリンクタイプとアイコンの管理</p>
         </Link>
 
-        <Link href="/admin/devices" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+        <Link href="/admin/managed-profiles" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+          <h3 className="font-semibold mb-2">公式プロフィール管理</h3>
+          <p className="text-sm text-muted-foreground">MANAGED VTuberプロフィールの作成と管理</p>
+        </Link>
+
+        <Link href="/admin/items" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
           <h3 className="font-semibold mb-2">デバイス管理</h3>
           <p className="text-sm text-muted-foreground">登録デバイスの管理と編集</p>
         </Link>
@@ -30,7 +41,12 @@ export default function AdminPage() {
           <h3 className="font-semibold mb-2">メディア管理</h3>
           <p className="text-sm text-muted-foreground">画像ファイルの管理と統計</p>
         </Link>
-        
+
+        <Link href="/admin/section-backgrounds" className="bg-card text-card-foreground p-6 rounded-lg border hover:bg-accent transition-colors">
+          <h3 className="font-semibold mb-2">背景プリセット</h3>
+          <p className="text-sm text-muted-foreground">セクション背景プリセットの管理</p>
+        </Link>
+
         <div className="bg-card text-card-foreground p-6 rounded-lg border">
           <h3 className="font-semibold mb-2">システム設定</h3>
           <p className="text-sm text-muted-foreground">アプリケーション設定の管理</p>

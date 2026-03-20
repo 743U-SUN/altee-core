@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
+  const mem = process.memoryUsage()
   const healthCheck = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV,
-    service: 'altee-core',
-    version: '1.0.0',
     checks: {
       memory: {
-        used: process.memoryUsage().heapUsed / 1024 / 1024,
-        total: process.memoryUsage().heapTotal / 1024 / 1024,
+        used: Math.round(mem.heapUsed / 1024 / 1024),
+        total: Math.round(mem.heapTotal / 1024 / 1024),
         unit: 'MB'
       }
     }

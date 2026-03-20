@@ -1,5 +1,7 @@
+import 'server-only'
+import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
-import { handleSchema } from '@/lib/validation/user-setup';
+import { handleSchema } from '@/lib/validations/user-setup';
 import { isReservedHandle } from '@/lib/reserved-handles';
 
 /**
@@ -20,7 +22,7 @@ export async function checkHandleAvailability(handle: string): Promise<HandleAva
   try {
     // 基本的なバリデーション
     const validation = handleSchema.safeParse(handle);
-    
+
     if (!validation.success) {
       return {
         available: false,
@@ -69,51 +71,52 @@ export async function checkHandleAvailability(handle: string): Promise<HandleAva
  * @returns 提案されるhandle
  */
 async function generateHandleSuggestion(baseHandle: string): Promise<string> {
-  const suggestions = [
+  const candidates = [
     `${baseHandle}1`,
     `${baseHandle}2`,
     `${baseHandle}3`,
     `${baseHandle}_user`,
     `${baseHandle}_alt`,
-  ];
+  ].filter(c => !isReservedHandle(c));
 
-  for (const suggestion of suggestions) {
-    const result = await checkHandleAvailability(suggestion);
-    if (result.available) {
-      return suggestion;
-    }
-  }
+  const taken = await prisma.user.findMany({
+    where: { handle: { in: candidates } },
+    select: { handle: true },
+  });
+  const takenSet = new Set(taken.map(u => u.handle));
+  const available = candidates.find(c => !takenSet.has(c));
 
-  // すべての提案が使用済みの場合、ランダムな数字を付加
-  const randomNum = Math.floor(Math.random() * 9000) + 1000;
-  return `${baseHandle}${randomNum}`;
+  return available ?? `${baseHandle}${Math.floor(Math.random() * 9000) + 1000}`;
 }
 
 /**
  * Handleからユーザー情報を取得
+ * React.cache()でリクエスト単位のデデュプリケーションを実装
  * @param handle 検索するhandle
  * @returns ユーザー情報（存在しない場合はnull）
  */
-export async function getUserByHandle(handle: string) {
+export const getUserByHandle = cache(async (handle: string) => {
   try {
-    const normalizedHandle = handle.toLowerCase();
-    
+    // @プレフィックスを削除して正規化
+    const normalizedHandle = handle.startsWith('@')
+      ? handle.slice(1).toLowerCase()
+      : handle.toLowerCase();
+
+    // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
+    if (isReservedHandle(normalizedHandle)) {
+      return null;
+    }
+
     const user = await prisma.user.findUnique({
       where: { handle: normalizedHandle },
       include: {
         profile: {
           include: {
-            profileImage: true,
+            characterImage: true, // キャラクター画像（9:16縦長）
           },
         },
-        userLinks: {
-          include: {
-            linkType: true,
-            customIcon: true,
-            selectedLinkTypeIcon: true,
-          },
-          orderBy: { sortOrder: 'asc' },
-          where: { isVisible: true },
+        characterInfo: {
+          select: { characterName: true, iconImageKey: true },
         },
         faqCategories: {
           include: {
@@ -125,6 +128,16 @@ export async function getUserByHandle(handle: string) {
           where: { isVisible: true },
           orderBy: { sortOrder: 'asc' },
         },
+        userSections: {
+          where: { isVisible: true, page: 'profile' },
+          orderBy: { sortOrder: 'asc' },
+        },
+        userNews: {
+          where: { published: true, adminHidden: false },
+          orderBy: { sortOrder: 'asc' },
+          include: { thumbnail: { select: { storageKey: true } } },
+          take: 3,
+        },
       },
     });
 
@@ -133,7 +146,7 @@ export async function getUserByHandle(handle: string) {
     console.error('Get user by handle error:', error);
     return null;
   }
-}
+});
 
 /**
  * Handleが存在するかチェック（簡易版）
@@ -147,7 +160,7 @@ export async function handleExists(handle: string): Promise<boolean> {
       where: { handle: normalizedHandle },
       select: { id: true },
     });
-    
+
     return !!user;
   } catch (error) {
     console.error('Handle exists check error:', error);

@@ -1,4 +1,5 @@
-import { getUserList } from "@/app/actions/user-management"
+import { getUserList } from "@/app/actions/admin/user-management"
+import { resolveAvatarUrl } from "@/lib/avatar-utils"
 import { UserListClient } from "./UserListClient"
 import { UserRole } from "@prisma/client"
 
@@ -7,8 +8,8 @@ interface UserListProps {
   search?: string
   role?: UserRole
   isActive?: boolean
-  createdFrom?: Date
-  createdTo?: Date
+  createdFrom?: string
+  createdTo?: string
 }
 
 export async function UserList({ 
@@ -28,10 +29,19 @@ export async function UserList({
       ...(createdTo && { createdTo }),
     }
     
-    const { users, totalCount, totalPages } = await getUserList(
+    const { users: rawUsers, totalCount, totalPages } = await getUserList(
       filters,
       { page: currentPage, limit: 20 }
     )
+
+    const users = rawUsers.map(u => ({
+      ...u,
+      // CharacterInfo の表示名・アイコンを展開してクライアントに渡す
+      characterName: u.characterInfo?.characterName ?? null,
+      iconImageUrl: resolveAvatarUrl(u.characterInfo?.iconImageKey, u.image),
+      accountType: u.accountType,
+      createdAt: u.createdAt.toISOString(),
+    }))
 
     return (
       <UserListClient

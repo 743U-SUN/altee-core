@@ -1,6 +1,6 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect, notFound } from "next/navigation"
-import { getCategory } from "@/app/actions/category-actions"
+import { getCategory } from "@/app/actions/content/category-actions"
 import { CategoryForm } from "../components/CategoryForm"
 
 interface PageProps {
@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 export default async function EditCategoryPage({ params }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   // 最終権限チェック（Page層）
   if (session?.user?.role !== 'ADMIN') {
@@ -19,9 +19,17 @@ export default async function EditCategoryPage({ params }: PageProps) {
 
   try {
     const category = await getCategory(id)
-    return <CategoryForm category={category} mode="edit" />
-  } catch (error) {
-    console.error('Category fetch error:', error)
+    const serializedCategory = {
+      ...category,
+      createdAt: category.createdAt.toISOString(),
+      updatedAt: category.updatedAt.toISOString(),
+      articles: category.articles.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+      })),
+    }
+    return <CategoryForm category={serializedCategory} mode="edit" />
+  } catch {
     notFound()
   }
 }

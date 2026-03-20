@@ -88,9 +88,6 @@ export interface NestedSortableListConfig<TParent extends SortableParentItem, TC
 
 // アイテムの状態
 export interface ItemState {
-  isEditing: { [itemId: string]: boolean };
   isDeleting: { [itemId: string]: boolean };
-  isSaving: { [itemId: string]: boolean };
-  tempValues: { [itemId: string]: { [fieldKey: string]: string } };
   accordionOpen: { [itemId: string]: boolean };
 }

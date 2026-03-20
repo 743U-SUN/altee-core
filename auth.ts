@@ -3,7 +3,7 @@ import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
-import { extractOAuthImageUrl, updateUserImage, isEmailBlacklisted } from "@/services/auth"
+import { extractOAuthImageUrl, updateUserImage, isEmailBlacklisted, type OAuthProfile } from "@/services/auth/auth"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -32,20 +32,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // ブラックリストチェック
-      if (user.email && await isEmailBlacklisted(user.email)) {
+      // MANAGEDプロフィール用メールドメインをブロック
+      if (user.email?.endsWith('@altee.internal')) {
         return false
       }
 
-      // アクティブ状態チェック
+      // ブラックリストチェック + アクティブ状態チェックを並列実行
       if (user.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          select: { isActive: true }
-        })
+        const [blacklisted, dbUser] = await Promise.all([
+          isEmailBlacklisted(user.email),
+          prisma.user.findUnique({
+            where: { email: user.email },
+            select: { isActive: true }
+          })
+        ])
+
+        if (blacklisted) {
+          return false
+        }
 
         if (dbUser && !dbUser.isActive) {
-          // 非アクティブなアカウントはログイン拒否
           return '/auth/suspended'
         }
       }
@@ -53,7 +59,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // OAuth画像URLを取得・更新
       if (!account || !profile || !user.id) return true
 
-      const oauthImageUrl = extractOAuthImageUrl(account.provider, profile as any)
+      const oauthImageUrl = extractOAuthImageUrl(account.provider, profile as OAuthProfile)
       if (oauthImageUrl) {
         const updated = await updateUserImage(user.id, oauthImageUrl)
         if (updated) {
@@ -65,17 +71,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, user }) {
       try {
-        // 管理者権限の自動付与
-        if (session.user?.email) {
-          const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
-          if (adminEmails.includes(session.user.email)) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { role: 'ADMIN' }
-            }).catch(() => {}) // エラー無視（既にADMINの場合）
-          }
-        }
-
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: {
@@ -84,21 +79,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             isActive: true,
             image: true,
             handle: true,
-            characterName: true,
+            characterInfo: {
+              select: { characterName: true }
+            },
           }
         })
 
         if (!dbUser) {
           console.error('Database user not found during session callback:', user.id)
-          // デフォルト値を返す
           session.user = {
             ...session.user,
             id: user.id,
             role: 'USER',
-            isActive: true,
+            isActive: false,
             image: session.user.image,
           }
           return session
+        }
+
+        // 管理者権限の自動付与（既にADMINなら不要）
+        if (session.user?.email && dbUser.role !== 'ADMIN') {
+          const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
+          if (adminEmails.includes(session.user.email)) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { role: 'ADMIN' }
+            }).catch(() => { })
+            dbUser.role = 'ADMIN'
+          }
         }
 
         // セッション時点での画像同期処理（signInコールバックで処理されなかった場合のフォールバック）
@@ -118,9 +126,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           isActive: dbUser.isActive,
           image: dbUser.image,
           handle: dbUser.handle,
-          characterName: dbUser.characterName,
+          characterName: dbUser.characterInfo?.characterName ?? null,
         }
-        
+
         return session
       } catch (error) {
         console.error('Session callback error:', error)
@@ -129,7 +137,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           ...session.user,
           id: user.id,
           role: 'USER',
-          isActive: true,
+          isActive: false,
         }
         return session
       }
@@ -140,7 +148,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (url.startsWith('/')) {
           return `${baseUrl}${url}`
         }
-        
+
         // 同じドメインの場合
         if (new URL(url).origin === baseUrl) {
           return url

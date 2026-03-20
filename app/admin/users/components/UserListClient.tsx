@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import dynamic from "next/dynamic"
 const BulkActionsBar = dynamic(() => import("./BulkActionsBar").then(mod => ({ default: mod.BulkActionsBar })), {
   loading: () => <div className="h-16 bg-blue-50 rounded-lg animate-pulse" />
 })
-import { UserRole } from "@prisma/client"
+import { UserRole, AccountType } from "@prisma/client"
 import Link from "next/link"
 
 interface User {
@@ -28,8 +28,10 @@ interface User {
   email: string
   role: UserRole
   isActive: boolean
-  image: string | null
-  createdAt: Date
+  accountType: AccountType
+  characterName: string | null
+  iconImageUrl: string | null
+  createdAt: string
   _count: {
     accounts: number
   }
@@ -43,8 +45,8 @@ interface UserListClientProps {
   search?: string
   role?: UserRole
   isActive?: boolean
-  createdFrom?: Date
-  createdTo?: Date
+  createdFrom?: string
+  createdTo?: string
 }
 
 export function UserListClient({
@@ -60,15 +62,15 @@ export function UserListClient({
 }: UserListClientProps) {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
 
-  const handleSelectAll = useCallback((checked: boolean) => {
+  const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedUsers(new Set(users.map(user => user.id)))
     } else {
       setSelectedUsers(new Set())
     }
-  }, [users])
+  }
 
-  const handleSelectUser = useCallback((userId: string, checked: boolean) => {
+  const handleSelectUser = (userId: string, checked: boolean) => {
     setSelectedUsers(prev => {
       const newSelected = new Set(prev)
       if (checked) {
@@ -78,19 +80,12 @@ export function UserListClient({
       }
       return newSelected
     })
-  }, [])
+  }
 
-  const { isAllSelected, isIndeterminate, selectedUsersArray, filteredSelectedUsers } = useMemo(() => {
-    const selectedArray = Array.from(selectedUsers)
-    const filteredSelected = users.filter(user => selectedUsers.has(user.id))
-    
-    return {
-      isAllSelected: users.length > 0 && selectedUsers.size === users.length,
-      isIndeterminate: selectedUsers.size > 0 && selectedUsers.size < users.length,
-      selectedUsersArray: selectedArray,
-      filteredSelectedUsers: filteredSelected
-    }
-  }, [users, selectedUsers])
+  const selectedUsersArray = Array.from(selectedUsers)
+  const filteredSelectedUsers = users.filter(user => selectedUsers.has(user.id))
+  const isAllSelected = users.length > 0 && selectedUsers.size === users.length
+  const isIndeterminate = selectedUsers.size > 0 && selectedUsers.size < users.length
 
   if (users.length === 0) {
     return (
@@ -122,7 +117,6 @@ export function UserListClient({
               />
             </TableHead>
             <TableHead>ユーザー</TableHead>
-            <TableHead>メールアドレス</TableHead>
             <TableHead>ロール</TableHead>
             <TableHead>状態</TableHead>
             <TableHead>アカウント連携</TableHead>
@@ -142,21 +136,27 @@ export function UserListClient({
               </TableCell>
               <TableCell className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarImage src={user.iconImageUrl ?? undefined} alt={user.characterName || user.name || "User"} />
                   <AvatarFallback>
-                    {user.name ? user.name.slice(0, 2).toUpperCase() : "U"}
+                    {(user.characterName || user.name) ? (user.characterName || user.name)!.slice(0, 2).toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{user.name || "名前未設定"}</div>
+                  <div className="font-medium">{user.characterName || user.name || "名前未設定"}</div>
                   <div className="text-sm text-muted-foreground">ID: {user.id}</div>
                 </div>
               </TableCell>
-              <TableCell>{user.email}</TableCell>
               <TableCell>
-                <Badge variant={user.role === "ADMIN" ? "destructive" : user.role === "USER" ? "default" : "secondary"}>
-                  {user.role}
-                </Badge>
+                <div className="flex items-center gap-1">
+                  <Badge variant={user.role === "ADMIN" ? "destructive" : user.role === "USER" ? "default" : "secondary"}>
+                    {user.role}
+                  </Badge>
+                  {user.accountType === "MANAGED" && (
+                    <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">
+                      MANAGED
+                    </Badge>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant={user.isActive ? "default" : "secondary"}>
@@ -196,8 +196,8 @@ export function UserListClient({
         search={search}
         role={role}
         isActive={isActive?.toString()}
-        createdFrom={createdFrom?.toISOString().split('T')[0]}
-        createdTo={createdTo?.toISOString().split('T')[0]}
+        createdFrom={createdFrom}
+        createdTo={createdTo}
       />
     </div>
   )

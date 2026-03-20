@@ -6,9 +6,10 @@ import {
   LogOut,
   Settings,
   Shield,
+  Edit,
 } from "lucide-react"
 import Link from "next/link"
-import { logoutAction } from "@/app/actions/auth"
+import { logoutAction } from "@/app/actions/auth/auth"
 
 import {
   Avatar,
@@ -96,7 +97,7 @@ export function NavUser({
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <Link href={`/${userHandle}`} className="flex items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent transition-colors rounded">
+              <Link href={`/@${userHandle}`} className="flex items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent transition-colors rounded">
                 <Avatar className="h-8 w-8 rounded-lg">
                   {userAvatar && <AvatarImage src={userAvatar} alt={displayName} />}
                   <AvatarFallback className="rounded-lg">
@@ -119,6 +120,12 @@ export function NavUser({
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
+                <Link href="/dashboard/profile-editor">
+                  <Edit />
+                  プロフィール編集
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/dashboard">
                   <Settings />
                   Settings
@@ -128,7 +135,12 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {
-                await logoutAction()
+                try {
+                  await logoutAction()
+                } catch {
+                  // ログアウト失敗時はページリロードでフォールバック
+                  window.location.href = '/'
+                }
               }}
             >
               <LogOut />

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ファンタジー風ステータスUI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"M PLUS Rounded 1c"', 'sans-serif'],
+                    },
+                    colors: {
+                        base: {
+                            light: '#FDF6E7', // メイン背景のクリーム色
+                            dark: '#F5E6CD',  // サブ背景の濃いクリーム色
+                            border: '#DBC49E',// 枠線や区切り線
+                            text: '#5A3D2B',  // 基本テキストのこげ茶色
+                        },
+                        accent: {
+                            red: '#C64B44',   // ヘッダーや強調の赤
+                            blue: '#4A80B4',  // タイプアイコン等の青
+                            yellow: '#FAD058',// ボタンのグラデーション
+                        }
+                    },
+                    boxShadow: {
+                        'btn': '0 3px 0 0 #D4A33B',
+                        'btn-white': '0 3px 0 0 #DBC49E',
+                        'inner-sm': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            /* プレビューを見やすくするための背景 */
+            background-color: #2b2522;
+            background-image: radial-gradient(#3a332f 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* テキストの縁取り */
+        .text-outline {
+            text-shadow:
+                -1px -1px 0 #8B302B,
+                1px -1px 0 #8B302B,
+                -1px 1px 0 #8B302B,
+                1px 1px 0 #8B302B;
+        }
+
+        /* ボタンの押し込みエフェクト */
+        .btn-press:active {
+            transform: translateY(3px);
+            box-shadow: none !important;
+        }
+
+        /* 点線リーダー */
+        .dotted-leader {
+            background-image: radial-gradient(circle, #DBC49E 1px, transparent 1.5px);
+            background-size: 6px 10px;
+            background-position: bottom;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- メインコンテナ -->
+    <div
+        class="relative w-full max-w-[460px] bg-base-light rounded-3xl shadow-2xl border-2 border-base-border text-base-text p-4 overflow-visible z-10">
+
+        <!-- 背景の装飾的な薄いパターン（疑似要素で表現） -->
+        <div class="absolute inset-0 bg-white/40 rounded-3xl pointer-events-none"></div>
+
+        <!-- コンテンツエリア (相対配置で前面に出す) -->
+        <div class="relative z-10 flex flex-col gap-2">
+
+            <!-- ヘッダー部 (カード型) -->
+            <div
+                class="flex w-full items-center bg-gradient-to-br from-white to-[#FDF6E7] border-2 border-base-border rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                <!-- 左側: 名前など (比率3) -->
+                <div class="w-3/4 flex flex-col justify-center relative z-10">
+                    <!-- 上部: 木のアイコン + 森の精霊 -->
+                    <div class="flex items-center gap-1 text-base font-bold text-[#5b8c41]">
+                        <i data-lucide="leaf" class="w-5 h-5"></i>
+                        森の精霊
+                    </div>
+                    <!-- 中部: 名前 -->
+                    <div class="text-[26px] font-extrabold text-base-text leading-tight mt-1">
+                        アネモナ・ドリアード
+                    </div>
+                    <!-- 下部: 英語名 -->
+                    <div class="text-sm font-bold text-base-text opacity-40 uppercase tracking-widest mt-5">
+                        Anemona
+                    </div>
+                </div>
+                <!-- 右側: 太陽のアイコン (比率1) -->
+                <div class="w-1/4 flex items-center justify-center relative z-10">
+                    <i data-lucide="sun" class="w-16 h-16 text-[#FAD058] drop-shadow-md"></i>
+                </div>
+                <!-- カード右側の装飾用背景サークル -->
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-[#F5E6CD] rounded-full opacity-50 z-0"></div>
+            </div>
+
+            <!-- ピル型タグエリア -->
+            <div class="flex items-center justify-end gap-2 w-full mt-1 flex-wrap">
+                <!-- Youtube -->
+                <div
+                    class="inline-flex items-center justify-center bg-base-light rounded-full border border-base-border shadow-sm px-3 py-1 font-bold text-xs text-base-text gap-1.5">
+                    <i data-lucide="youtube" class="w-4 h-4 text-[#FF0000]"></i>
+                    <span>Youtube</span>
+                </div>
+                <!-- Twitch -->
+                <div
+                    class="inline-flex items-center justify-center bg-base-light rounded-full border border-base-border shadow-sm px-3 py-1 font-bold text-xs text-base-text gap-1.5">
+                    <i data-lucide="twitch" class="w-4 h-4 text-[#9146FF]"></i>
+                    <span>Twitch</span>
+                </div>
+                <!-- エルフ -->
+                <div
+                    class="inline-flex items-center justify-center bg-base-light rounded-full border border-base-border shadow-sm px-3 py-1 font-bold text-xs text-base-text gap-1.5 text-[#5b8c41]">
+                    <i data-lucide="leaf" class="w-4 h-4"></i>
+                    <span class="text-base-text">エルフ</span>
+                </div>
+                <!-- 女性 -->
+                <div
+                    class="inline-flex items-center justify-center bg-base-light rounded-full border border-base-border shadow-sm px-3 py-1 font-bold text-xs text-base-text gap-1.5 text-[#C64B44]">
+                    <i data-lucide="user" class="w-4 h-4 text-[#C64B44]"></i>
+                    <span class="text-base-text">女性</span>
+                </div>
+            </div>
+
+            <!-- ステータスグリッド -->
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3 mt-3 px-1 text-sm font-bold">
+                <!-- HP -->
+                <div class="flex items-end justify-between border-b-2 border-dotted border-[#DBC49E] pb-1.5">
+                    <div class="flex items-center bg-[#D2B48C] text-white rounded px-2 py-0.5 mr-2 -mb-2 z-10">
+                        <i data-lucide="heart" class="w-3.5 h-3.5 mr-1 text-white"></i>
+                        <span class="text-xs">HP</span>
+                    </div>
+                    <div class="text-right leading-none z-10 bg-base-light pl-1 -mb-1">
+                        340
+                    </div>
+                </div>
+                <!-- 会心 -->
+                <div class="flex items-end justify-between border-b-2 border-dotted border-[#DBC49E] pb-1.5">
+                    <div
+                        class="flex items-center justify-center bg-[#D2B48C] text-white rounded px-2 py-0.5 mr-2 -mb-2 z-10">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 mr-1 text-white"></i>
+                        <span class="text-xs">会心</span>
+                    </div>
+                    <div class="text-right leading-none z-10 bg-base-light pl-1 -mb-1">
+                        10.3%
+                    </div>
+                </div>
+                <!-- 攻撃 -->
+                <div class="flex items-end justify-between border-b-2 border-dotted border-[#DBC49E] pb-1.5">
+                    <div class="flex items-center bg-[#D2B48C] text-white rounded px-2 py-0.5 mr-2 -mb-2 z-10">
+                        <i data-lucide="sword" class="w-3.5 h-3.5 mr-1 text-white"></i>
+                        <span class="text-xs">攻撃</span>
+                    </div>
+                    <div class="text-right leading-none z-10 bg-base-light pl-1 -mb-1">
+                        60
+                    </div>
+                </div>
+                <!-- 会ダ -->
+                <div class="flex items-end justify-between border-b-2 border-dotted border-[#DBC49E] pb-1.5">
+                    <div class="flex items-center bg-[#D2B48C] text-white rounded px-2 py-0.5 mr-2 -mb-2 z-10">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 mr-1 text-white"></i>
+                        <span class="text-xs">会ダ</span>
+                    </div>
+                    <div class="text-right leading-none z-10 bg-base-light pl-1 -mb-1">
+                        50.0%
+                    </div>
+                </div>
+                <!-- 防御 -->
+                <div class="flex items-end justify-between border-b-2 border-dotted border-[#DBC49E] pb-1.5">
+                    <div class="flex items-center bg-[#D2B48C] text-white rounded px-2 py-0.5 mr-2 -mb-2 z-10">
+                        <i data-lucide="shield" class="w-3.5 h-3.5 mr-1 text-white"></i>
+                        <span class="text-xs">防御</span>
+                    </div>
+                    <div class="text-right leading-none z-10 bg-base-light pl-1 -mb-1">
+                        16
+                    </div>
+                </div>
+                <!-- 速度 -->
+                <div class="flex items-end justify-between border-b-2 border-dotted border-[#DBC49E] pb-1.5">
+                    <div class="flex items-center bg-[#D2B48C] text-white rounded px-2 py-0.5 mr-2 -mb-2 z-10">
+                        <i data-lucide="wind" class="w-3.5 h-3.5 mr-1 text-white"></i>
+                        <span class="text-xs">速度</span>
+                    </div>
+                    <div class="text-right leading-none z-10 bg-base-light pl-1 -mb-1">
+                        99
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- セクションタイトル (GAME) -->
+            <div class="flex items-center justify-center mt-3 mb-3">
+                <div class="h-[2px] bg-base-border w-10 flex-grow rounded-full"></div>
+                <div class="px-4 text-sm font-bold text-[#8B6B4C] bg-base-light relative z-10 tracking-widest">GAME
+                </div>
+                <div class="h-[2px] bg-base-border w-10 flex-grow rounded-full"></div>
+            </div>
+
+            <!-- GAME のコンテンツ (パネル外) -->
+            <div class="flex flex-col gap-3 px-2 mb-4">
+                <!-- HARD -->
+                <div class="flex items-center">
+                    <div class="text-xs font-bold text-[#8B6B4C] w-14 flex-shrink-0 tracking-wider">HARD</div>
+                    <div class="flex gap-2">
+                        <div
+                            class="w-8 h-8 bg-white border border-base-border rounded shadow-sm flex items-center justify-center">
+                            <i data-lucide="gamepad-2" class="w-5 h-5 text-base-text"></i>
+                        </div>
+                        <div
+                            class="w-8 h-8 bg-white border border-base-border rounded shadow-sm flex items-center justify-center">
+                            <i data-lucide="mouse" class="w-5 h-5 text-base-text"></i>
+                        </div>
+                        <div
+                            class="w-8 h-8 bg-white border border-base-border rounded shadow-sm flex items-center justify-center">
+                            <i data-lucide="keyboard" class="w-5 h-5 text-base-text"></i>
+                        </div>
+                        <div
+                            class="w-8 h-8 bg-white border border-base-border rounded shadow-sm flex items-center justify-center">
+                            <i data-lucide="monitor" class="w-5 h-5 text-base-text"></i>
+                        </div>
+                        <div
+                            class="w-8 h-8 bg-white border border-base-border rounded shadow-sm flex items-center justify-center">
+                            <i data-lucide="headphones" class="w-5 h-5 text-base-text"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GENRE -->
+                <div class="flex items-center">
+                    <div class="text-xs font-bold text-[#8B6B4C] w-14 flex-shrink-0 tracking-wider">GENRE</div>
+                    <div class="flex items-center text-sm font-bold text-base-text">
+                        <span>FPS</span>
+                        <span class="text-[#DBC49E] mx-2 font-normal">|</span>
+                        <span>RPG</span>
+                        <span class="text-[#DBC49E] mx-2 font-normal">|</span>
+                        <span>ACTION</span>
+                    </div>
+                </div>
+
+                <!-- LIKE -->
+                <div class="flex items-center">
+                    <div class="text-xs font-bold text-[#8B6B4C] w-14 flex-shrink-0 tracking-wider">LIKE</div>
+                    <div class="text-sm font-bold text-base-text">
+                        MONSTER HUNTER
+                    </div>
+                </div>
+            </div>
+
+            <!-- コメントセクションパネル (濃いエリア) -->
+            <div class="bg-base-dark rounded-xl p-4 border border-base-border shadow-inner-sm flex flex-col pt-3">
+                <!-- セクションタイトル (COMMENT) -->
+                <div class="flex items-center justify-center mb-3">
+                    <div class="h-[2px] bg-base-border w-10 flex-grow rounded-full"></div>
+                    <div
+                        class="px-4 text-sm font-bold text-[#8B6B4C] bg-base-dark relative z-10 tracking-widest -mt-0.5">
+                        COMMENT</div>
+                    <div class="h-[2px] bg-base-border w-10 flex-grow rounded-full"></div>
+                </div>
+
+                <!-- コメント本文 -->
+                <div class="text-sm font-bold text-base-text leading-relaxed px-1">
+                    最近はFPSにハマり中！週末は夜遅くまで遊んでます👍一緒に遊べるフレンド募集中です！
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

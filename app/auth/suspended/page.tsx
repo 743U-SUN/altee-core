@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Mail } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: 'アカウント停止',
+  robots: { index: false, follow: false },
+}
 import Link from "next/link"
 
 export default function SuspendedPage() {

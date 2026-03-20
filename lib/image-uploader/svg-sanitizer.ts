@@ -1,18 +1,13 @@
+import 'server-only'
+
 /**
- * 環境に応じてDOMPurifyインスタンスを取得（動的import）
+ * DOMPurifyインスタンスを取得（サーバー専用）
  */
 async function getDOMPurify() {
-  if (typeof window !== 'undefined') {
-    // ブラウザ環境
-    const createDOMPurify = (await import('dompurify')).default
-    return createDOMPurify(window)
-  } else {
-    // Node.js環境
-    const { JSDOM } = await import('jsdom')
-    const createDOMPurify = (await import('dompurify')).default
-    const jsdomWindow = new JSDOM('').window
-    return createDOMPurify(jsdomWindow as unknown as Window & typeof globalThis)
-  }
+  const { JSDOM } = await import('jsdom')
+  const createDOMPurify = (await import('dompurify')).default
+  const jsdomWindow = new JSDOM('').window
+  return createDOMPurify(jsdomWindow as unknown as Window & typeof globalThis)
 }
 
 // SVGサニタイズ設定
@@ -20,8 +15,8 @@ const SVG_SANITIZE_CONFIG = {
   // 許可するタグ
   ALLOWED_TAGS: [
     'svg', 'g', 'path', 'circle', 'ellipse', 'line', 'rect', 'polyline', 'polygon',
-    'text', 'tspan', 'defs', 'clipPath', 'mask', 'pattern', 'image', 'switch',
-    'foreignObject', 'linearGradient', 'radialGradient', 'stop', 'use', 'symbol',
+    'text', 'tspan', 'defs', 'clipPath', 'mask', 'pattern', 'switch',
+    'linearGradient', 'radialGradient', 'stop', 'symbol',
     'marker', 'title', 'desc', 'metadata'
   ],
   

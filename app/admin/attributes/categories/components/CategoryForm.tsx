@@ -1,30 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { createCategory, updateCategory } from '@/app/actions/category-actions'
+import { AttributeForm } from '../../components/AttributeForm'
+import { createCategory, updateCategory } from '@/app/actions/content/category-actions'
 import { toast } from 'sonner'
-import { ArrowLeft, Save } from 'lucide-react'
-import Link from 'next/link'
 import type { CategoryWithArticles } from './types'
-
-const formSchema = z.object({
-  name: z.string().min(1, 'カテゴリ名は必須です').max(50, 'カテゴリ名は50文字以内で入力してください'),
-  slug: z.string().min(1, 'スラッグは必須です').max(100, 'スラッグは100文字以内で入力してください'),
-  description: z.string().max(200, '説明は200文字以内で入力してください').optional(),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, '正しいカラーコードを入力してください').optional(),
-  order: z.number().int().min(0, '表示順序は0以上で入力してください').optional(),
-})
-
-type FormValues = z.infer<typeof formSchema>
 
 interface CategoryFormProps {
   category?: CategoryWithArticles
@@ -32,223 +11,34 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ category, mode }: CategoryFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
+  const handleSubmit = async (
+    values: { name: string; slug: string; description?: string; color?: string; order?: number },
+    id?: string
+  ) => {
+    const formData = new FormData()
+    formData.append('name', values.name)
+    formData.append('slug', values.slug)
+    if (values.description) formData.append('description', values.description)
+    if (values.color) formData.append('color', values.color)
+    formData.append('order', values.order?.toString() || '0')
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: category?.name || '',
-      slug: category?.slug || '',
-      description: category?.description || '',
-      color: category?.color || '',
-      order: category?.order || 0,
-    },
-  })
-
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true)
-    
-    try {
-      const formData = new FormData()
-      formData.append('name', values.name)
-      formData.append('slug', values.slug)
-      if (values.description) formData.append('description', values.description)
-      if (values.color) formData.append('color', values.color)
-      formData.append('order', values.order?.toString() || '0')
-
-      if (mode === 'create') {
-        await createCategory(formData)
-        toast.success('カテゴリが作成されました')
-      } else if (category) {
-        await updateCategory(category.id, formData)
-        toast.success('カテゴリが更新されました')
-      }
-      
-      router.push('/admin/attributes/categories')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '操作に失敗しました')
-    } finally {
-      setIsSubmitting(false)
+    if (mode === 'create') {
+      await createCategory(formData)
+      toast.success('カテゴリが作成されました')
+    } else if (id) {
+      await updateCategory(id, formData)
+      toast.success('カテゴリが更新されました')
     }
   }
 
-  const isEditing = mode === 'edit'
-  const title = isEditing ? 'カテゴリ編集' : '新規カテゴリ作成'
-  const submitText = isEditing ? '更新' : '作成'
-
   return (
-    <div className="space-y-6">
-      {/* ナビゲーション */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/attributes/categories">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            カテゴリ一覧に戻る
-          </Button>
-        </Link>
-      </div>
-
-      {/* フォーム */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* カテゴリ名 */}
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>カテゴリ名 *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="カテゴリ名を入力"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        記事で表示されるカテゴリ名です。
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* スラッグ */}
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>スラッグ *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="category-slug"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        URLで使用される識別子です。英数字とハイフンのみ使用可能。
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* カラーコード */}
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>カラーコード</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2">
-                          <Input
-                            {...field}
-                            type="color"
-                            className="w-16 h-10 p-1 border rounded"
-                          />
-                          <Input
-                            value={field.value || ''}
-                            onChange={field.onChange}
-                            placeholder="#FF5733"
-                            className="flex-1"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription>
-                        UI表示用の色を設定します。HEX形式（#RRGGBB）で入力。
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* 表示順序 */}
-                <FormField
-                  control={form.control}
-                  name="order"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>表示順序</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          min="0"
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          placeholder="0"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        カテゴリの表示順序です。小さい数字ほど上に表示されます。
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* 説明 */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>説明</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="カテゴリの説明を入力（任意）"
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      このカテゴリについての説明（最大200文字）
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 使用状況表示（編集時のみ） */}
-              {isEditing && category && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">使用状況</h4>
-                  <p className="text-sm text-muted-foreground">
-                    このカテゴリは現在 <strong>{category._count.articles}件の記事</strong> で使用されています。
-                    {category._count.articles > 0 && (
-                      <span className="block mt-1">
-                        記事で使用中のカテゴリは削除できません。
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
-
-              {/* 送信ボタン */}
-              <div className="flex gap-4">
-                <Button type="submit" disabled={isSubmitting}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting ? `${submitText}中...` : submitText}
-                </Button>
-                <Link href="/admin/attributes/categories">
-                  <Button variant="outline" type="button">
-                    キャンセル
-                  </Button>
-                </Link>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+    <AttributeForm
+      item={category}
+      mode={mode}
+      entityLabel="カテゴリ"
+      listPath="/admin/attributes/categories"
+      hasOrder
+      onSubmit={handleSubmit}
+    />
   )
 }

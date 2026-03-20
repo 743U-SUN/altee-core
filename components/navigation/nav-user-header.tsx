@@ -7,7 +7,7 @@ import {
   Shield,
 } from "lucide-react"
 import Link from "next/link"
-import { logoutAction } from "@/app/actions/auth"
+import { logoutAction } from "@/app/actions/auth/auth"
 
 import {
   Avatar,
@@ -76,7 +76,7 @@ export function NavUserHeader({
         sideOffset={4}
       >
         <DropdownMenuLabel className="p-0 font-normal">
-          <Link href={`/${userHandle}`} className="flex items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent transition-colors rounded">
+          <Link href={`/@${userHandle}`} className="flex items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent transition-colors rounded">
             <Avatar className="h-8 w-8 rounded-lg">
               {userAvatar && <AvatarImage src={userAvatar} alt={displayName} />}
               <AvatarFallback className="rounded-lg">
@@ -108,7 +108,12 @@ export function NavUserHeader({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
-            await logoutAction()
+            try {
+              await logoutAction()
+            } catch {
+              // ログアウト失敗時はページリロードでフォールバック
+              window.location.href = '/'
+            }
           }}
         >
           <LogOut />

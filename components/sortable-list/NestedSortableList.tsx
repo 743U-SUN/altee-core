@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,15 +31,12 @@ interface NestedSortableListProps<TParent extends SortableParentItemType, TChild
   loading?: boolean;
 }
 
-function NestedSortableListComponent<TParent extends SortableParentItemType, TChild extends SortableChildItem>({ 
+export function NestedSortableList<TParent extends SortableParentItemType, TChild extends SortableChildItem>({
   config, 
   loading = false 
 }: NestedSortableListProps<TParent, TChild>) {
   const [parentState, setParentState] = useState<ItemState>({
-    isEditing: {},
     isDeleting: {},
-    isSaving: {},
-    tempValues: {},
     accordionOpen: {},
   });
   const [childStates, setChildStates] = useState<{ [parentId: string]: ItemState }>({});
@@ -54,69 +51,26 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     })
   );
 
-  // 親アイテムが変更されたときに一時データを初期化
-  useEffect(() => {
-    const tempValues: { [itemId: string]: { [fieldKey: string]: string } } = {};
-    
-    config.parentItems.forEach(item => {
-      if (!parentState.tempValues[item.id]) {
-        tempValues[item.id] = {};
-        config.parentConfig.editableFields.forEach(field => {
-          tempValues[item.id][field.key] = (item as Record<string, unknown>)[field.key] as string || '';
-        });
-      }
-    });
-    
-    if (Object.keys(tempValues).length > 0) {
-      setParentState(prev => ({
-        ...prev,
-        tempValues: { ...prev.tempValues, ...tempValues }
-      }));
-    }
-  }, [config.parentItems, config.parentConfig.editableFields, parentState.tempValues]);
+  const initializedParentsRef = useRef(new Set<string>());
 
-  // 子アイテムの状態を初期化
+  // 子アイテムの状態を初期化（accordionOpenのみ）
   useEffect(() => {
     const newChildStates: { [parentId: string]: ItemState } = {};
-    
+
     config.parentItems.forEach(parentItem => {
-      const childItems = config.getChildItems(parentItem.id);
-      
-      if (!childStates[parentItem.id]) {
+      if (!initializedParentsRef.current.has(parentItem.id)) {
         newChildStates[parentItem.id] = {
-          isEditing: {},
           isDeleting: {},
-          isSaving: {},
-          tempValues: {},
           accordionOpen: {},
         };
-        
-        childItems.forEach(childItem => {
-          newChildStates[parentItem.id].tempValues[childItem.id] = {};
-          config.childConfig.editableFields.forEach(field => {
-            newChildStates[parentItem.id].tempValues[childItem.id][field.key] = (childItem as Record<string, unknown>)[field.key] as string || '';
-          });
-        });
-      } else {
-        // 既存の状態を保持しつつ、新しい子アイテムの tempValues のみ初期化
-        childItems.forEach(childItem => {
-          if (!childStates[parentItem.id].tempValues[childItem.id]) {
-            if (!newChildStates[parentItem.id]) {
-              newChildStates[parentItem.id] = { ...childStates[parentItem.id] };
-            }
-            newChildStates[parentItem.id].tempValues[childItem.id] = {};
-            config.childConfig.editableFields.forEach(field => {
-              newChildStates[parentItem.id].tempValues[childItem.id][field.key] = (childItem as Record<string, unknown>)[field.key] as string || '';
-            });
-          }
-        });
+        initializedParentsRef.current.add(parentItem.id);
       }
     });
-    
+
     if (Object.keys(newChildStates).length > 0) {
       setChildStates(prev => ({ ...prev, ...newChildStates }));
     }
-  }, [config.parentItems, config.childConfig.editableFields, childStates, config]);
+  }, [config.parentItems]);
 
   // 親アイテムを追加
   const handleAddParentItem = async () => {
@@ -130,40 +84,23 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     try {
       setIsAddingParent(true);
       await config.parentConfig.onAdd();
-    } catch (error) {
-      console.error('Add parent item error:', error);
+    } catch {
       toast.error('アイテムの追加に失敗しました');
     } finally {
       setIsAddingParent(false);
     }
   };
 
-  // 親アイテムを編集
+  // 親アイテムを編集（InlineEditから呼ばれる）
   const handleEditParentItem = async (itemId: string, updates: Partial<TParent>) => {
     if (!config.parentConfig.onEdit) return;
 
     try {
-      setParentState(prev => ({
-        ...prev,
-        isSaving: { ...prev.isSaving, [itemId]: true }
-      }));
-      
       await config.parentConfig.onEdit(itemId, updates);
-      
-      setParentState(prev => ({
-        ...prev,
-        isEditing: { ...prev.isEditing, [itemId]: false }
-      }));
-      
       toast.success('保存しました');
     } catch (error) {
-      console.error('Edit parent item error:', error);
       toast.error('保存に失敗しました');
-    } finally {
-      setParentState(prev => ({
-        ...prev,
-        isSaving: { ...prev.isSaving, [itemId]: false }
-      }));
+      throw error; // InlineEditが元に戻すためにthrow
     }
   };
 
@@ -178,22 +115,13 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
       }));
       
       await config.parentConfig.onDelete(itemId);
-      
-      // 親アイテムと関連する子アイテムの一時データを削除
-      setParentState(prev => {
-        const newTempValues = { ...prev.tempValues };
-        delete newTempValues[itemId];
-        const newIsEditing = { ...prev.isEditing };
-        delete newIsEditing[itemId];
-        
-        return {
-          ...prev,
-          tempValues: newTempValues,
-          isEditing: newIsEditing,
-          isDeleting: { ...prev.isDeleting, [itemId]: false }
-        };
-      });
-      
+
+      // 親アイテムと関連する子アイテムの状態を削除
+      setParentState(prev => ({
+        ...prev,
+        isDeleting: { ...prev.isDeleting, [itemId]: false }
+      }));
+
       setChildStates(prev => {
         const newStates = { ...prev };
         delete newStates[itemId];
@@ -201,8 +129,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
       });
       
       toast.success('削除しました');
-    } catch (error) {
-      console.error('Delete parent item error:', error);
+    } catch {
       toast.error('削除に失敗しました');
       setParentState(prev => ({
         ...prev,
@@ -234,31 +161,18 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     try {
       await config.parentConfig.onReorder(updatedItems);
       toast.success('並び順を更新しました');
-    } catch (error) {
-      console.error('Reorder parent error:', error);
+    } catch {
       toast.error('並び順の更新に失敗しました');
     }
   };
 
-  // 親アイテムの編集状態を切り替え
-  const toggleParentEdit = (itemId: string) => {
-    setParentState(prev => ({
-      ...prev,
-      isEditing: { ...prev.isEditing, [itemId]: !prev.isEditing[itemId] }
-    }));
-  };
+  // toggleParentEditとupdateParentTempValueは不要（InlineEditが管理）
 
-  // 親アイテムの一時値を更新
-  const updateParentTempValue = (itemId: string, fieldKey: string, value: string) => {
+  // 親アイテムの状態を更新
+  const updateParentState = (newState: Partial<ItemState>) => {
     setParentState(prev => ({
       ...prev,
-      tempValues: {
-        ...prev.tempValues,
-        [itemId]: {
-          ...prev.tempValues[itemId],
-          [fieldKey]: value
-        }
-      }
+      ...newState
     }));
   };
 
@@ -273,16 +187,20 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     }));
   };
 
-  // アコーディオンの開閉を切り替え
-  const toggleAccordion = (parentId: string) => {
+  // 子アイテムリストのアコーディオン開閉
+  const handleChildListAccordionChange = (parentId: string, value: string) => {
+    const newAccordionState: { [itemId: string]: boolean } = {};
+    if (value && value !== '') {
+      // 開く
+      newAccordionState[parentId] = true;
+    }
+    // valueが空文字列の場合は閉じる（空のオブジェクト）
+
     setChildStates(prev => ({
       ...prev,
       [parentId]: {
         ...prev[parentId],
-        accordionOpen: {
-          ...prev[parentId]?.accordionOpen,
-          [parentId]: !prev[parentId]?.accordionOpen?.[parentId]
-        }
+        accordionOpen: newAccordionState
       }
     }));
   };
@@ -296,7 +214,7 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
   }
 
   // sortOrderでソート
-  const sortedParentItems = [...config.parentItems].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedParentItems = config.parentItems.toSorted((a, b) => a.sortOrder - b.sortOrder);
 
   return (
     <div className="space-y-6">
@@ -318,18 +236,14 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
                 config={config}
                 parentState={parentState}
                 childState={childStates[parentItem.id] || {
-                  isEditing: {},
                   isDeleting: {},
-                  isSaving: {},
-                  tempValues: {},
                   accordionOpen: {},
                 }}
                 onEditParent={handleEditParentItem}
                 onDeleteParent={handleDeleteParentItem}
-                onToggleParentEdit={toggleParentEdit}
-                onUpdateParentTempValue={updateParentTempValue}
+                onUpdateParentState={updateParentState}
                 onUpdateChildState={updateChildState}
-                onToggleAccordion={toggleAccordion}
+                onToggleChildListAccordion={handleChildListAccordionChange}
               />
             ))}
           </div>
@@ -368,8 +282,3 @@ function NestedSortableListComponent<TParent extends SortableParentItemType, TCh
     </div>
   );
 }
-
-// React.memoでメモ化して不要な再レンダリングを防ぐ
-export const NestedSortableList = React.memo(NestedSortableListComponent) as <TParent extends SortableParentItemType, TChild extends SortableChildItem>(
-  props: NestedSortableListProps<TParent, TChild>
-) => React.ReactElement;

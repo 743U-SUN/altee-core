@@ -1,16 +1,24 @@
-import { auth } from "@/auth"
+import type { Metadata } from 'next'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { BaseLayout } from "@/components/layout/BaseLayout"
-import { getAdminStats } from "@/app/actions/admin-stats"
+import { getAdminStats } from "@/app/actions/admin/stats"
 import { getSidebarContent } from "@/lib/sidebar-content-registry"
 import { getUserNavData } from "@/lib/user-data"
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Admin',
+    default: '管理画面',
+  },
+}
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth();
+  const session = await cachedAuth();
   
   // 認証チェック
   if (!session?.user?.email) {
@@ -19,7 +27,7 @@ export default async function AdminLayout({
   
   // アクティブユーザーチェック
   if (!session.user.isActive) {
-    redirect('/suspended');
+    redirect('/auth/suspended');
   }
   
   // 管理者権限チェック
@@ -27,12 +35,12 @@ export default async function AdminLayout({
     redirect('/unauthorized');
   }
   
-  // 統計データを取得してサイドバーコンテンツを生成
-  const stats = await getAdminStats()
+  // 統計データとユーザー情報を並列取得
+  const [stats, user] = await Promise.all([
+    getAdminStats(),
+    getUserNavData(),
+  ])
   const adminSidebarContent = getSidebarContent("admin", stats)
-  
-  // ユーザー情報を取得
-  const user = await getUserNavData()
   
   return (
     <BaseLayout 

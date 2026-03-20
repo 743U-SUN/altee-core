@@ -11,8 +11,14 @@ export const RESERVED_HANDLES = [
   'dashboard',
   'user',
   'profile',
-  
+  'u',          // VTuber一覧ページ
+  'g',          // グループ関連ページ
+  '_next',      // Next.js内部ルート
+  'serwist',    // PWA service worker route
+  'sw',         // Service worker
+
   // 機能系
+  'demo',       // デモ・テストページ
   'settings',
   'help',
   'about',
@@ -22,12 +28,18 @@ export const RESERVED_HANDLES = [
   'news',
   'faq',
   'links',
-  
+  'posts',      // お知らせ統合ページ
+  'articles',   // 管理者記事
+  'lib',        // ライブラリ（リンク集、フォント、オーディション）
+  'pc-builder', // PCビルダー
+  'items',      // アイテムカタログ
+  'tools',      // ツールページ（PC構成シミュレーター等）
+
   // 法的ページ
   'terms',
   'privacy',
   'legal',
-  
+
   // その他の一般的な予約語
   'www',
   'mail',
@@ -43,7 +55,7 @@ export const RESERVED_HANDLES = [
   'uploads',
   'download',
   'downloads',
-  
+
   // HTTP関連
   'get',
   'post',
@@ -52,7 +64,7 @@ export const RESERVED_HANDLES = [
   'patch',
   'head',
   'options',
-  
+
   // 将来の拡張用
   'shop',
   'store',
@@ -73,7 +85,7 @@ export function isReservedHandle(handle: string): boolean {
   if (!handle || typeof handle !== 'string') {
     return true;
   }
-  
+
   const lowerHandle = handle.toLowerCase();
   return (RESERVED_HANDLES as readonly string[]).includes(lowerHandle);
 }

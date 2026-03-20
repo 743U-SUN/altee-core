@@ -35,7 +35,8 @@ yarn-error.log*
 !.env.example
 
 # database backups
-backups/
+backups/*
+!backups/.gitkeep
 
 # vercel
 .vercel
@@ -44,8 +45,35 @@ backups/
 *.tsbuildinfo
 next-env.d.ts
 
-# docs
-docs/
+# docs (except PLANS and LOGS)
+docs/*
+!docs/PLANS/
+!docs/LOGS/
 
 # MCP configuration (personal)
 .mcp.json
+
+# Playwright MCP screenshots
+.playwright-mcp/
+# Authentication and tests
+auth.json
+test-results/
+
+# Tool specific
+.claude/
+.agents/
+
+# IDE
+.vscode/
+.idea/
+
+# Build / Cache
+.turbo/
+.turbopack/
+dist/
+
+# Playwright test reports
+playwright-report/
+
+# OS specific
+Thumbs.db

@@ -1,4 +1,4 @@
-import { getMediaFiles, MediaFilesFilter } from "@/app/actions/media-actions"
+import { getMediaFiles, MediaFilesFilter } from "@/app/actions/media/media-actions"
 import { MediaTableClient } from "./MediaTableClient"
 import { MediaType } from "@prisma/client"
 
@@ -32,9 +32,14 @@ export async function MediaTable({
     
     const { mediaFiles, pagination } = await getMediaFiles(filters)
 
+    const serializedFiles = mediaFiles.map((file) => ({
+      ...file,
+      createdAt: file.createdAt.toISOString(),
+    }))
+
     return (
       <MediaTableClient
-        mediaFiles={mediaFiles}
+        mediaFiles={serializedFiles}
         pagination={pagination}
         search={search}
         containerName={containerName}
@@ -43,9 +48,7 @@ export async function MediaTable({
         storageUrl={process.env.NEXT_PUBLIC_STORAGE_URL || ''}
       />
     )
-  } catch (error) {
-    console.error("MediaTable error:", error)
-    
+  } catch {
     return (
       <div className="rounded-lg border p-8 text-center">
         <p className="text-muted-foreground">

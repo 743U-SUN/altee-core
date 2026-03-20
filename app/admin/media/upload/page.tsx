@@ -1,12 +1,18 @@
-import { auth } from '@/auth'
+import type { Metadata } from 'next'
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { MediaUploadForm } from './components/MediaUploadForm'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
+export const metadata: Metadata = {
+  title: 'メディアアップロード',
+  robots: { index: false, follow: false },
+}
+
 export default async function MediaUploadPage() {
-  const session = await auth()
+  const session = await cachedAuth()
 
   // 3層認証アーキテクチャ：Page層での最終権限チェック
   if (!session?.user?.id || session.user.role !== 'ADMIN') {

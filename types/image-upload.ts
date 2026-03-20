@@ -41,6 +41,8 @@ export interface ImageUploaderProps {
   onDelete?: (fileId: string) => void
   onError?: (error: string) => void
   showPreview?: boolean // プレビュー表示の制御（デフォルト: true）
+  imageProcessingOptions?: ImageProcessingOptions // 画像処理オプション（immediateモードのみ。未指定時は1920x1080）
+  sequentialProcessing?: boolean // trueの場合、画像を順次処理（メモリ節約用）
 }
 
 export interface ImageUploaderRef {

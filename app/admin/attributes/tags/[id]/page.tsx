@@ -1,6 +1,6 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect, notFound } from "next/navigation"
-import { getTag } from "@/app/actions/tag-actions"
+import { getTag } from "@/app/actions/content/tag-actions"
 import { TagForm } from "../components/TagForm"
 
 interface PageProps {
@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 export default async function EditTagPage({ params }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   // 最終権限チェック（Page層）
   if (session?.user?.role !== 'ADMIN') {
@@ -19,9 +19,17 @@ export default async function EditTagPage({ params }: PageProps) {
 
   try {
     const tag = await getTag(id)
-    return <TagForm tag={tag} mode="edit" />
-  } catch (error) {
-    console.error('Tag fetch error:', error)
+    const serializedTag = {
+      ...tag,
+      createdAt: tag.createdAt.toISOString(),
+      updatedAt: tag.updatedAt.toISOString(),
+      articles: tag.articles.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+      })),
+    }
+    return <TagForm tag={serializedTag} mode="edit" />
+  } catch {
     notFound()
   }
 }

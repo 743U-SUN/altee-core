@@ -1,17 +1,10 @@
+import 'client-only'
 import type { ImageProcessingOptions, ProcessingResult } from '@/types/image-upload'
 
 // デフォルトの処理オプション
 const DEFAULT_OPTIONS: Required<ImageProcessingOptions> = {
   maxWidth: 1920,
   maxHeight: 1080,
-  quality: 0.8,
-  format: 'webp'
-}
-
-// 記事コンテンツ用の処理オプション
-const ARTICLE_CONTENT_OPTIONS: Required<ImageProcessingOptions> = {
-  maxWidth: 1200,
-  maxHeight: 1200,
   quality: 0.8,
   format: 'webp'
 }
@@ -206,20 +199,6 @@ export async function processImages(
 ): Promise<ProcessingResult[]> {
   const promises = files.map(file => processImage(file, options))
   return Promise.all(promises)
-}
-
-/**
- * 記事コンテンツ用画像処理（1200x1200px最大）
- */
-export async function processArticleImage(file: File): Promise<ProcessingResult> {
-  return processImage(file, ARTICLE_CONTENT_OPTIONS)
-}
-
-/**
- * 記事コンテンツ用複数画像処理
- */
-export async function processArticleImages(files: File[]): Promise<ProcessingResult[]> {
-  return processImages(files, ARTICLE_CONTENT_OPTIONS)
 }
 
 /**

@@ -1,6 +1,6 @@
-import { auth } from "@/auth"
+import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
-import { getTags } from "@/app/actions/tag-actions"
+import { getTags } from "@/app/actions/content/tag-actions"
 import { TagList } from "./components/TagList"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function TagsPage({ searchParams }: PageProps) {
-  const session = await auth()
+  const session = await cachedAuth()
   
   if (session?.user?.role !== 'ADMIN') {
     redirect('/unauthorized')
@@ -40,14 +40,17 @@ export default async function TagsPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <TagList 
-          tags={tags} 
+        <TagList
+          tags={tags.map((t) => ({
+            ...t,
+            createdAt: t.createdAt.toISOString(),
+            updatedAt: t.updatedAt.toISOString(),
+          }))}
           pagination={pagination}
         />
       </div>
     )
-  } catch (error) {
-    console.error('Tags page error:', error)
+  } catch {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">

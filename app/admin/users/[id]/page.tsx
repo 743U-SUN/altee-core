@@ -1,9 +1,13 @@
-import { getUserDetail } from "@/app/actions/user-management"
+import { getUserDetail } from "@/app/actions/admin/user-management"
+import { adminGetUserNewsList } from "@/app/actions/admin/user-news-admin-actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { UserActions } from "./components/UserActions"
+import { HandleEditor } from "./components/HandleEditor"
+import { UserNewsAdmin } from "./components/UserNewsAdmin"
+import { resolveAvatarUrl } from "@/lib/avatar-utils"
 import { ArrowLeft, Calendar, Shield, User, Mail, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -16,7 +20,15 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { id } = await params
 
   try {
-    const user = await getUserDetail(id)
+    const [user, userNewsRaw] = await Promise.all([
+      getUserDetail(id),
+      adminGetUserNewsList(id),
+    ])
+
+    const userNews = userNewsRaw.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+    }))
 
     return (
       <div className="container mx-auto p-6 flex flex-col gap-6">
@@ -43,13 +55,25 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarImage
+                    src={resolveAvatarUrl(user.characterInfo?.iconImageKey, user.image) ?? undefined}
+                    alt={user.characterInfo?.characterName || user.name || "User"}
+                  />
                   <AvatarFallback className="text-lg">
-                    {user.name ? user.name.slice(0, 2).toUpperCase() : "U"}
+                    {(user.characterInfo?.characterName || user.name) ? (user.characterInfo?.characterName || user.name)!.slice(0, 2).toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-semibold">{user.name || "名前未設定"}</h3>
+                  <h3 className="text-lg font-semibold">
+                    {user.characterInfo?.characterName || user.name || "名前未設定"}
+                  </h3>
+
+                  {/* Handle name - only show if set */}
+                  {user.handle && (
+                    <p className="text-sm text-muted-foreground">@{user.handle}</p>
+                  )}
+
+                  {/* ID - always show */}
                   <p className="text-sm text-muted-foreground">ID: {user.id}</p>
                 </div>
               </div>
@@ -89,8 +113,9 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                     <span className="text-sm">
                       {new Date(user.createdAt).toLocaleDateString("ja-JP", {
                         year: "numeric",
-                        month: "long", 
-                        day: "numeric"
+                        month: "long",
+                        day: "numeric",
+                        timeZone: "Asia/Tokyo"
                       })}
                     </span>
                   </div>
@@ -206,13 +231,22 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             </CardContent>
           </Card>
 
+          {/* ニュース記事管理 */}
+          <UserNewsAdmin news={userNews} />
+
+          {/* ハンドル変更 */}
+          <HandleEditor user={user} />
+
           {/* 管理操作 */}
           <UserActions user={user} />
         </div>
       </div>
     )
   } catch (error) {
-    console.error("UserDetail error:", error)
-    notFound()
+    const message = error instanceof Error ? error.message : ''
+    if (message.includes('ユーザーが見つかりません')) {
+      notFound()
+    }
+    throw error
   }
 }

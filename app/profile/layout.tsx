@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { BaseLayout } from "@/components/layout/BaseLayout"
 import { getUserNavData } from "@/lib/user-data"
 
@@ -24,11 +25,13 @@ export default async function ProfileLayout({
         {/* 左上の横長バナー */}
         <div className="p-6 pt-8">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg lg:max-w-xs md:max-w-52 max-w-40">
-            <img 
-              src="https://via.placeholder.com/210x70/4f46e5/ffffff?text=User+Banner" 
-              alt="User Banner" 
+            <Image
+              src="https://via.placeholder.com/210x70/4f46e5/ffffff?text=User+Banner"
+              alt="User Banner"
+              width={210}
+              height={70}
+              unoptimized
               className="w-full h-auto rounded"
-              style={{ aspectRatio: '3/1' }}
             />
           </div>
         </div>
@@ -87,11 +90,13 @@ export default async function ProfileLayout({
           {/* キャラクター画像エリア */}
           <div className="flex-1 flex justify-center items-end">
             <div className="bg-white/95 backdrop-blur-sm rounded-t-lg p-3 shadow-xl">
-              <img 
-                src="https://via.placeholder.com/432x768/8b5cf6/ffffff?text=Character" 
-                alt="Character" 
+              <Image
+                src="https://via.placeholder.com/432x768/8b5cf6/ffffff?text=Character"
+                alt="Character"
+                width={432}
+                height={768}
+                unoptimized
                 className="w-auto max-h-[48rem] h-[calc(100vh-16rem)] object-cover rounded"
-                style={{ aspectRatio: '9/16' }}
               />
             </div>
           </div>

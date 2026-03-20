@@ -1,5 +1,11 @@
+import type { Metadata } from 'next'
 import { auth, signIn } from "@/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  title: 'ログイン',
+  description: 'アカウントにログインしてください',
+}
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { redirect } from "next/navigation"

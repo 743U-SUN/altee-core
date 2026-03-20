@@ -4,7 +4,8 @@ import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { initStorageAction, uploadFile, listFiles } from './actions'
-import { uploadImagesAction } from '@/app/actions/image-upload-actions'
+import { uploadImagesAction } from '@/app/actions/media/image-upload-actions'
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { processImage } from '@/lib/image-uploader/image-processor'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import type { UploadedFile } from '@/types/image-upload'
@@ -285,7 +286,7 @@ export default function ArticleDemoPage() {
                     <div key={index} className="bg-white rounded border p-4">
                       <div className="relative w-full h-48 mb-2">
                         <Image
-                          src={`/api/files/${file.key}`}
+                          src={getPublicUrl(file.key)}
                           alt={file.name}
                           fill
                           className="object-contain rounded"

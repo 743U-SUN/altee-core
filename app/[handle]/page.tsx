@@ -1,32 +1,48 @@
-export default async function HandlePage({ 
-  params 
-}: { 
-  params: Promise<{ handle: string }> 
-}) {
+import { notFound } from 'next/navigation'
+import { getUserByHandle } from '@/lib/handle-utils'
+import { getActivePresets } from '@/lib/sections/preset-queries'
+import { SectionRenderer } from '@/components/profile/SectionRenderer'
+import type { Metadata } from 'next'
+import type { UserSection } from '@/types/profile-sections'
+
+type Props = { params: Promise<{ handle: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params
+  const user = await getUserByHandle(handle)
+
+  const displayName =
+    user?.characterInfo?.characterName ?? user?.name ?? handle
+
+  return {
+    title: 'プロフィール',
+    description: `${displayName}のプロフィールページ`,
+    openGraph: {
+      title: `${displayName}のプロフィール`,
+      description: `${displayName}のプロフィールページ`,
+    },
+  }
+}
+
+export default async function HandlePage({
+  params,
+}: Props) {
+  const { handle } = await params
+
+  const [user, presets] = await Promise.all([
+    getUserByHandle(handle),
+    getActivePresets(),
+  ])
+
+  if (!user || !user.userSections) {
+    notFound()
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-4">@{handle}</h1>
-        <p className="text-muted-foreground">
-          This is the profile page for user: {handle}
-        </p>
-      </div>
-      
-      <div className="bg-card rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">User Content</h2>
-        <div className="space-y-4">
-          <div className="p-4 bg-muted rounded-lg">
-            <p>Sample post content 1</p>
-          </div>
-          <div className="p-4 bg-muted rounded-lg">
-            <p>Sample post content 2</p>
-          </div>
-          <div className="p-4 bg-muted rounded-lg">
-            <p>Sample post content 3</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <SectionRenderer
+      sections={user.userSections as UserSection[]}
+      presets={presets}
+      isEditable={false}
+    />
   )
 }

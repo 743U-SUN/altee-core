@@ -11,10 +11,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { userSetupSchema, type UserSetupSchema } from '@/lib/validation/user-setup';
+import { userSetupSchema, type UserSetupSchema } from '@/lib/validations/user-setup';
 import { completeUserSetup, checkHandleAvailability } from './actions';
 import { UserRole } from '@prisma/client';
-import type { UserRoleSchema } from '@/lib/validation/user-setup';
+import type { UserRoleSchema } from '@/lib/validations/user-setup';
 
 interface SetupFormProps {
   initialCharacterName: string;
@@ -27,7 +27,7 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
   const [handleCheckStatus, setHandleCheckStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [handleError, setHandleError] = useState<string>('');
   const [submitError, setSubmitError] = useState<string>('');
-  
+
   const form = useForm<UserSetupSchema>({
     resolver: zodResolver(userSetupSchema),
     defaultValues: {
@@ -46,10 +46,10 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
       const timeoutId = setTimeout(async () => {
         setHandleCheckStatus('checking');
         setHandleError('');
-        
+
         try {
           const result = await checkHandleAvailability(watchedHandle);
-          
+
           if (result.success && result.data?.available) {
             setHandleCheckStatus('available');
           } else {
@@ -75,7 +75,7 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
 
     try {
       const result = await completeUserSetup(data);
-      
+
       if (result.success) {
         router.push('/dashboard');
         router.refresh();
@@ -166,6 +166,14 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
                   {...form.register('handle')}
                   placeholder="3-20文字の英数字、アンダースコア、ハイフン"
                   className="pr-10"
+                  onChange={(e) => {
+                    // 許可される文字のみフィルタリング（小文字英数字、アンダースコア、ハイフン）
+                    const filtered = e.target.value
+                      .toLowerCase()  // 大文字を小文字に変換
+                      .replace(/[^a-z0-9_-]/g, '');  // 許可されない文字を削除
+
+                    form.setValue('handle', filtered);
+                  }}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                   {getHandleStatusIcon()}
@@ -181,7 +189,7 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
                 <p className="text-sm text-green-600">このハンドルは利用可能です</p>
               )}
               <p className="text-xs text-muted-foreground">
-                個別ページのURL: {typeof window !== 'undefined' && window.location.origin}/{watchedHandle || 'your-handle'}
+                個別ページのURL: {process.env.NEXT_PUBLIC_DOMAIN || 'https://example.com'}/{watchedHandle || 'your-handle'}
               </p>
             </div>
           )}
@@ -194,11 +202,11 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
           )}
 
           {/* 送信ボタン */}
-          <Button 
-            type="submit" 
-            className="w-full" 
+          <Button
+            type="submit"
+            className="w-full"
             disabled={
-              isSubmitting || 
+              isSubmitting ||
               (watchedRole === 'USER' && handleCheckStatus !== 'available')
             }
           >

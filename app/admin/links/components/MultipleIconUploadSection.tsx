@@ -1,25 +1,28 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useTransition } from "react"
+import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import { PRESET_ICON } from "@/lib/image-uploader/image-processing-presets"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Star, StarOff, Trash2, Upload } from "lucide-react"
+import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import Image from "next/image"
 import { toast } from "sonner"
-import { 
-  createLinkTypeIcon, 
-  deleteLinkTypeIcon, 
+import {
+  createLinkTypeIcon,
+  deleteLinkTypeIcon,
   setDefaultLinkTypeIcon,
   getLinkTypeIcons
-} from "@/app/actions/link-actions"
+} from "@/app/actions/admin/link-type-actions"
 import type { UploadedFile } from "@/types/image-upload"
 import type { LinkTypeIcon } from "@/types/link-type"
 
@@ -29,39 +32,32 @@ interface MultipleIconUploadSectionProps {
   onIconsChanged?: (icons: LinkTypeIcon[]) => void
 }
 
-export function MultipleIconUploadSection({ 
-  linkTypeId, 
+export function MultipleIconUploadSection({
+  linkTypeId,
   initialIcons = [],
-  onIconsChanged 
+  onIconsChanged
 }: MultipleIconUploadSectionProps) {
-  const [icons, setIcons] = useState<LinkTypeIcon[]>(initialIcons)
+  const [, startTransition] = useTransition()
 
-  const loadIcons = useCallback(async () => {
-    if (!linkTypeId) return
-
-    try {
+  const { data: icons = initialIcons, mutate } = useSWR<LinkTypeIcon[]>(
+    linkTypeId ? ['link-type-icons', linkTypeId] : null,
+    async () => {
+      if (!linkTypeId) return []
       const result = await getLinkTypeIcons(linkTypeId)
-      
       if (result.success) {
-        setIcons(result.data || [])
-        onIconsChanged?.(result.data || [])
-      } else {
-        toast.error(result.error || "アイコンの取得に失敗しました")
+        return result.data || []
       }
-    } catch (error) {
-      console.error("アイコン取得エラー:", error)
-      toast.error("アイコンの取得に失敗しました")
+      throw new Error(result.error || "アイコンの取得に失敗しました")
+    },
+    {
+      fallbackData: initialIcons,
+      onSuccess: (data) => {
+        if (onIconsChanged) onIconsChanged(data)
+      }
     }
-  }, [linkTypeId, onIconsChanged])
+  )
 
-  // linkTypeIdが変更された時にアイコンを再取得
-  useEffect(() => {
-    if (linkTypeId) {
-      loadIcons()
-    }
-  }, [linkTypeId, loadIcons])
-
-  const handleIconUpload = async (files: UploadedFile[]) => {
+  const handleIconUpload = (files: UploadedFile[]) => {
     if (!linkTypeId) {
       toast.error("リンクタイプIDが必要です")
       return
@@ -69,85 +65,99 @@ export function MultipleIconUploadSection({
 
     if (files.length === 0) return
 
-    try {
-      const uploadPromises = files.map(async (file, index) => {
-        const isDefault = icons.length === 0 && index === 0 // 最初のアイコンの場合はデフォルトに
+    startTransition(async () => {
+      try {
+        const uploadPromises = files.map(async (file, index) => {
+          const isDefault = icons.length === 0 && index === 0 // 最初のアイコンの場合はデフォルトに
 
-        return createLinkTypeIcon(linkTypeId, {
-          iconKey: file.key,
-          iconName: "", // 名前は空文字
-          isDefault,
-          sortOrder: icons.length + index
+          return createLinkTypeIcon(linkTypeId, {
+            iconKey: file.key,
+            iconName: "", // 名前は空文字
+            isDefault,
+            sortOrder: icons.length + index
+          })
         })
-      })
 
-      const results = await Promise.all(uploadPromises)
-      
-      // 成功したアイコンを追加
-      const newIcons = results
-        .filter(result => result.success)
-        .map(result => result.data!)
+        const results = await Promise.all(uploadPromises)
 
-      if (newIcons.length > 0) {
-        const updatedIcons = [...icons, ...newIcons]
-        setIcons(updatedIcons)
-        onIconsChanged?.(updatedIcons)
-        toast.success(`アイコンを追加しました`)
+        // 成功したアイコンを追加
+        const newIcons = results
+          .filter(result => result.success)
+          .map(result => result.data!)
+
+        if (newIcons.length > 0) {
+          const updatedIcons = [...icons, ...newIcons]
+          await mutate(updatedIcons, false) // 楽観的更新
+          if (onIconsChanged) onIconsChanged(updatedIcons)
+          toast.success(`アイコンを追加しました`)
+          mutate() // バックグラウンドで再フェッチ
+        }
+
+        // エラーがあった場合は表示
+        const errors = results.filter(result => !result.success)
+        if (errors.length > 0) {
+          toast.error(`${errors.length}個のアイコンの追加に失敗しました`)
+        }
+
+      } catch (error) {
+        console.error("アイコンアップロードエラー:", error)
+        toast.error("アイコンのアップロードに失敗しました")
       }
-
-      // エラーがあった場合は表示
-      const errors = results.filter(result => !result.success)
-      if (errors.length > 0) {
-        toast.error(`${errors.length}個のアイコンの追加に失敗しました`)
-      }
-
-    } catch (error) {
-      console.error("アイコンアップロードエラー:", error)
-      toast.error("アイコンのアップロードに失敗しました")
-    }
+    })
   }
 
-  const handleSetDefault = async (iconId: string) => {
-    try {
-      const result = await setDefaultLinkTypeIcon(iconId)
-      
-      if (result.success) {
-        // ローカル状態を更新
-        setIcons(prevIcons => 
-          prevIcons.map(icon => ({
-            ...icon,
-            isDefault: icon.id === iconId
-          }))
-        )
-        
-        toast.success("メインアイコンを設定しました")
-      } else {
-        toast.error(result.error || "デフォルト設定に失敗しました")
+  const handleSetDefault = (iconId: string) => {
+    startTransition(async () => {
+      try {
+        // 楽観的更新
+        const updatedIcons = icons.map(icon => ({
+          ...icon,
+          isDefault: icon.id === iconId
+        }))
+        await mutate(updatedIcons, false)
+
+        const result = await setDefaultLinkTypeIcon(iconId)
+
+        if (result.success) {
+          toast.success("メインアイコンを設定しました")
+          mutate()
+        } else {
+          toast.error(result.error || "デフォルト設定に失敗しました")
+          mutate() // ロールバック
+        }
+      } catch (error) {
+        console.error("デフォルト設定エラー:", error)
+        toast.error("デフォルト設定に失敗しました")
+        mutate() // ロールバック
       }
-    } catch (error) {
-      console.error("デフォルト設定エラー:", error)
-      toast.error("デフォルト設定に失敗しました")
-    }
+    })
   }
 
-  const handleDeleteIcon = async (iconId: string) => {
+  const handleDeleteIcon = (iconId: string) => {
     if (!confirm("このアイコンを削除しますか？")) return
 
-    try {
-      const result = await deleteLinkTypeIcon(iconId)
-      
-      if (result.success) {
+    startTransition(async () => {
+      try {
+        // 楽観的更新
         const updatedIcons = icons.filter(icon => icon.id !== iconId)
-        setIcons(updatedIcons)
-        onIconsChanged?.(updatedIcons)
-        toast.success("アイコンを削除しました")
-      } else {
-        toast.error(result.error || "削除に失敗しました")
+        await mutate(updatedIcons, false)
+        if (onIconsChanged) onIconsChanged(updatedIcons)
+
+        const result = await deleteLinkTypeIcon(iconId)
+
+        if (result.success) {
+          toast.success("アイコンを削除しました")
+          mutate()
+        } else {
+          toast.error(result.error || "削除に失敗しました")
+          mutate() // ロールバック
+        }
+      } catch (error) {
+        console.error("アイコン削除エラー:", error)
+        toast.error("削除に失敗しました")
+        mutate() // ロールバック
       }
-    } catch (error) {
-      console.error("アイコン削除エラー:", error)
-      toast.error("削除に失敗しました")
-    }
+    })
   }
 
 
@@ -176,6 +186,7 @@ export function MultipleIconUploadSection({
             onUpload={handleIconUpload}
             showPreview={false}
             className="min-h-[80px]"
+            imageProcessingOptions={PRESET_ICON}
           />
           <div className="text-xs text-muted-foreground mt-2 space-y-1">
             <p>• 最大5個まで同時にアップロード可能</p>
@@ -194,26 +205,26 @@ export function MultipleIconUploadSection({
           <CardContent>
             <div className="max-h-96 overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {icons.map((icon) => (
-                <div 
-                  key={icon.id} 
-                  className="relative border rounded-lg p-2 hover:bg-muted/50 transition-colors"
-                >
-                  {/* アイコン画像 */}
-                  <div className="flex items-center justify-center h-16">
-                    <Image
-                      src={`/api/files/${icon.iconKey}`}
-                      alt={icon.iconName}
-                      width={48}
-                      height={48}
-                      className="object-contain dark:brightness-0 dark:invert"
-                      unoptimized
-                    />
-                  </div>
+                {icons.map((icon) => (
+                  <div
+                    key={icon.id}
+                    className="relative border rounded-lg p-2 hover:bg-muted/50 transition-colors"
+                  >
+                    {/* アイコン画像 */}
+                    <div className="flex items-center justify-center h-16">
+                      <Image
+                        src={getPublicUrl(icon.iconKey)}
+                        alt={icon.iconName}
+                        width={48}
+                        height={48}
+                        className="object-contain dark:brightness-0 dark:invert"
+                        unoptimized
+                      />
+                    </div>
 
 
-                  {/* アクション */}
-                  <div className="absolute top-1 right-1">
+                    {/* アクション */}
+                    <div className="absolute top-1 right-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -221,7 +232,7 @@ export function MultipleIconUploadSection({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleSetDefault(icon.id)}
                             disabled={icon.isDefault}
                           >
@@ -237,7 +248,7 @@ export function MultipleIconUploadSection({
                               </>
                             )}
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteIcon(icon.id)}
                             className="text-destructive"
                           >
@@ -246,9 +257,9 @@ export function MultipleIconUploadSection({
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           </CardContent>

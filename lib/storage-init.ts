@@ -1,3 +1,4 @@
+import 'server-only'
 import { CreateBucketCommand, HeadBucketCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { storageClient, STORAGE_BUCKET } from './storage'
 
@@ -18,7 +19,6 @@ async function bucketExists(): Promise<boolean> {
  */
 async function createBucket(): Promise<void> {
   await storageClient.send(new CreateBucketCommand({ Bucket: STORAGE_BUCKET }))
-  console.log(`Bucket created: ${STORAGE_BUCKET}`)
 }
 
 /**
@@ -44,7 +44,6 @@ async function createDirectoryStructure(): Promise<void> {
     }))
   }
   
-  console.log('Directory structure created')
 }
 
 /**
@@ -54,7 +53,6 @@ export async function initializeStorage(): Promise<{ success: boolean; message: 
   try {
     // バケットが存在するかチェック
     if (await bucketExists()) {
-      console.log(`Bucket already exists: ${STORAGE_BUCKET}`)
       return { success: true, message: 'Storage already initialized' }
     }
 

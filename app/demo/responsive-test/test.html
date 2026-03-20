@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プロフィール (Squeeze Logic)</title>
+<style>
+  /* --- 基本リセット --- */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body { 
+    font-family: "Helvetica Neue", Arial, sans-serif; 
+    color: #333; 
+    background-color: #e0e5ec; 
+    background-image: radial-gradient(#fff 10%, transparent 11%), radial-gradient(#fff 10%, transparent 11%);
+    background-size: 30px 30px;
+    background-position: 0 0, 15px 15px;
+    
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-x: hidden; 
+  }
+
+  /* --- レイアウトコンテナ --- */
+  .layout-container {
+    display: flex;
+    width: 100%;
+    max-width: 1460px; /* フルサイズ上限 */
+    
+    background-color: #fff;
+    box-shadow: 0 0 50px rgba(0,0,0,0.15);
+    min-height: 100vh;
+  }
+
+  /* --- 1. サイドバー --- */
+  .sidebar {
+    width: 240px; /* デフォルト */
+    background: #1a1a1a;
+    color: #fff;
+    flex-shrink: 0; /* 縮小禁止 */
+    
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 50;
+    
+    display: flex; flex-direction: column; padding: 30px 0;
+    overflow: hidden; transition: width 0.3s ease;
+  }
+
+  .logo-area {
+    font-size: 1.2rem; font-weight: bold; margin-bottom: 40px; 
+    padding-left: 24px; white-space: nowrap;
+  }
+  .nav-links { list-style: none; width: 100%; }
+  .nav-links li { margin-bottom: 8px; }
+  .nav-links a {
+    color: #bbb; text-decoration: none; display: flex; align-items: center;
+    height: 48px; padding-left: 24px; transition: background 0.2s, color 0.2s; white-space: nowrap;
+  }
+  .nav-links a:hover { background: #333; color: #fff; }
+  .nav-icon {
+    width: 24px; height: 24px; background: rgba(255,255,255,0.2); 
+    border-radius: 4px; flex-shrink: 0; margin-right: 16px;
+  }
+  .nav-text { opacity: 1; transition: opacity 0.2s; }
+
+
+  /* --- 2. 画像エリア --- */
+  .visual-area {
+    width: 500px; /* デフォルト */
+    flex-shrink: 0; /* 縮小禁止 (メディアクエリで制御するため) */
+    
+    background: linear-gradient(160deg, #d4fc79 0%, #96e6a1 100%);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 40;
+    display: flex; align-items: flex-end; justify-content: center;
+    overflow: hidden;
+    transition: width 0.3s ease; /* 幅変更時のアニメーション */
+  }
+
+  .char-img {
+    width: 90%; height: auto; max-height: 90vh;
+    object-fit: contain; filter: drop-shadow(0 0 15px rgba(0,0,0,0.1));
+  }
+
+
+  /* --- 3. 文章エリア --- */
+  .text-area {
+    width: 720px; /* ベース幅 */
+    flex-shrink: 1; /* 縮小許可 */
+    flex-grow: 1;
+    min-width: 0; /* Flexboxバグ回避 */
+    
+    padding: 80px 60px;
+    background: #fff;
+  }
+
+  h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+  p { line-height: 1.9; margin-bottom: 2rem; color: #444; text-align: justify; }
+  .status-badge {
+    display: inline-block; padding: 5px 10px; border-radius: 4px; 
+    background: #eee; font-weight: bold; margin-bottom: 20px;
+  }
+
+
+  /* --- ★レスポンシブ・ロジック --- */
+
+  /* Phase 1: レールナビ化 (1300px以下) */
+  /* 文章エリアを確保するため、早めにメニューを畳む */
+  @media (max-width: 1300px) {
+    .sidebar { width: 72px; }
+    .logo-area { display: none; }
+    .nav-text { opacity: 0; visibility: hidden; width: 0; }
+    .nav-icon { margin-right: 0; }
+    .nav-links a { justify-content: center; padding-left: 0; }
+  }
+
+  /* Phase 2: 画像縮小 (1080px以下) */
+  /* ★ここがポイント：文章エリアが500pxを切りそうになったら画像を420pxにする */
+  @media (max-width: 1080px) {
+    .visual-area { 
+      width: 420px; /* 画像を小さくしてスペースを空ける */
+    }
+    .text-area {
+      padding: 80px 40px; /* 余白も少し詰める */
+    }
+  }
+
+  /* Phase 3: 縦積み (992px以下) */
+  /* ナビ72 + 画像420 + 文章500 = 992px。これ以下は縦積み */
+  @media (max-width: 992px) {
+    body { display: block; overflow-x: auto; }
+    
+    .layout-container {
+      flex-direction: column; width: 100%; max-width: none; box-shadow: none;
+    }
+
+    /* ボトムナビ */
+    .sidebar {
+      width: 100%; height: 60px; position: fixed; bottom: 0; top: auto;
+      flex-direction: row; justify-content: space-around; padding: 0; z-index: 100;
+    }
+    .nav-links { display: flex; justify-content: space-around; }
+    .nav-links li { margin: 0; flex: 1; }
+    .nav-links a { flex-direction: column; justify-content: center; padding: 0; height: 100%; font-size: 0.6rem; }
+    .nav-icon { margin: 0 0 2px 0; }
+    .nav-text { opacity: 1; visibility: visible; width: auto; display: block; }
+
+    /* 画像エリア */
+    .visual-area {
+      width: 100%; height: 50vh; position: relative;
+    }
+
+    /* 文章エリア */
+    .text-area {
+      width: 100%; padding: 40px 24px 100px 24px;
+    }
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="layout-container">
+
+    <nav class="sidebar">
+      <div class="logo-area">MY SITE</div>
+      <ul class="nav-links">
+        <li><a href="#"><div class="nav-icon"></div><span class="nav-text">Home</span></a></li>
+        <li><a href="#"><div class="nav-icon"></div><span class="nav-text">Profile</span></a></li>
+        <li><a href="#"><div class="nav-icon"></div><span class="nav-text">Gallery</span></a></li>
+      </ul>
+    </nav>
+
+    <aside class="visual-area">
+      <img src="https://placehold.co/500x1000/png?text=Character" class="char-img" alt="Character">
+    </aside>
+
+    <main class="text-area">
+      <div class="status-badge">現在のモード: ウィンドウ幅を変えて確認</div>
+      <h1>Responsive Logic</h1>
+      
+      <p>ご要望の「限界まで横並びを粘る」ロジックを実装しました。<br>
+      ブラウザの幅をゆっくり縮めてみてください。</p>
+
+      <h3>1. 通常モード (~1300px)</h3>
+      <p>ナビ240px、画像500px。文章は最大720px。<br>ゆったりとしたレイアウトです。</p>
+
+      <h3>2. レールナビモード (1080px ~ 1300px)</h3>
+      <p>文章の幅を確保するため、まずナビが72px（アイコンのみ）に縮小します。<br>画像は500pxのままです。</p>
+
+      <h3>3. 画像縮小モード (992px ~ 1080px)</h3>
+      <p><strong>ここが粘りポイント！</strong><br>
+      文章エリアが500pxを切りそうになると、画像が自動的に <strong>420px</strong> に縮小します。<br>
+      これにより、iPad ProやAirの横持ちなどでも、快適な文章幅を維持したまま横並び表示を続けられます。</p>
+
+      <h3>4. 縦積みモード (992px以下)</h3>
+      <p>これ以上は文章が読みづらくなるため、縦積みに切り替わります。</p>
+
+      <p>(以下ダミー)<br>
+      吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。</p>
+      <p>しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。この書生というのは時々我々を捕えて煮て食うという話である。しかしその当時は何という考もなかったから別段恐しいとも思わなかった。</p>
+    </main>
+
+  </div>
+
+</body>
+</html>

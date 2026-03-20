@@ -6,8 +6,8 @@ export interface Tag {
   slug: string
   description: string | null
   color: string | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   _count: {
     articles: number
   }
@@ -18,7 +18,7 @@ export interface TagWithArticles extends Tag {
     id: string
     articleId: string
     tagId: string
-    createdAt: Date
+    createdAt: string
     article: {
       id: string
       title: string

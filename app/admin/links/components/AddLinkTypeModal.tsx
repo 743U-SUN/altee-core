@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
-import { createLinkType } from "@/app/actions/link-actions"
+import { createLinkType } from "@/app/actions/admin/link-type-actions"
 
 // フォームスキーマ
 const linkTypeFormSchema = z.object({
@@ -40,7 +40,7 @@ interface AddLinkTypeModalProps {
 
 export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModalProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   // 既存のカスタムリンクタイプがあるかチェック
   const hasCustomLinkType = linkTypes.some(lt => lt.isCustom)
@@ -56,28 +56,27 @@ export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModa
     },
   })
 
-  const onSubmit = async (data: z.infer<typeof linkTypeFormSchema>) => {
-    setIsSubmitting(true)
-    try {
-      const result = await createLinkType({
-        ...data,
-        sortOrder: 0, // デフォルト値、Server Actionで適切な値に変更される
-      })
+  const onSubmit = (data: z.infer<typeof linkTypeFormSchema>) => {
+    startTransition(async () => {
+      try {
+        const result = await createLinkType({
+          ...data,
+          sortOrder: 0, // デフォルト値、Server Actionで適切な値に変更される
+        })
 
-      if (result.success) {
-        toast.success("リンクタイプを追加しました")
-        form.reset()
-        setIsOpen(false)
-        // 親コンポーネントに更新を通知（window.location.reload()を削除）
-        onLinkTypeAdded?.()
-      } else {
-        toast.error(result.error || "リンクタイプの追加に失敗しました")
+        if (result.success) {
+          toast.success("リンクタイプを追加しました")
+          form.reset()
+          setIsOpen(false)
+          // 親コンポーネントに更新を通知
+          onLinkTypeAdded?.()
+        } else {
+          toast.error(result.error || "リンクタイプの追加に失敗しました")
+        }
+      } catch {
+        toast.error("リンクタイプの追加に失敗しました")
       }
-    } catch {
-      toast.error("リンクタイプの追加に失敗しました")
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -99,7 +98,7 @@ export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModa
         <DialogHeader>
           <DialogTitle>新しいリンクタイプを追加</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -111,9 +110,9 @@ export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModa
                     識別名 <span className="text-sm text-muted-foreground">（システム内部用）</span>
                   </FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="例: youtube, instagram" 
-                      {...field} 
+                    <Input
+                      placeholder="例: youtube, instagram"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -128,9 +127,9 @@ export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModa
                 <FormItem>
                   <FormLabel>表示名</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="例: YouTube, Instagram" 
-                      {...field} 
+                    <Input
+                      placeholder="例: YouTube, Instagram"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -147,10 +146,10 @@ export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModa
                     URLパターン <span className="text-sm text-muted-foreground">（正規表現、オプション）</span>
                   </FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="例: ^https://(www\\.)?(youtube\\.com|youtu\\.be).*"
                       rows={3}
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -218,15 +217,15 @@ export function AddLinkTypeModal({ linkTypes, onLinkTypeAdded }: AddLinkTypeModa
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setIsOpen(false)}
               >
                 キャンセル
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "追加中..." : "追加"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "追加中..." : "追加"}
               </Button>
             </div>
           </form>

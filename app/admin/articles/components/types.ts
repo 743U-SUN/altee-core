@@ -1,5 +1,6 @@
-// 記事フォーム関連の共通型定義
+// 記事管理関連の共通型定義
 
+// フォームの入力値
 export interface FormValues {
   title: string
   slug: string
@@ -8,16 +9,40 @@ export interface FormValues {
   published: boolean
 }
 
-export interface Article {
+// ページネーション
+export interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+// カテゴリ・タグの基本型
+export interface CategoryItem {
+  id: string
+  name: string
+  slug: string
+  color: string | null
+}
+
+export interface TagItem {
+  id: string
+  name: string
+  slug: string
+  color: string | null
+}
+
+// 一覧用（content なし、author 必須）
+export interface ArticleSummary {
   id: string
   title: string
   slug: string
-  content: string
   excerpt: string | null
   published: boolean
-  createdAt: Date | string
-  updatedAt: Date | string
-  author?: {
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+  author: {
     id: string
     name: string | null
     email: string
@@ -27,24 +52,19 @@ export interface Article {
     storageKey: string
     originalName: string
   } | null
+}
+
+// フォーム用（content あり、categories/tags 含む）
+export interface ArticleDetail extends ArticleSummary {
+  content: string
   categories?: {
     id: string
     categoryId: string
-    category: {
-      id: string
-      name: string
-      slug: string
-      color: string | null
-    }
+    category: CategoryItem
   }[]
   tags?: {
     id: string
     tagId: string
-    tag: {
-      id: string
-      name: string
-      slug: string
-      color: string | null
-    }
+    tag: TagItem
   }[]
 }
