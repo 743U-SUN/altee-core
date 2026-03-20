@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getUserNavData } from "@/lib/user-data"
 import { DashboardSidebarContent } from "@/components/sidebar-content/DashboardSidebarContent"
 import { CharacterSidebarContent } from "@/components/sidebar-content/CharacterSidebarContent"
 import { DashboardLayoutClient } from "@/components/layout/DashboardLayoutClient"
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | ダッシュボード',
+    default: 'ダッシュボード',
+  },
+}
 
 export default async function DashboardLayout({
   children,

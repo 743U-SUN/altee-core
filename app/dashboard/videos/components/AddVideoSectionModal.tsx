@@ -13,7 +13,60 @@ import { getSectionsByPage, SECTION_REGISTRY, type SectionDefinition } from '@/l
 import { createSection } from '@/app/actions/user/section-actions'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import * as LucideIcons from 'lucide-react'
+import {
+  User,
+  Image,
+  Link,
+  FileText,
+  BarChart2,
+  Video,
+  Heading,
+  UserCircle,
+  HelpCircle,
+  Link2,
+  List,
+  PieChart,
+  PanelTop,
+  Columns2,
+  Columns3,
+  Youtube,
+  CalendarDays,
+  Clock,
+  Newspaper,
+  PlaySquare,
+  Film,
+  Rss,
+  ThumbsUp,
+  Tv2,
+} from 'lucide-react'
+
+// セクションアイコンマップ（`import * as LucideIcons` の代替）
+const SECTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  User,
+  Image,
+  Link,
+  FileText,
+  BarChart2,
+  Video,
+  Heading,
+  UserCircle,
+  HelpCircle,
+  Link2,
+  List,
+  PieChart,
+  PanelTop,
+  Columns2,
+  Columns3,
+  Youtube,
+  CalendarDays,
+  Clock,
+  Newspaper,
+  PlaySquare,
+  Film,
+  Rss,
+  ThumbsUp,
+  Tv2,
+}
 import type { UserSection } from '@/types/profile-sections'
 
 interface AddVideoSectionModalProps {
@@ -77,10 +130,7 @@ export function AddVideoSectionModal({
 
         <div className="grid grid-cols-1 gap-3">
           {videoSections.map((section: SectionDefinition) => {
-            const IconComponent =
-              LucideIcons[
-                section.icon as keyof typeof LucideIcons
-              ] as React.ComponentType<{ className?: string }>
+            const IconComponent = SECTION_ICON_MAP[section.icon]
             const isAddable = canAddSectionType(section.type)
 
             return (

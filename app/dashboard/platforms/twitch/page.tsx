@@ -1,6 +1,6 @@
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
-import { getUserTwitchSettings } from "@/app/actions/social/twitch-actions"
+import { getUserTwitchSettings, getTwitchEventSubSubscriptionStatus } from "@/app/actions/social/twitch-actions"
 import { TwitchTabContent } from "../components/TwitchTabContent"
 
 export default async function TwitchPlatformPage() {
@@ -11,11 +11,18 @@ export default async function TwitchPlatformPage() {
   }
 
   const twitchResult = await getUserTwitchSettings()
+  const twitchData = twitchResult.success && twitchResult.data ? twitchResult.data : null
+
+  // twitchUserIdが存在する場合のみsubscriptionステータスをサーバーで取得（waterfall解消）
+  const subStatusResult = twitchData?.twitchUserId
+    ? await getTwitchEventSubSubscriptionStatus()
+    : null
 
   return (
     <div className="space-y-6">
       <TwitchTabContent
-        initialData={twitchResult.success && twitchResult.data ? twitchResult.data : null}
+        initialData={twitchData}
+        initialIsSubscribed={subStatusResult?.isSubscribed ?? false}
       />
     </div>
   )

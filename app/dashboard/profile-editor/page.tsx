@@ -59,6 +59,13 @@ export default async function ProfileEditorPage() {
     : null
   const avatarImageUrl = resolveAvatarUrl(user.characterInfo?.iconImageKey, user.image)
 
+  // DateオブジェクトをISO文字列に変換してRSC境界を超えられるようにする
+  const sections = (user.userSections as UserSection[]).map((s) => ({
+    ...s,
+    createdAt: s.createdAt instanceof Date ? s.createdAt.toISOString() : s.createdAt,
+    updatedAt: s.updatedAt instanceof Date ? s.updatedAt.toISOString() : s.updatedAt,
+  })) as unknown as UserSection[]
+
   return (
     <div className="flex flex-1 flex-col">
       <EditableProfileClient
@@ -70,7 +77,7 @@ export default async function ProfileEditorPage() {
         characterName={user.characterInfo?.characterName ?? null}
         bannerImageKey={user.profile.bannerImageKey}
         characterBackgroundKey={user.profile.characterBackgroundKey}
-        sections={user.userSections as UserSection[]}
+        sections={sections}
         presets={presets}
         userId={user.id}
       />

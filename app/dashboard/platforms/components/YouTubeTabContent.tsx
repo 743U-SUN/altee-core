@@ -21,7 +21,12 @@ import {
   getMyRssFeedVideos
 } from "@/app/actions/social/youtube-actions"
 import { toast } from "sonner"
-import { RecommendedVideosList } from "./RecommendedVideosList"
+import dynamic from "next/dynamic"
+
+const RecommendedVideosList = dynamic(
+  () => import("./RecommendedVideosList").then((m) => ({ default: m.RecommendedVideosList })),
+  { ssr: false }
+)
 import Link from "next/link"
 
 interface YouTubeTabContentProps {

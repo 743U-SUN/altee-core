@@ -1,5 +1,3 @@
-'use client'
-
 import { UserProfileLayout } from '@/components/user-profile/UserProfileLayout'
 import { NewsManagementSection } from './components/NewsManagementSection'
 import type {

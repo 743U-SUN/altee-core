@@ -26,11 +26,7 @@ export default async function VideosPage() {
     prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
-        profile: {
-          include: {
-            characterImage: true,
-          },
-        },
+        profile: true,
         characterInfo: {
           select: { characterName: true },
         },
@@ -52,10 +48,17 @@ export default async function VideosPage() {
     ? (user.profile.themeSettings as unknown as ThemeSettings)
     : DEFAULT_THEME_SETTINGS
 
+  // DateオブジェクトをISO文字列に変換してRSC境界を超えられるようにする
+  const sections = (user.userSections as UserSection[]).map((s) => ({
+    ...s,
+    createdAt: s.createdAt instanceof Date ? s.createdAt.toISOString() : s.createdAt,
+    updatedAt: s.updatedAt instanceof Date ? s.updatedAt.toISOString() : s.updatedAt,
+  })) as unknown as UserSection[]
+
   return (
     <div className="flex flex-1 flex-col">
       <EditableVideosClient
-        sections={user.userSections as UserSection[]}
+        sections={sections}
         presets={presets}
         userId={user.id}
         handle={user.handle ?? ''}

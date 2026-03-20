@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -21,7 +22,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { ImageUploader } from "@/components/image-uploader/image-uploader"
+
+const ImageUploader = dynamic(
+  () => import("@/components/image-uploader/image-uploader").then((m) => ({ default: m.ImageUploader })),
+  { ssr: false }
+)
 import { PRESET_ICON } from "@/lib/image-uploader/image-processing-presets"
 import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import { updateBasicInfo } from "@/app/actions/user/character-actions"

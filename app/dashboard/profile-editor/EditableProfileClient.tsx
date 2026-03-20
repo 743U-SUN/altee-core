@@ -1,13 +1,27 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { UserProfileLayout } from '@/components/user-profile/UserProfileLayout'
 import { EditableSectionRenderer } from '@/components/user-profile/EditableSectionRenderer'
-import { BannerImageModal } from '@/components/user-profile/BannerImageModal'
-import { CharacterImageModal } from '@/components/user-profile/CharacterImageModal'
-import { HeaderEditModal } from '@/components/user-profile/HeaderEditModal'
-import { NotificationEditModal } from '@/components/user-profile/NotificationEditModal'
 import { AddSectionModal } from './components/AddSectionModal'
+
+const BannerImageModal = dynamic(
+  () => import('@/components/user-profile/BannerImageModal').then((m) => ({ default: m.BannerImageModal })),
+  { ssr: false }
+)
+const CharacterImageModal = dynamic(
+  () => import('@/components/user-profile/CharacterImageModal').then((m) => ({ default: m.CharacterImageModal })),
+  { ssr: false }
+)
+const HeaderEditModal = dynamic(
+  () => import('@/components/user-profile/HeaderEditModal').then((m) => ({ default: m.HeaderEditModal })),
+  { ssr: false }
+)
+const NotificationEditModal = dynamic(
+  () => import('@/components/user-profile/NotificationEditModal').then((m) => ({ default: m.NotificationEditModal })),
+  { ssr: false }
+)
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import type {
@@ -55,21 +69,21 @@ export function EditableProfileClient({
   >(null)
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false)
 
-  const handleImageEdit = useCallback((type: 'banner' | 'character' | 'profile') => {
+  const handleImageEdit = (type: 'banner' | 'character' | 'profile') => {
     setImageEditType(type)
-  }, [])
+  }
 
-  const handleImageEditClose = useCallback(() => {
+  const handleImageEditClose = () => {
     setImageEditType(null)
-  }, [])
+  }
 
-  const handleNotificationClick = useCallback((type: 'gift' | 'mail' | 'bell') => {
+  const handleNotificationClick = (type: 'gift' | 'mail' | 'bell') => {
     setNotificationEditType(type)
-  }, [])
+  }
 
-  const handleNotificationClose = useCallback(() => {
+  const handleNotificationClose = () => {
     setNotificationEditType(null)
-  }, [])
+  }
 
   return (
     <>

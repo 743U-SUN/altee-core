@@ -1,5 +1,3 @@
-'use client'
-
 import { UserProfileLayout } from '@/components/user-profile/UserProfileLayout'
 import { FaqManagementSection } from './components/FaqManagementSection'
 import type { ThemeSettings, SectionBackgroundPreset } from '@/types/profile-sections'

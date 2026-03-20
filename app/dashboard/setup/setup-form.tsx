@@ -189,7 +189,7 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
                 <p className="text-sm text-green-600">このハンドルは利用可能です</p>
               )}
               <p className="text-xs text-muted-foreground">
-                個別ページのURL: {typeof window !== 'undefined' && window.location.origin}/{watchedHandle || 'your-handle'}
+                個別ページのURL: {process.env.NEXT_PUBLIC_DOMAIN || 'https://example.com'}/{watchedHandle || 'your-handle'}
               </p>
             </div>
           )}

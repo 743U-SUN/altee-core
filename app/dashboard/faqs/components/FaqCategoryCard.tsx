@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { ChevronUp, ChevronDown, Trash2, Eye, EyeOff, Plus, Palette } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,8 +9,12 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SectionStylePanel } from '@/components/user-profile/SectionStylePanel'
 import { SectionBand } from '@/components/profile/SectionBand'
+
+const SectionStylePanel = dynamic(
+  () => import('@/components/user-profile/SectionStylePanel').then((m) => ({ default: m.SectionStylePanel })),
+  { ssr: false }
+)
 import { resolvePreset } from '@/lib/sections/background-utils'
 import type { SectionSettings, SectionBackgroundPreset } from '@/types/profile-sections'
 import { FAQ_LIMITS } from '@/types/faq'

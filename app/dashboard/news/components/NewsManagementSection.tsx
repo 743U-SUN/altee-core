@@ -7,7 +7,12 @@ import { SectionBand } from '@/components/profile/SectionBand'
 import { SectionStylePanel } from '@/components/user-profile/SectionStylePanel'
 import { resolvePreset } from '@/lib/sections/background-utils'
 import { updateNewsListSettings } from '@/app/actions/content/user-news-actions'
-import { UserNewsListClient } from './UserNewsListClient'
+import dynamic from 'next/dynamic'
+
+const UserNewsListClient = dynamic(
+  () => import('./UserNewsListClient').then((m) => ({ default: m.UserNewsListClient })),
+  { ssr: false }
+)
 import type { SectionSettings, SectionBackgroundPreset } from '@/types/profile-sections'
 import type { UserNewsWithImages } from '@/types/user-news'
 

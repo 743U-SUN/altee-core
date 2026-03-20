@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,6 @@ import {
 import {
   createTwitchEventSubSubscription,
   deleteTwitchEventSubSubscription,
-  getTwitchEventSubSubscriptionStatus
 } from "@/app/actions/social/twitch-actions"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -39,36 +38,20 @@ interface TwitchTabContentProps {
     twitchUserId: string | null
     livePriority: string
   } | null
+  initialIsSubscribed?: boolean
 }
 
-export function TwitchTabContent({ initialData }: TwitchTabContentProps) {
+export function TwitchTabContent({ initialData, initialIsSubscribed = false }: TwitchTabContentProps) {
   const [username, setUsername] = useState(initialData?.twitchUsername || "")
   const [livePriority, setLivePriority] = useState<"youtube" | "twitch">(
     (initialData?.livePriority as "youtube" | "twitch") || "youtube"
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isSavingPriority, setIsSavingPriority] = useState(false)
-  const [isSubscribed, setIsSubscribed] = useState(false)
-  const [isLoadingSubStatus, setIsLoadingSubStatus] = useState(false)
+  const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed)
   const [isCreatingWebhook, setIsCreatingWebhook] = useState(false)
   const [isDeletingWebhook, setIsDeletingWebhook] = useState(false)
   const [twitchUserId, setTwitchUserId] = useState(initialData?.twitchUserId || null)
-
-  // EventSub購読ステータスをロード
-  useEffect(() => {
-    const loadSubStatus = async () => {
-      if (!twitchUserId) return
-
-      setIsLoadingSubStatus(true)
-      const result = await getTwitchEventSubSubscriptionStatus()
-      if (result.success) {
-        setIsSubscribed(result.isSubscribed)
-      }
-      setIsLoadingSubStatus(false)
-    }
-
-    loadSubStatus()
-  }, [twitchUserId])
 
   const handleSaveChannel = async () => {
     if (!username.trim()) {
@@ -195,9 +178,7 @@ export function TwitchTabContent({ initialData }: TwitchTabContentProps) {
                     ライブ配信開始/終了の自動通知を受信
                   </p>
                 </div>
-                {isLoadingSubStatus ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : isSubscribed ? (
+                {isSubscribed ? (
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <CheckCircle2 className="h-4 w-4" />
                     <span>登録済み</span>

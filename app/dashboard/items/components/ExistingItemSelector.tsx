@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, memo } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
+import { z } from 'zod'
+import { useDebounce } from '@/hooks/use-debounce'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -35,12 +36,12 @@ interface ExistingItemSelectorProps {
   onItemAdded: (userItem: UserItemWithDetails) => void
 }
 
-const ExistingItemSelectorComponent = ({
+export function ExistingItemSelector({
   userId: _userId,
   categories,
   brands,
   onItemAdded
-}: ExistingItemSelectorProps) => {
+}: ExistingItemSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchItemResult[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all')
@@ -49,6 +50,8 @@ const ExistingItemSelectorComponent = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedItem, setSelectedItem] = useState<SearchItemResult | null>(null)
 
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
   const form = useForm({
     resolver: zodResolver(userItemSchema),
     defaultValues: {
@@ -56,8 +59,33 @@ const ExistingItemSelectorComponent = ({
     }
   })
 
-  // アイテム検索・フィルタ
-  const handleSearch = useCallback(async () => {
+  // アイテム検索・フィルタ（デバウンス済みのsearchQueryとフィルタ変更時に実行）
+  useEffect(() => {
+    const doSearch = async () => {
+      setIsSearching(true)
+      try {
+        const result = await getItems({
+          search: debouncedSearchQuery.trim() || undefined,
+          categoryId: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
+          brandId: selectedBrandId === 'all' ? undefined : selectedBrandId,
+        })
+
+        if (result.success && result.data) {
+          setSearchResults(result.data as SearchItemResult[])
+        } else {
+          setSearchResults([])
+        }
+      } catch {
+        toast.error('検索に失敗しました')
+      } finally {
+        setIsSearching(false)
+      }
+    }
+
+    doSearch()
+  }, [debouncedSearchQuery, selectedCategoryId, selectedBrandId])
+
+  const handleSearch = async () => {
     setIsSearching(true)
     try {
       const result = await getItems({
@@ -76,13 +104,7 @@ const ExistingItemSelectorComponent = ({
     } finally {
       setIsSearching(false)
     }
-  }, [searchQuery, selectedCategoryId, selectedBrandId])
-
-  // カテゴリ・ブランド変更時に自動検索
-  useEffect(() => {
-    handleSearch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, selectedBrandId, searchQuery])
+  }
 
   // 既存アイテムからの登録
   const handleSubmit = async (data: z.infer<typeof userItemSchema>) => {
@@ -241,14 +263,3 @@ const ExistingItemSelectorComponent = ({
   )
 }
 
-// Propsの比較関数
-const arePropsEqual = (prevProps: ExistingItemSelectorProps, nextProps: ExistingItemSelectorProps) => {
-  return (
-    prevProps.userId === nextProps.userId &&
-    prevProps.categories.length === nextProps.categories.length &&
-    prevProps.brands.length === nextProps.brands.length &&
-    prevProps.onItemAdded === nextProps.onItemAdded
-  )
-}
-
-export const ExistingItemSelector = memo(ExistingItemSelectorComponent, arePropsEqual)
