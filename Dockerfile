@@ -70,9 +70,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
-# Copy Prisma CLI and dependencies for migrate deploy
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# Install Prisma CLI with all dependencies for migrate deploy
+COPY --from=builder /app/package.json ./package.prisma.json
+RUN npm install prisma@7.2.0 --no-save --no-package-lock && npm cache clean --force
 
 # Switch to non-root user
 USER nextjs
