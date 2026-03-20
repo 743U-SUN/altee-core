@@ -1,6 +1,7 @@
 'use server';
 
 import { auth } from '@/auth';
+import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { userSetupSchema, handleAvailabilityCheckSchema, type UserSetupSchema } from '@/lib/validations/user-setup';
 import { checkHandleAvailability as checkHandle } from '@/lib/handle-utils';
@@ -37,6 +38,18 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
 
     const validatedData = validation.data;
 
+    // 現在のユーザー情報を取得（ADMINロール保持 + セットアップ済みチェック）
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true, handle: true },
+    });
+
+    // セットアップ済みチェック（再実行防止）
+    // GUEST = 未セットアップ、USER/ADMIN = セットアップ済み
+    if (currentUser?.role === 'USER') {
+      return { success: false, error: 'セットアップはすでに完了しています' };
+    }
+
     // USER ロールの場合はハンドル重複チェック
     if (validatedData.role === 'USER' && validatedData.handle) {
       const handleAvailability = await checkHandle(validatedData.handle);
@@ -47,12 +60,6 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
         };
       }
     }
-
-    // 現在のユーザー情報を取得してADMINロールを保持
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
 
     // トランザクションでユーザー情報を更新
     await prisma.$transaction(async (tx) => {
@@ -105,6 +112,8 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
  */
 export async function checkHandleAvailability(handle: string): Promise<ActionResult<{ available: boolean; error?: string; suggestion?: string }>> {
   try {
+    await requireAuth();
+
     // バリデーション
     const validation = handleAvailabilityCheckSchema.safeParse({ handle });
     if (!validation.success) {

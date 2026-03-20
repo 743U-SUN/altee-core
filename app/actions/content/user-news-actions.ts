@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { USER_NEWS_LIMITS } from '@/types/user-news'
 import type { SectionSettings } from '@/types/profile-sections'
+import { sectionSettingsSchema } from '@/lib/validations/section-settings'
 
 // バリデーションスキーマ
 const userNewsSchema = z.object({
@@ -285,6 +286,14 @@ export async function updateNewsListSettings(
   const session = await requireAuth()
 
   try {
+
+    // settingsのバリデーション（nullの場合はスキップ）
+    if (settings !== null) {
+      const parsed = sectionSettingsSchema.safeParse(settings)
+      if (!parsed.success) {
+        return { success: false, error: 'スタイル設定が無効です: ' + parsed.error.errors.map(e => e.message).join(', ') }
+      }
+    }
 
     const section = await prisma.userSection.findUnique({
       where: { id: sectionId },

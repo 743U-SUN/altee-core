@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { FAQ_LIMITS, type FaqActionResult } from "@/types/faq"
 import type { SectionSettings } from "@/types/profile-sections"
+import { sectionSettingsSchema } from "@/lib/validations/section-settings"
 
 // Zodスキーマ定義
 const createFaqCategorySchema = z.object({
@@ -385,6 +386,14 @@ export async function updateFaqCategorySettings(
   const session = await requireAuth()
 
   try {
+
+    // settingsのバリデーション（nullの場合はスキップ）
+    if (settings !== null) {
+      const parsed = sectionSettingsSchema.safeParse(settings)
+      if (!parsed.success) {
+        return { success: false, error: "スタイル設定が無効です: " + parsed.error.errors.map(e => e.message).join(", ") }
+      }
+    }
 
     // 所有者確認
     const existingCategory = await prisma.faqCategory.findFirst({

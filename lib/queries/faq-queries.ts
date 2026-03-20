@@ -5,6 +5,21 @@ import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
 import type { FaqActionResult } from '@/types/faq'
 
 /**
+ * ダッシュボード用: ログインユーザーのFAQカテゴリー一覧取得
+ */
+export async function getDashboardFaqCategories(userId: string) {
+  return prisma.faqCategory.findMany({
+    where: { userId },
+    include: {
+      questions: {
+        orderBy: { sortOrder: 'asc' },
+      },
+    },
+    orderBy: { sortOrder: 'asc' },
+  })
+}
+
+/**
  * 公開FAQ取得（ハンドルから）
  */
 export const getPublicFaqByHandle = cache(async (

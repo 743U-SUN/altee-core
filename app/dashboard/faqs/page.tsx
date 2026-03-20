@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getFaqCategories } from '@/app/actions/content/faq-actions'
+import { getDashboardFaqCategories } from '@/lib/queries/faq-queries'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { EditableFAQClient } from './EditableFAQClient'
 
@@ -23,7 +23,7 @@ export default async function DashboardFaqsPage() {
   }
 
   // 並行してデータフェッチを行うことでウォーターフォールを解消
-  const [user, faqResult, presets] = await Promise.all([
+  const [user, faqCategories, presets] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -37,7 +37,7 @@ export default async function DashboardFaqsPage() {
         },
       },
     }),
-    getFaqCategories(),
+    getDashboardFaqCategories(session.user.id),
     getActivePresets(),
   ])
 
@@ -56,7 +56,7 @@ export default async function DashboardFaqsPage() {
     }
   }
 
-  const initialFaqCategories = faqResult.success ? ((faqResult.data as unknown[]) ?? []) : []
+  const initialFaqCategories = faqCategories
 
   return (
     <div className="flex flex-1 flex-col">

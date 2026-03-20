@@ -1,7 +1,6 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -34,17 +33,12 @@ const contactSchema = z.object({
 })
 
 // ユーザーの連絡方法設定を取得
-export async function getUserContact(userId?: string) {
+export async function getUserContact() {
   try {
-    const session = await auth()
-    const targetUserId = userId || session?.user?.id
-
-    if (!targetUserId) {
-      return { success: false, error: "ユーザーが見つかりません" }
-    }
+    const session = await requireAuth()
 
     const contact = await prisma.userContact.findUnique({
-      where: { userId: targetUserId },
+      where: { userId: session.user.id },
       include: {
         image: {
           select: {

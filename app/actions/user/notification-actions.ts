@@ -1,7 +1,6 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -34,17 +33,12 @@ const notificationSchema = z.object({
 })
 
 // ユーザーの通知設定を取得
-export async function getUserNotification(userId?: string) {
+export async function getUserNotification() {
   try {
-    const session = await auth()
-    const targetUserId = userId || session?.user?.id
-
-    if (!targetUserId) {
-      return { success: false, error: "ユーザーが見つかりません" }
-    }
+    const session = await requireAuth()
 
     const notification = await prisma.userNotification.findUnique({
-      where: { userId: targetUserId },
+      where: { userId: session.user.id },
       include: {
         image: {
           select: {
@@ -162,15 +156,17 @@ export async function deleteUserNotification() {
 }
 
 // Cookie用の既読状態管理
-export async function markNotificationAsRead(userId: string) {
+export async function markNotificationAsRead() {
   try {
+    const session = await requireAuth()
+
     // この関数は通知の既読状態をCookieで管理するため、
     // データベース操作は不要。
     // 実際のCookie設定はクライアントサイドで行う。
-    
+
     // 通知の最終更新日時を取得して返す
     const notification = await prisma.userNotification.findUnique({
-      where: { userId },
+      where: { userId: session.user.id },
       select: { updatedAt: true }
     })
 
@@ -178,12 +174,12 @@ export async function markNotificationAsRead(userId: string) {
       return { success: false, error: "通知が見つかりません" }
     }
 
-    return { 
-      success: true, 
-      data: { 
-        userId, 
-        updatedAt: notification.updatedAt.toISOString() 
-      } 
+    return {
+      success: true,
+      data: {
+        userId: session.user.id,
+        updatedAt: notification.updatedAt.toISOString()
+      }
     }
 
   } catch {

@@ -1,12 +1,16 @@
-import { getCharacterInfo } from "@/app/actions/user/character-actions"
+import { cachedAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import { getDashboardCharacterInfo } from "@/lib/queries/character-queries"
 import { BasicInfoForm } from "./components/BasicInfoForm"
 
 export default async function CharacterBasicInfoPage() {
-  const result = await getCharacterInfo()
+  const session = await cachedAuth()
 
-  if (!result.success) {
-    return <p className="text-destructive">{result.error}</p>
+  if (!session?.user?.id) {
+    redirect('/auth/signin')
   }
 
-  return <BasicInfoForm initialData={result.data ?? null} />
+  const characterInfo = await getDashboardCharacterInfo(session.user.id)
+
+  return <BasicInfoForm initialData={characterInfo ?? null} />
 }

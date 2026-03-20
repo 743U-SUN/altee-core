@@ -1,7 +1,6 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -32,17 +31,12 @@ const giftSchema = z.object({
 )
 
 // ユーザーのギフト設定を取得
-export async function getUserGift(userId?: string) {
+export async function getUserGift() {
   try {
-    const session = await auth()
-    const targetUserId = userId || session?.user?.id
-
-    if (!targetUserId) {
-      return { success: false, error: "ユーザーが見つかりません" }
-    }
+    const session = await requireAuth()
 
     const gift = await prisma.userGift.findUnique({
-      where: { userId: targetUserId },
+      where: { userId: session.user.id },
       include: {
         image: {
           select: {

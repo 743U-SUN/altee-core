@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getUserNews } from '@/app/actions/content/user-news-actions'
+import { getDashboardNews, getDashboardNewsSection } from '@/lib/queries/news-queries'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { EditableNewsClient } from './EditableNewsClient'
 import {
@@ -21,7 +21,7 @@ export default async function DashboardNewsPage() {
   const session = await cachedAuth()
   if (!session?.user?.id) redirect('/auth/signin')
 
-  const [user, newsResult, presets, existingSection] = await Promise.all([
+  const [user, newsData, presets] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -35,36 +35,16 @@ export default async function DashboardNewsPage() {
         },
       },
     }),
-    getUserNews(),
+    getDashboardNews(session.user.id),
     getActivePresets(),
-    prisma.userSection.findFirst({
-      where: {
-        userId: session.user.id,
-        page: 'news',
-        sectionType: 'news-list',
-      },
-    }),
   ])
 
   if (!user || !user.profile) {
     redirect('/dashboard/setup')
   }
 
-  // ニュースセクションが存在しない場合は作成
-  const newsSection =
-    existingSection ??
-    (await prisma.userSection.create({
-      data: {
-        userId: session.user.id,
-        sectionType: 'news-list',
-        page: 'news',
-        title: null,
-        sortOrder: 0,
-        isVisible: true,
-        data: {},
-        settings: null as never,
-      },
-    }))
+  // ニュースセクション取得（なければ作成）
+  const newsSection = await getDashboardNewsSection(session.user.id)
 
   const themePreset = user.profile.themePreset ?? 'claymorphic'
 
@@ -77,7 +57,7 @@ export default async function DashboardNewsPage() {
     }
   }
 
-  const initialData = newsResult.success ? (newsResult.data as UserNewsWithImages[]) : []
+  const initialData = newsData as UserNewsWithImages[]
 
   return (
     <div className="flex flex-1 flex-col">
