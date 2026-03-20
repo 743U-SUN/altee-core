@@ -74,11 +74,19 @@ function saveToStorage(build: GuestPcBuild) {
 }
 
 export function useGuestPcBuild() {
-  const [build, setBuild] = useState<GuestPcBuild>(() => loadFromStorage())
+  const [build, setBuild] = useState<GuestPcBuild>({ name: '', parts: [] })
+  const [isLoaded, setIsLoaded] = useState(false)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // デバウンス付き localStorage 保存
+  // localStorage から読み込み（クライアントのみ、ハイドレーション後）
   useEffect(() => {
+    setBuild(loadFromStorage())
+    setIsLoaded(true)
+  }, [])
+
+  // デバウンス付き localStorage 保存（初回読み込み完了後のみ）
+  useEffect(() => {
+    if (!isLoaded) return
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current)
     }
@@ -91,7 +99,7 @@ export function useGuestPcBuild() {
         clearTimeout(saveTimerRef.current)
       }
     }
-  }, [build])
+  }, [build, isLoaded])
 
   const addPart = (part: Omit<GuestPcPart, 'id'>) => {
     setBuild((prev) => ({
@@ -115,7 +123,7 @@ export function useGuestPcBuild() {
 
   return {
     build,
-    isLoaded: true,
+    isLoaded,
     addPart,
     removePart,
     clearBuild,
