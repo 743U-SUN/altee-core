@@ -1,4 +1,3 @@
-import { SortableParentItem, SortableChildItem } from '@/components/sortable-list/types'
 import type { SectionSettings } from '@/types/profile-sections'
 
 // カテゴリー + 質問の結合型（公開ページ用）
@@ -15,8 +14,8 @@ export interface FaqCategoryBase {
   sortOrder: number
   isVisible: boolean
   settings: SectionSettings | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface FaqQuestionBase {
@@ -26,28 +25,8 @@ export interface FaqQuestionBase {
   answer: string
   sortOrder: number
   isVisible: boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-// ソート可能コンポーネント用の型（SortableParentItem/SortableChildItemを継承）
-export interface FaqCategory extends SortableParentItem {
-  userId: string
-  name: string
-  description: string | null
-  isVisible: boolean
-  settings: SectionSettings | null
-  createdAt: Date
-  updatedAt: Date
-}
-
-export interface FaqQuestion extends SortableChildItem {
-  categoryId: string // parentIdとして使用
-  question: string
-  answer: string
-  isVisible: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 // Server Actions用の入力型
@@ -93,6 +72,3 @@ export const FAQ_LIMITS = {
     ANSWER_MAX_LENGTH: 1000,
   },
 } as const
-
-// バリデーション関数型
-export type FaqValidationFunction = (value: string) => string | null

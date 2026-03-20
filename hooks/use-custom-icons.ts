@@ -1,6 +1,8 @@
+'use client'
+
 import useSWR from 'swr'
 import { getPublicCustomIcons } from '@/app/actions/content/icon-actions'
-import type { CustomIcon } from '@/app/actions/admin/icon-actions'
+import type { CustomIcon } from '@/types/icon'
 
 /**
  * カスタムアイコン取得用SWRフック

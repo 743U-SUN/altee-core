@@ -28,7 +28,7 @@ import { upsertUserPcBuild, deletePcBuildPart } from '@/app/actions/content/pc-b
 import { pcBuildSchema, pcPartTypeLabels, type PcBuildInput } from '@/lib/validations/pc-build'
 import type { UserPcBuildPart } from '@prisma/client'
 import type { PcBuildWithParts } from '@/types/pc-build'
-import { partTypeIcons } from '@/constants/pc-build'
+import { partTypeIconComponents } from '@/constants/pc-build'
 
 const AddPcPartModal = dynamic(
   () => import('./AddPcPartModal').then((mod) => ({ default: mod.AddPcPartModal })),
@@ -207,10 +207,12 @@ export function PcBuildManagementSection({ initialPcBuild }: PcBuildManagementSe
           </div>
         ) : (
           <div className="divide-y border rounded-lg">
-            {parts.map((part) => (
+            {parts.map((part) => {
+              const PartIcon = partTypeIconComponents[part.partType]
+              return (
               <div key={part.id} className="flex items-center gap-3 p-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                  {partTypeIcons[part.partType]}
+                  <PartIcon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -242,7 +244,7 @@ export function PcBuildManagementSection({ initialPcBuild }: PcBuildManagementSe
                   </Button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

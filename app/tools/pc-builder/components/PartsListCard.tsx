@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Package, Plus, Trash2 } from 'lucide-react'
 import { pcPartTypeLabels } from '@/lib/validations/pc-build'
-import { partTypeIcons } from '@/constants/pc-build'
+import { partTypeIconComponents } from '@/constants/pc-build'
 import type { GuestPcPart } from '@/hooks/useGuestPcBuild'
 
 interface PartsListCardProps {
@@ -41,10 +41,12 @@ export function PartsListCard({ parts, totalPrice, onAddClick, onRemovePart }: P
           </div>
         ) : (
           <div className="divide-y">
-            {parts.map((part) => (
+            {parts.map((part) => {
+              const PartIcon = partTypeIconComponents[part.partType]
+              return (
               <div key={part.id} className="flex items-center gap-3 py-3">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                  {partTypeIcons[part.partType]}
+                  <PartIcon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -73,7 +75,7 @@ export function PartsListCard({ parts, totalPrice, onAddClick, onRemovePart }: P
                   </Button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </CardContent>

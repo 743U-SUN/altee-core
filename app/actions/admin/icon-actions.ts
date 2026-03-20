@@ -4,15 +4,9 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { requireAdmin } from '@/lib/auth'
+import type { CustomIcon } from '@/types/icon'
 
-export interface CustomIcon {
-  id: string
-  name: string
-  originalName: string
-  url: string
-  tags: string[]
-  description?: string
-}
+export type { CustomIcon }
 
 /**
  * admin-iconsコンテナのカスタムアイコン一覧を取得

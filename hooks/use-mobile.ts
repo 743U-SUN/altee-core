@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 1024
@@ -7,11 +9,11 @@ export function useIsMobile(breakpoint: number = MOBILE_BREAKPOINT) {
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < breakpoint)
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches)
     }
     mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < breakpoint)
+    setIsMobile(mql.matches)
     return () => mql.removeEventListener("change", onChange)
   }, [breakpoint])
 

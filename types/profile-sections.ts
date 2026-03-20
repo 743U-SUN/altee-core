@@ -9,8 +9,8 @@ export interface UserSection {
   isVisible: boolean
   data: unknown // セクション固有データ（型ガードで絞り込み: lib/sections/type-guards.ts）
   settings: SectionSettings | null // バンドの見た目設定（背景・パディング）
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 // ===== SectionBand 設定 =====
@@ -331,8 +331,8 @@ export interface YouTubeLatestData {
   rssFeedLimit: number
 }
 
-// youtube-recommended セクションのdata構造
-export interface YouTubeRecommendedData {
+// youtube-recommended / niconico-recommended セクションの共通data構造
+export interface VideoRecommendedData {
   items: {
     id: string
     videoId: string
@@ -342,16 +342,11 @@ export interface YouTubeRecommendedData {
   }[]
 }
 
-// niconico-recommended セクションのdata構造
-export interface NiconicoRecommendedData {
-  items: {
-    id: string
-    videoId: string
-    title: string
-    thumbnail: string
-    sortOrder: number
-  }[]
-}
+/** @deprecated Use VideoRecommendedData instead */
+export type YouTubeRecommendedData = VideoRecommendedData
+
+/** @deprecated Use VideoRecommendedData instead */
+export type NiconicoRecommendedData = VideoRecommendedData
 
 // themeSettings JSON構造
 export interface ThemeSettings {
@@ -365,9 +360,9 @@ export interface ThemeSettings {
   visibility: {
     banner: boolean // バナー画像（デフォルト: false）
     character: boolean // キャラクター画像（デフォルト: true）
-    gameButton: boolean // ゲームボタン（デフォルト: false）
-    snsButton: boolean // SNSシェアボタン（デフォルト: false）
-    notification: boolean // 通知アイコン（デフォルト: false）
+    gameButton: boolean // ゲームボタン（デフォルト: true）
+    snsButton: boolean // SNSシェアボタン（デフォルト: true）
+    notification: boolean // 通知アイコン（デフォルト: true）
     newsPage: boolean // NEWSページ（デフォルト: true）
   }
 

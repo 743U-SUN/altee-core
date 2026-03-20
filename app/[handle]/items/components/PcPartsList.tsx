@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { ExternalLink } from 'lucide-react'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { pcPartTypeLabels } from '@/lib/validations/pc-build'
-import { partTypeIcons } from '@/constants/pc-build'
+import { partTypeIconComponents } from '@/constants/pc-build'
 import type { PcBuildPartWithItem } from '@/types/pc-build'
 
 interface PcPartsListProps {
@@ -28,6 +28,7 @@ export function PcPartsList({ parts }: PcPartsListProps) {
           : null
         const amazonUrl = part.amazonUrl || item?.amazonUrl
 
+        const PartIcon = partTypeIconComponents[part.partType]
         return (
           <div key={part.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
             {/* アイコンまたは画像 */}
@@ -44,7 +45,7 @@ export function PcPartsList({ parts }: PcPartsListProps) {
               </div>
             ) : (
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                {partTypeIcons[part.partType]}
+                <PartIcon className="w-4 h-4" />
               </div>
             )}
 
