@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { EditModal } from '../EditModal'
@@ -45,6 +46,7 @@ export function ImageSectionModal({
   sectionId,
   currentData,
 }: ImageSectionModalProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [altText, setAltText] = useState(currentData.altText || '')
@@ -86,7 +88,7 @@ export function ImageSectionModal({
       if (result.success) {
         toast.success('画像セクションを更新しました')
         onClose()
-        window.location.reload()
+        router.refresh()
       } else {
         toast.error(result.error || '更新に失敗しました')
       }
@@ -105,7 +107,7 @@ export function ImageSectionModal({
       if (result.success) {
         toast.success('画像を削除しました')
         onClose()
-        window.location.reload()
+        router.refresh()
       } else {
         toast.error(result.error || '削除に失敗しました')
       }

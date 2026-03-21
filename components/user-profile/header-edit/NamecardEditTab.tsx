@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { PRESET_NAMECARD } from '@/lib/image-uploader/image-processing-presets'
@@ -28,7 +28,6 @@ interface NamecardImage {
 }
 
 interface NamecardEditTabProps {
-  isOpen: boolean
   onClose: () => void
   currentThemeSettings: ThemeSettings
 }
@@ -57,7 +56,6 @@ const PRESET_TEXT_COLORS = [
 ]
 
 export function NamecardEditTab({
-  isOpen,
   onClose,
   currentThemeSettings,
 }: NamecardEditTabProps) {
@@ -81,15 +79,6 @@ export function NamecardEditTab({
   const [isPresetsLoading, setIsPresetsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isImageDeleting, setIsImageDeleting] = useState(false)
-
-  // モーダルが閉じた時に状態をリセット
-  useEffect(() => {
-    if (!isOpen) {
-      setUploadedFiles([])
-      setIsSaving(false)
-      setIsImageDeleting(false)
-    }
-  }, [isOpen])
 
   // プリセット画像を取得
   const loadPresets = async () => {

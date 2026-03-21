@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
@@ -46,18 +46,6 @@ export function CharacterImageModal({
   const currentBackgroundImageUrl = currentCharacterBackgroundKey
     ? getPublicUrl(currentCharacterBackgroundKey)
     : null
-
-  // モーダルが閉じた時に状態をリセット
-  useEffect(() => {
-    if (!isOpen) {
-      setUploadedFiles([])
-      setIsSaving(false)
-      setIsDeleting(false)
-      setBackgroundUploadedFiles([])
-      setIsBackgroundSaving(false)
-      setIsBackgroundDeleting(false)
-    }
-  }, [isOpen])
 
   // キャラクター画像保存処理
   const handleSave = async () => {

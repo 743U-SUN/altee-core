@@ -120,6 +120,7 @@ export function EditableProfileClient({
         currentBackgroundKey={bannerImageKey}
       />
       <CharacterImageModal
+        key={imageEditType === 'character' ? 'open' : 'closed'}
         isOpen={imageEditType === 'character'}
         onClose={handleImageEditClose}
         currentCharacterImageUrl={characterImageUrl}

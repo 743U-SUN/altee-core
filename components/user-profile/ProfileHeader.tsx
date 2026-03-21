@@ -48,20 +48,18 @@ export function ProfileHeader({
   const pathname = usePathname()
   const navItems = getNavItems(handle, inDashboard, visibility)
 
-  const namecardStyle: CSSProperties = (() => {
-    if (!namecard) return {}
+  let namecardStyle: CSSProperties = {}
+  if (namecard) {
     if (namecard.type === 'color' && namecard.color) {
-      return { backgroundColor: namecard.color }
-    }
-    if ((namecard.type === 'preset' || namecard.type === 'image') && namecard.imageKey) {
-      return {
+      namecardStyle = { backgroundColor: namecard.color }
+    } else if ((namecard.type === 'preset' || namecard.type === 'image') && namecard.imageKey) {
+      namecardStyle = {
         backgroundImage: `url(${getPublicUrl(namecard.imageKey)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }
     }
-    return {}
-  })()
+  }
 
   return (
     <header className={`flex justify-center w-full sticky ${inDashboard ? 'top-17' : 'top-0'} z-40 bg-[var(--theme-header-bg)]/90 backdrop-blur-sm border-b border-[var(--theme-stat-bg)] max-[992px]:hidden`}>

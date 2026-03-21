@@ -2,8 +2,6 @@
 
 import {
   createContext,
-  useMemo,
-  useCallback,
   type ReactNode,
 } from 'react'
 import { getTheme, DEFAULT_THEME_ID } from '@/lib/themes/registry'
@@ -51,66 +49,47 @@ export function UserThemeProvider({
   children,
 }: UserThemeProviderProps) {
   // 旧テーマIDを新テーマIDにマッピング
-  const themeId = useMemo(() => migrateLegacyThemeId(themePreset), [themePreset])
+  const themeId = migrateLegacyThemeId(themePreset)
 
   // テーマを取得（見つからない場合はデフォルト）
-  const theme = useMemo(() => {
-    return getTheme(themeId) ?? getTheme(DEFAULT_THEME_ID)!
-  }, [themeId])
+  const theme = getTheme(themeId) ?? getTheme(DEFAULT_THEME_ID)!
 
   // CSS変数を計算
-  const themeVariables = useMemo(() => {
-    const baseVariables = { ...theme.variables }
+  const baseVariables = { ...theme.variables }
 
-    // アクセントカラーのカスタマイズ
-    if (themeSettings.accentColor) {
-      baseVariables['--theme-text-accent'] = themeSettings.accentColor
-      baseVariables['--theme-accent-bg'] = `${themeSettings.accentColor}14`
-      baseVariables['--theme-accent-border'] = `${themeSettings.accentColor}33`
-    }
+  // アクセントカラーのカスタマイズ
+  if (themeSettings.accentColor) {
+    baseVariables['--theme-text-accent'] = themeSettings.accentColor
+    baseVariables['--theme-accent-bg'] = `${themeSettings.accentColor}14`
+    baseVariables['--theme-accent-border'] = `${themeSettings.accentColor}33`
+  }
 
-    // ヘッダーカラーのカスタマイズ
-    if (themeSettings.headerColor) {
-      baseVariables['--theme-header-bg'] = themeSettings.headerColor
-    }
-    if (themeSettings.headerTextColor) {
-      baseVariables['--theme-header-text'] = themeSettings.headerTextColor
-    }
+  // ヘッダーカラーのカスタマイズ
+  if (themeSettings.headerColor) {
+    baseVariables['--theme-header-bg'] = themeSettings.headerColor
+  }
+  if (themeSettings.headerTextColor) {
+    baseVariables['--theme-header-text'] = themeSettings.headerTextColor
+  }
 
-    // カスタムオーバーライド
-    if (themeSettings.customOverrides) {
-      Object.assign(baseVariables, themeSettings.customOverrides)
-    }
-
-    return baseVariables as React.CSSProperties
-  }, [
-    theme,
-    themeSettings.accentColor,
-    themeSettings.headerColor,
-    themeSettings.headerTextColor,
-    themeSettings.customOverrides,
-  ])
+  // カスタムオーバーライド
+  const themeVariables: React.CSSProperties = themeSettings.customOverrides
+    ? { ...baseVariables, ...themeSettings.customOverrides }
+    : baseVariables as React.CSSProperties
 
   // 装飾タイプを取得するヘルパー
-  // useCallbackでメモ化することで、themeが変わったときのみ新しい参照を作成
-  const getDecoration = useCallback(
-    <K extends keyof ThemeDecorations>(type: K): ThemeDecorations[K] => {
-      return theme.decorations[type]
-    },
-    [theme]
-  )
+  const getDecoration = <K extends keyof ThemeDecorations>(type: K): ThemeDecorations[K] => {
+    return theme.decorations[type]
+  }
 
-  const contextValue = useMemo<UserThemeContextValue>(
-    () => ({
-      theme,
-      themeSettings,
-      themeVariables,
-      getDecoration,
-      // 後方互換性
-      themePreset: theme.id,
-    }),
-    [theme, themeSettings, themeVariables, getDecoration]
-  )
+  const contextValue: UserThemeContextValue = {
+    theme,
+    themeSettings,
+    themeVariables,
+    getDecoration,
+    // 後方互換性
+    themePreset: theme.id,
+  }
 
   return (
     <UserThemeContext.Provider value={contextValue}>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
@@ -51,19 +51,17 @@ export function useImageGridEditor({
   })
 
   // sortOrderでソートした表示用アイテム
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => a.sortOrder - b.sortOrder)
-  }, [items])
+  const sortedItems = [...items].sort((a, b) => a.sortOrder - b.sortOrder)
 
   // アイテム更新
-  const updateItem = useCallback((id: string, updates: Partial<ImageGridItem>) => {
+  const updateItem = (id: string, updates: Partial<ImageGridItem>) => {
     setItems(prev =>
       prev.map(item => (item.id === id ? { ...item, ...updates } : item))
     )
-  }, [])
+  }
 
   // 並べ替え
-  const handleMove = useCallback((id: string, direction: 'left' | 'right') => {
+  const handleMove = (id: string, direction: 'left' | 'right') => {
     setItems(prev => {
       const sorted = [...prev].sort((a, b) => a.sortOrder - b.sortOrder)
       const index = sorted.findIndex(item => item.id === id)
@@ -80,10 +78,10 @@ export function useImageGridEditor({
 
       return newSorted.map((item, idx) => ({ ...item, sortOrder: idx }))
     })
-  }, [])
+  }
 
   // 画像アップロード用の値を取得
-  const getUploadValue = useCallback((item: ImageGridItem): UploadedFile[] => {
+  const getUploadValue = (item: ImageGridItem): UploadedFile[] => {
     if (!item.imageKey) return []
     return [
       {
@@ -97,26 +95,26 @@ export function useImageGridEditor({
         uploadedAt: new Date().toISOString(),
       },
     ]
-  }, [])
+  }
 
   // 画像アップロード完了
-  const handleUpload = useCallback((itemId: string, files: UploadedFile[]) => {
+  const handleUpload = (itemId: string, files: UploadedFile[]) => {
     if (files.length > 0) {
       updateItem(itemId, { imageKey: files[0].key })
     }
-  }, [updateItem])
+  }
 
   // 画像削除
-  const handleDelete = useCallback(async (itemId: string) => {
+  const handleDelete = async (itemId: string) => {
     const item = items.find(i => i.id === itemId)
     if (item?.imageKey) {
       await deleteImageAction(item.imageKey)
     }
     updateItem(itemId, { imageKey: undefined })
-  }, [items, updateItem])
+  }
 
   // 保存処理
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     startTransition(async () => {
       try {
         const sortedForSave = [...items].sort((a, b) => a.sortOrder - b.sortOrder)
@@ -133,7 +131,7 @@ export function useImageGridEditor({
         toast.error('保存中にエラーが発生しました')
       }
     })
-  }, [items, sectionId, onClose, router])
+  }
 
   return {
     items,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { PRESET_AVATAR } from '@/lib/image-uploader/image-processing-presets'
@@ -12,13 +12,11 @@ import Image from 'next/image'
 import type { UploadedFile } from '@/types/image-upload'
 
 interface AvatarEditTabProps {
-  isOpen: boolean
   onClose: () => void
   currentAvatarImageUrl?: string | null
 }
 
 export function AvatarEditTab({
-  isOpen,
   onClose,
   currentAvatarImageUrl,
 }: AvatarEditTabProps) {
@@ -26,15 +24,6 @@ export function AvatarEditTab({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  // モーダルが閉じた時に状態をリセット
-  useEffect(() => {
-    if (!isOpen) {
-      setUploadedFiles([])
-      setIsSaving(false)
-      setIsDeleting(false)
-    }
-  }, [isOpen])
 
   const handleSave = async () => {
     if (uploadedFiles.length === 0) {

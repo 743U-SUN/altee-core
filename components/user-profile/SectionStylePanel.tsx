@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
   Sheet,
@@ -80,57 +80,45 @@ export function SectionStylePanel({
   )
 
   // 設定変更を親に通知（リアルタイムプレビュー）
-  const notifyChange = useCallback(
-    (bg: SectionBandBackground, pt: ResponsivePadding, pb: ResponsivePadding) => {
-      onSettingsChange({ background: bg, paddingTop: pt, paddingBottom: pb })
-    },
-    [onSettingsChange]
-  )
+  const notifyChange = (bg: SectionBandBackground, pt: ResponsivePadding, pb: ResponsivePadding) => {
+    onSettingsChange({ background: bg, paddingTop: pt, paddingBottom: pb })
+  }
 
   // 背景変更
-  const handleBackgroundTypeChange = useCallback(
-    (type: 'inherit' | 'preset') => {
-      const newBg: SectionBandBackground =
-        type === 'inherit' ? { type: 'inherit' } : { type: 'preset', presetId: presets[0]?.id }
-      setBackground(newBg)
-      notifyChange(newBg, paddingTop, paddingBottom)
-    },
-    [presets, paddingTop, paddingBottom, notifyChange]
-  )
+  const handleBackgroundTypeChange = (type: 'inherit' | 'preset') => {
+    const newBg: SectionBandBackground =
+      type === 'inherit' ? { type: 'inherit' } : { type: 'preset', presetId: presets[0]?.id }
+    setBackground(newBg)
+    notifyChange(newBg, paddingTop, paddingBottom)
+  }
 
-  const handlePresetSelect = useCallback(
-    (presetId: string) => {
-      const newBg: SectionBandBackground = { type: 'preset', presetId }
-      setBackground(newBg)
-      notifyChange(newBg, paddingTop, paddingBottom)
-    },
-    [paddingTop, paddingBottom, notifyChange]
-  )
+  const handlePresetSelect = (presetId: string) => {
+    const newBg: SectionBandBackground = { type: 'preset', presetId }
+    setBackground(newBg)
+    notifyChange(newBg, paddingTop, paddingBottom)
+  }
 
   // パディング変更
-  const handlePaddingChange = useCallback(
-    (
-      direction: 'top' | 'bottom',
-      breakpoint: 'mobile' | 'tablet' | 'desktop',
-      value: SectionPaddingValue
-    ) => {
-      const setter = direction === 'top' ? setPaddingTop : setPaddingBottom
-      const current = direction === 'top' ? paddingTop : paddingBottom
+  const handlePaddingChange = (
+    direction: 'top' | 'bottom',
+    breakpoint: 'mobile' | 'tablet' | 'desktop',
+    value: SectionPaddingValue
+  ) => {
+    const setter = direction === 'top' ? setPaddingTop : setPaddingBottom
+    const current = direction === 'top' ? paddingTop : paddingBottom
 
-      const updated = { ...current, [breakpoint]: value }
-      setter(updated)
+    const updated = { ...current, [breakpoint]: value }
+    setter(updated)
 
-      if (direction === 'top') {
-        notifyChange(background, updated, paddingBottom)
-      } else {
-        notifyChange(background, paddingTop, updated)
-      }
-    },
-    [background, paddingTop, paddingBottom, notifyChange]
-  )
+    if (direction === 'top') {
+      notifyChange(background, updated, paddingBottom)
+    } else {
+      notifyChange(background, paddingTop, updated)
+    }
+  }
 
   // 保存
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     startTransition(async () => {
       const settings: SectionSettings = {
         background,
@@ -159,7 +147,7 @@ export function SectionStylePanel({
         toast.error(result.error || 'スタイルの更新に失敗しました')
       }
     })
-  }, [sectionId, background, paddingTop, paddingBottom, onClose, onSave])
+  }
 
   // プリセットをカテゴリ別に分類
   const solidPresets = presets.filter((p) => p.category === 'solid')

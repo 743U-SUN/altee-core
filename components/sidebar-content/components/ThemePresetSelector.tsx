@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Label } from '@/components/ui/label'
 import { updateUserThemeSettings } from '@/app/actions/user/theme-actions'
 import { useRouter } from 'next/navigation'
@@ -28,21 +28,18 @@ export function ThemePresetSelector({
   const themeGroups = getThemesGroupedByName()
 
   // プレビュー開始
-  const handlePreviewStart = useCallback(
-    (themeId: string) => {
-      // 前のプレビューをクリーンアップ
-      cleanupPreviewRef.current?.()
-      const cleanup = applyThemePreview(themeId)
-      cleanupPreviewRef.current = cleanup
-    },
-    [] // 依存配列を空にすることで無限ループを防止
-  )
+  const handlePreviewStart = (themeId: string) => {
+    // 前のプレビューをクリーンアップ
+    cleanupPreviewRef.current?.()
+    const cleanup = applyThemePreview(themeId)
+    cleanupPreviewRef.current = cleanup
+  }
 
   // プレビュー終了
-  const handlePreviewEnd = useCallback(() => {
+  const handlePreviewEnd = () => {
     cleanupPreviewRef.current?.()
     cleanupPreviewRef.current = null
-  }, []) // 依存配列を空にすることで無限ループを防止
+  }
 
   // テーマ選択
   const handleSelect = async (themeId: string) => {

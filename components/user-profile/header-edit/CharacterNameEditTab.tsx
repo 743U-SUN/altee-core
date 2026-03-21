@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateUserProfile } from '@/app/actions/user/profile-actions'
 import { toast } from 'sonner'
@@ -9,27 +9,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 interface CharacterNameEditTabProps {
-  isOpen: boolean
   onClose: () => void
   currentCharacterName?: string | null
 }
 
 export function CharacterNameEditTab({
-  isOpen,
   onClose,
   currentCharacterName,
 }: CharacterNameEditTabProps) {
   const router = useRouter()
   const [characterName, setCharacterName] = useState(currentCharacterName || '')
   const [isSaving, setIsSaving] = useState(false)
-
-  // モーダルが閉じた時に状態をリセット
-  useEffect(() => {
-    if (!isOpen) {
-      setCharacterName(currentCharacterName || '')
-      setIsSaving(false)
-    }
-  }, [isOpen, currentCharacterName])
 
   const handleSave = async () => {
     if (!characterName.trim()) {

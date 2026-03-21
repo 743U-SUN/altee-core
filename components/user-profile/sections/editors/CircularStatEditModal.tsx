@@ -22,16 +22,7 @@ import {
 } from 'lucide-react'
 import { getLucideIcon } from '@/lib/lucide-icons'
 import { cn } from '@/lib/utils'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { DeleteItemAlertDialog } from './components/DeleteItemAlertDialog'
 import type { CircularStatData, CircularStatItem } from '@/types/profile-sections'
 import { useEditableList } from './hooks/useEditableList'
 
@@ -457,25 +448,11 @@ export function CircularStatEditModal({
         )}
       </div>
 
-      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && cancelDelete()}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>この項目を削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              この操作は保存前であれば取り消せます。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              削除する
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteItemAlertDialog
+        open={!!deleteTargetId}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </EditModal>
   )
 }

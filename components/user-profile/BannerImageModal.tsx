@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { getBackgroundImages, updateUserProfile } from '@/app/actions/user/profile-actions'
@@ -34,6 +35,7 @@ export function BannerImageModal({
   onClose,
   currentBackgroundKey,
 }: BannerImageModalProps) {
+  const router = useRouter()
   const [backgroundImages, setBackgroundImages] = useState<BackgroundImage[]>([])
   const [selectedKey, setSelectedKey] = useState<string>(
     currentBackgroundKey || 'none'
@@ -75,6 +77,7 @@ export function BannerImageModal({
       if (result.success) {
         toast.success('バナー画像を更新しました')
         onClose()
+        router.refresh()
       } else {
         toast.error(result.error || 'バナー画像の更新に失敗しました')
       }

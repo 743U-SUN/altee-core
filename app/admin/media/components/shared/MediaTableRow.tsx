@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog"
 import { Trash2, ExternalLink } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { uploadTypeLabels } from "./upload-type-labels"
 import { formatFileSize } from "@/lib/format-utils"
@@ -52,12 +53,12 @@ export function MediaTableRow({
           onClick={() => window.open(`${storageUrl}/${file.storageKey}`, '_blank')}
           title="クリックして画像を表示"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={`${storageUrl}/${file.storageKey}`}
             alt={file.originalName}
-            className="h-full w-full object-cover"
-            loading="lazy"
+            fill
+            sizes="48px"
+            className="object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement
               target.style.display = 'none'

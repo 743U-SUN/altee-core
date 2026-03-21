@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { ImageUploaderProps, UploadedFile } from '@/types/image-upload'
@@ -45,7 +45,7 @@ export function ImageUploader({
   }, [value])
 
   // エラーを追加
-  const addError = useCallback((error: string) => {
+  const addError = (error: string) => {
     setErrors(prev => [...prev, error])
     onError?.(error)
     toast.error(error)
@@ -54,16 +54,16 @@ export function ImageUploader({
     setTimeout(() => {
       setErrors(prev => prev.filter(e => e !== error))
     }, 5000)
-  }, [onError])
+  }
 
   // 内部状態とrefを同期更新するヘルパー
-  const updateFiles = useCallback((newFiles: UploadedFile[]) => {
+  const updateFiles = (newFiles: UploadedFile[]) => {
     setUploadedFiles(newFiles)
     uploadedFilesRef.current = newFiles
-  }, [])
+  }
 
   // ファイル選択時の処理
-  const handleFilesSelected = useCallback(async (files: File[]) => {
+  const handleFilesSelected = async (files: File[]) => {
     if (disabled || isUploading) return
 
     // ファイル数制限チェック
@@ -187,10 +187,10 @@ export function ImageUploader({
       updateFiles(newFiles)
       onUpload?.(newFiles)
     }
-  }, [disabled, isUploading, maxFiles, maxSize, mode, addError, onUpload, folder, updateFiles, imageProcessingOptions, sequentialProcessing])
+  }
 
   // ファイル削除
-  const handleDelete = useCallback(async (fileId: string) => {
+  const handleDelete = async (fileId: string) => {
     const currentFiles = uploadedFilesRef.current
     const fileToDelete = currentFiles.find(f => f.id === fileId)
     if (!fileToDelete) return
@@ -219,7 +219,7 @@ export function ImageUploader({
     } catch (error) {
       addError(`削除エラー: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }, [addError, onDelete, onUpload, updateFiles])
+  }
 
   const isSingleFile = maxFiles === 1
   const hasFiles = uploadedFiles.length > 0

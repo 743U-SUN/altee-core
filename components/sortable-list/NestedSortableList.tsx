@@ -70,7 +70,8 @@ export function NestedSortableList<TParent extends SortableParentItemType, TChil
     if (Object.keys(newChildStates).length > 0) {
       setChildStates(prev => ({ ...prev, ...newChildStates }));
     }
-  }, [config.parentItems]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.parentItems.map(i => i.id).join(',')]);
 
   // 親アイテムを追加
   const handleAddParentItem = async () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { BaseSectionProps, ImageSectionData } from '@/types/profile-sections'
@@ -17,7 +17,7 @@ export function ImageSection({ section, isEditable }: BaseSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // アスペクト比のクラス
-  const aspectRatioClass = useMemo(() => {
+  const aspectRatioClass = (() => {
     switch (data.aspectRatio) {
       case '16:9':
         return 'aspect-video'
@@ -30,10 +30,10 @@ export function ImageSection({ section, isEditable }: BaseSectionProps) {
       default:
         return 'aspect-video'
     }
-  }, [data.aspectRatio])
+  })()
 
   // 角丸のクラス
-  const borderRadiusClass = useMemo(() => {
+  const borderRadiusClass = (() => {
     switch (data.borderRadius) {
       case 'none':
         return 'rounded-none'
@@ -46,10 +46,10 @@ export function ImageSection({ section, isEditable }: BaseSectionProps) {
       default:
         return 'rounded-md'
     }
-  }, [data.borderRadius])
+  })()
 
   // 背景スタイル
-  const backgroundStyle = useMemo(() => {
+  const backgroundStyle = (() => {
     const bg = data.background
 
     if (!bg || bg.type === 'transparent') {
@@ -69,7 +69,7 @@ export function ImageSection({ section, isEditable }: BaseSectionProps) {
     }
 
     return {}
-  }, [data.background])
+  })()
 
   const handleClick = () => {
     if (isEditable) {

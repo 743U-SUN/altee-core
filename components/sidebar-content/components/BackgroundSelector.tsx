@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Image from 'next/image'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { updateThemeBackground } from '@/app/actions/user/theme-actions'
 import { toast } from 'sonner'
@@ -186,11 +187,12 @@ export function BackgroundSelector({
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">現在の背景画像</p>
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={getPublicUrl(currentBackground.imageKey)}
                   alt="現在の背景"
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 340px"
+                  className="object-cover"
                 />
               </div>
               <div className="flex gap-2">

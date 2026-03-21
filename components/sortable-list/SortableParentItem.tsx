@@ -235,7 +235,6 @@ function SortableParentItemComponent<TParent extends SortableParentItemType, TCh
   );
 }
 
-// React.memoでメモ化して不要な再レンダリングを防ぐ
-export const SortableParentItem = React.memo(SortableParentItemComponent) as <TParent extends SortableParentItemType, TChild extends SortableChildItem>(
+export const SortableParentItem = SortableParentItemComponent as <TParent extends SortableParentItemType, TChild extends SortableChildItem>(
   props: SortableParentItemProps<TParent, TChild>
 ) => React.ReactElement;

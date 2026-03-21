@@ -62,11 +62,6 @@ export function SectionRenderer({
                 />
               </SectionBand>
             )}
-            onError={(error, errorInfo) => {
-              if (process.env.NODE_ENV === 'production') {
-                console.error('[SectionRenderer] Error:', error, errorInfo)
-              }
-            }}
           >
             <Suspense fallback={
               <SectionBand settings={settings} preset={preset} fullBleed={definition.fullBleed}>

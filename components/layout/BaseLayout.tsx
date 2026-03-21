@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import dynamic from "next/dynamic"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Sidebar } from "./Sidebar"
@@ -37,21 +36,18 @@ export function BaseLayout({
   user,
   children
 }: BaseLayoutProps) {
-  const finalConfig = useMemo(() => {
-    const baseConfig = getLayoutConfig(variant)
-    const configWithUser = mergeLayoutConfig(baseConfig, {
-      ...overrides,
-      firstSidebar: {
-        ...overrides?.firstSidebar,
-        user: user || undefined
-      },
-      header: {
-        ...overrides?.header,
-        user: user || undefined
-      }
-    })
-    return configWithUser
-  }, [variant, overrides, user])
+  const baseConfig = getLayoutConfig(variant)
+  const finalConfig = mergeLayoutConfig(baseConfig, {
+    ...overrides,
+    firstSidebar: {
+      ...overrides?.firstSidebar,
+      user: user || undefined
+    },
+    header: {
+      ...overrides?.header,
+      user: user || undefined
+    }
+  })
 
   // 縦並びレイアウトの場合
   if (finalConfig.mobileLayout.verticalLayout) {

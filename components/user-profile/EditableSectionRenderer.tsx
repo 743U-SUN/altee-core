@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useMemo, useCallback, useTransition } from 'react'
+import { Suspense, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type {
@@ -41,12 +41,9 @@ export function EditableSectionRenderer({
   // リアルタイムプレビュー用のローカル設定（セクションID → SectionSettings）
   const [localSettings, setLocalSettings] = useState<Record<string, SectionSettings>>({})
 
-  const visibleSections = useMemo(
-    () => sections.filter((s) => s.isVisible).sort((a, b) => a.sortOrder - b.sortOrder),
-    [sections]
-  )
+  const visibleSections = sections.filter((s) => s.isVisible).sort((a, b) => a.sortOrder - b.sortOrder)
 
-  const handleMove = useCallback(async (sectionId: string, direction: 'up' | 'down') => {
+  const handleMove = async (sectionId: string, direction: 'up' | 'down') => {
     const result = await moveSectionOrder(sectionId, direction)
     if (result.success) {
       startTransition(() => {
@@ -55,9 +52,9 @@ export function EditableSectionRenderer({
     } else {
       toast.error(result.error || 'セクションの移動に失敗しました')
     }
-  }, [router, startTransition])
+  }
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return
 
     const result = await deleteSection(deleteTarget.id)
@@ -70,23 +67,20 @@ export function EditableSectionRenderer({
     } else {
       toast.error(result.error || 'セクションの削除に失敗しました')
     }
-  }, [deleteTarget, router, startTransition])
+  }
 
-  const handleEditClose = useCallback(() => {
+  const handleEditClose = () => {
     setEditTarget(null)
-  }, [])
+  }
 
   // スタイルパネルの設定変更（リアルタイムプレビュー用）
-  const handleSettingsChange = useCallback(
-    (settings: SectionSettings) => {
-      if (!styleTarget) return
-      setLocalSettings((prev) => ({ ...prev, [styleTarget.id]: settings }))
-    },
-    [styleTarget]
-  )
+  const handleSettingsChange = (settings: SectionSettings) => {
+    if (!styleTarget) return
+    setLocalSettings((prev) => ({ ...prev, [styleTarget.id]: settings }))
+  }
 
   // スタイルパネルを閉じる（ローカル設定をクリアして router.refresh）
-  const handleStyleClose = useCallback(() => {
+  const handleStyleClose = () => {
     if (styleTarget) {
       setLocalSettings((prev) => {
         const next = { ...prev }
@@ -98,7 +92,7 @@ export function EditableSectionRenderer({
     startTransition(() => {
       router.refresh()
     })
-  }, [styleTarget, router, startTransition])
+  }
 
   return (
     <>
@@ -147,37 +141,37 @@ export function EditableSectionRenderer({
       )}
 
       {/* 編集モーダル（動的インポート） */}
-      {editTarget &&
-        (() => {
-          const editorDef = getEditorDefinition(editTarget.sectionType)
-          if (!editorDef) return null
+      {(() => {
+        if (!editTarget) return null
+        const editorDef = getEditorDefinition(editTarget.sectionType)
+        if (!editorDef) return null
 
-          const EditorComponent = editorDef.component
-          const props: BaseSectionEditorProps = {
-            isOpen: true,
-            onClose: handleEditClose,
-            sectionId: editTarget.id,
-            currentData: editTarget.data,
-            ...(editorDef.needsTitle && {
-              currentTitle: editTarget.title ?? undefined,
-            }),
-          }
+        const EditorComponent = editorDef.component
+        const props: BaseSectionEditorProps = {
+          isOpen: true,
+          onClose: handleEditClose,
+          sectionId: editTarget.id,
+          currentData: editTarget.data,
+          ...(editorDef.needsTitle && {
+            currentTitle: editTarget.title ?? undefined,
+          }),
+        }
 
-          return (
-            <Suspense
-              fallback={
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                  <div className="text-center">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">読み込み中...</p>
-                  </div>
+        return (
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                <div className="text-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">読み込み中...</p>
                 </div>
-              }
-            >
-              <EditorComponent {...props} />
-            </Suspense>
-          )
-        })()}
+              </div>
+            }
+          >
+            <EditorComponent {...props} />
+          </Suspense>
+        )
+      })()}
 
       {/* スタイル設定パネル */}
       {styleTarget && (

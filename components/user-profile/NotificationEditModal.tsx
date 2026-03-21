@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import useSWR from 'swr'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
 import { EditModal } from './EditModal'
@@ -36,54 +36,48 @@ export function NotificationEditModal({
   onClose,
   type,
 }: NotificationEditModalProps) {
-  const [notificationData, setNotificationData] = useState<UserNotification | null>(null)
-  const [contactData, setContactData] = useState<UserContact | null>(null)
-  const [giftData, setGiftData] = useState<UserGift | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadData = useCallback(async () => {
-    setError(null)
-    setIsLoading(true)
-    try {
-      if (type === 'bell') {
-        const result = await getUserNotification()
-        if (result.success) {
-          setNotificationData(result.data ?? null)
-        } else {
-          setError(result.error || '読み込みに失敗しました')
-          toast.error('お知らせ設定の読み込みに失敗しました')
-        }
-      } else if (type === 'mail') {
-        const result = await getUserContact()
-        if (result.success) {
-          setContactData(result.data ?? null)
-        } else {
-          setError(result.error || '読み込みに失敗しました')
-          toast.error('連絡方法設定の読み込みに失敗しました')
-        }
-      } else if (type === 'gift') {
-        const result = await getUserGift()
-        if (result.success) {
-          setGiftData(result.data ?? null)
-        } else {
-          setError(result.error || '読み込みに失敗しました')
-          toast.error('ギフト設定の読み込みに失敗しました')
-        }
+  const { data: notificationData, error: notificationError } = useSWR<UserNotification | null>(
+    isOpen && type === 'bell' ? ['notification', type] : null,
+    async () => {
+      const result = await getUserNotification()
+      if (!result.success) {
+        toast.error('お知らせ設定の読み込みに失敗しました')
+        throw new Error(result.error || '読み込みに失敗しました')
       }
-    } catch {
-      setError('エラーが発生しました')
-      toast.error('データの読み込みに失敗しました')
-    } finally {
-      setIsLoading(false)
+      return result.data ?? null
     }
-  }, [type])
+  )
 
-  useEffect(() => {
-    if (isOpen) {
-      loadData()
+  const { data: contactData, error: contactError } = useSWR<UserContact | null>(
+    isOpen && type === 'mail' ? ['notification', type] : null,
+    async () => {
+      const result = await getUserContact()
+      if (!result.success) {
+        toast.error('連絡方法設定の読み込みに失敗しました')
+        throw new Error(result.error || '読み込みに失敗しました')
+      }
+      return result.data ?? null
     }
-  }, [isOpen, loadData])
+  )
+
+  const { data: giftData, error: giftError } = useSWR<UserGift | null>(
+    isOpen && type === 'gift' ? ['notification', type] : null,
+    async () => {
+      const result = await getUserGift()
+      if (!result.success) {
+        toast.error('ギフト設定の読み込みに失敗しました')
+        throw new Error(result.error || '読み込みに失敗しました')
+      }
+      return result.data ?? null
+    }
+  )
+
+  const isLoading =
+    (type === 'bell' && notificationData === undefined && !notificationError) ||
+    (type === 'mail' && contactData === undefined && !contactError) ||
+    (type === 'gift' && giftData === undefined && !giftError)
+
+  const error = notificationError?.message || contactError?.message || giftError?.message || null
 
   const getTitle = () => {
     switch (type) {
@@ -110,18 +104,12 @@ export function NotificationEditModal({
       ) : error ? (
         <div className="flex flex-col items-center justify-center p-8 text-center">
           <p className="text-destructive mb-2">{error}</p>
-          <button
-            onClick={loadData}
-            className="text-sm text-muted-foreground hover:text-foreground underline"
-          >
-            再試行
-          </button>
         </div>
       ) : (
         <>
           {type === 'bell' && (
             <NotificationSettings
-              initialData={notificationData}
+              initialData={notificationData ?? null}
               showLink={false}
               showButton={false}
               compact={true}
@@ -129,7 +117,7 @@ export function NotificationEditModal({
           )}
           {type === 'mail' && (
             <ContactSettings
-              initialData={contactData}
+              initialData={contactData ?? null}
               showLink={false}
               showButton={false}
               showImage={false}
@@ -138,7 +126,7 @@ export function NotificationEditModal({
           )}
           {type === 'gift' && (
             <GiftSettings
-              initialData={giftData}
+              initialData={giftData ?? null}
               compact={true}
             />
           )}

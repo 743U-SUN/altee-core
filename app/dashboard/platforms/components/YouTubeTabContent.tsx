@@ -28,6 +28,7 @@ const RecommendedVideosList = dynamic(
   () => import("./RecommendedVideosList").then((m) => ({ default: m.RecommendedVideosList })),
   { ssr: false }
 )
+import Image from "next/image"
 import Link from "next/link"
 
 interface YouTubeTabContentProps {
@@ -194,12 +195,12 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
                   >
                     <div className="aspect-video bg-muted relative">
                       {video.thumbnail && (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <Image
                           src={video.thumbnail}
                           alt={video.title}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                          fill
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                          className="object-cover group-hover:opacity-90 transition-opacity"
                         />
                       )}
                     </div>

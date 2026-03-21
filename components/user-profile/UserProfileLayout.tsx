@@ -1,11 +1,11 @@
 'use client'
 
-import { memo, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { UserThemeProvider } from '@/components/theme-provider/UserThemeProvider'
 import { ProfileLayout } from '@/components/profile/ProfileLayout'
 import type { ThemeSettings } from '@/types/profile-sections'
-import type { ReactNode, CSSProperties } from 'react'
+import type { ReactNode } from 'react'
 import { ProfileHeader } from './ProfileHeader'
 import { MobileBottomNav } from './MobileBottomNav'
 import { FloatingElements } from './FloatingElements'
@@ -33,7 +33,7 @@ interface UserProfileLayoutProps {
  * 1カラムレイアウト（全デバイス共通）
  * - キャラクター画像はPhase 4でCharacterProfileSectionとして実装予定
  */
-export const UserProfileLayout = memo(function UserProfileLayout({
+export function UserProfileLayout({
   handle,
   themePreset,
   themeSettings,
@@ -48,7 +48,7 @@ export const UserProfileLayout = memo(function UserProfileLayout({
   const background = themeSettings.background
 
   // 背景スタイルを計算
-  const backgroundStyle = useMemo((): CSSProperties => {
+  const backgroundStyle: CSSProperties = (() => {
     if (!background || background.type === 'preset') {
       return { backgroundColor: 'var(--theme-bg)' }
     }
@@ -67,7 +67,7 @@ export const UserProfileLayout = memo(function UserProfileLayout({
     }
 
     return { backgroundColor: 'var(--theme-bg)' }
-  }, [background])
+  })()
 
   return (
     <UserThemeProvider
@@ -105,4 +105,4 @@ export const UserProfileLayout = memo(function UserProfileLayout({
       </ProfileLayout>
     </UserThemeProvider>
   )
-})
+}

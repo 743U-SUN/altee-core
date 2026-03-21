@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ImageIcon } from 'lucide-react'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
@@ -42,7 +42,7 @@ export function ImageHeroSection({ section }: BaseSectionProps) {
       ? sortedSpeeches[speechIndex].text
       : null
 
-  const handleCharacterTap = useCallback(() => {
+  const handleCharacterTap = () => {
     if (sortedSpeeches.length === 0) return
 
     // タイマーリセット
@@ -70,7 +70,7 @@ export function ImageHeroSection({ section }: BaseSectionProps) {
     timerRef.current = setTimeout(() => {
       setShowSpeech(false)
     }, 3000)
-  }, [sortedSpeeches, speechIndex, data.speechDisplayMode])
+  }
 
   // クリーンアップ
   useEffect(() => {

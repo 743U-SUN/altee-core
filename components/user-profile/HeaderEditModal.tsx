@@ -49,7 +49,7 @@ export function HeaderEditModal({
 
         <TabsContent value="avatar" className="mt-4">
           <AvatarEditTab
-            isOpen={isOpen}
+            key={isOpen ? 'open' : 'closed'}
             onClose={onClose}
             currentAvatarImageUrl={currentAvatarImageUrl}
           />
@@ -57,7 +57,7 @@ export function HeaderEditModal({
 
         <TabsContent value="name" className="mt-4">
           <CharacterNameEditTab
-            isOpen={isOpen}
+            key={isOpen ? 'open' : 'closed'}
             onClose={onClose}
             currentCharacterName={currentCharacterName}
           />
@@ -65,7 +65,7 @@ export function HeaderEditModal({
 
         <TabsContent value="namecard" className="mt-4">
           <NamecardEditTab
-            isOpen={isOpen}
+            key={isOpen ? 'open' : 'closed'}
             onClose={onClose}
             currentThemeSettings={currentThemeSettings}
           />

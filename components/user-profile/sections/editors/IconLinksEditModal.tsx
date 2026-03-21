@@ -19,16 +19,8 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { DeleteItemAlertDialog } from './components/DeleteItemAlertDialog'
+import { isSafeUrl } from '@/lib/validations/shared'
 import type { IconLinksData } from '@/types/profile-sections'
 import { useEditableList } from './hooks/useEditableList'
 import { useCustomIcons, resolveIconSelection, getSelectedIconValue } from '@/hooks/use-custom-icons'
@@ -106,6 +98,12 @@ export function IconLinksEditModal({
     const invalidLinks = links.filter((link) => !link.platform.trim() || !link.url.trim())
     if (invalidLinks.length > 0) {
       toast.error('プラットフォーム名またはURLが未入力の項目があります')
+      return
+    }
+
+    const unsafeLinks = links.filter((link) => link.url.trim() && !isSafeUrl(link.url))
+    if (unsafeLinks.length > 0) {
+      toast.error('無効なURLが含まれています')
       return
     }
 
@@ -285,25 +283,11 @@ export function IconLinksEditModal({
         )}
       </div>
 
-      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && cancelDelete()}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>この項目を削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              この操作は保存前であれば取り消せます。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              削除する
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteItemAlertDialog
+        open={!!deleteTargetId}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </EditModal>
   )
 }

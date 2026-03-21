@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { GripVertical, Trash2, Loader2 } from "lucide-react"
+import Image from "next/image"
 import { toast } from "sonner"
 import { deleteRecommendedVideo, reorderRecommendedVideos } from "@/app/actions/social/youtube-actions"
 import {
@@ -192,11 +193,13 @@ function VideoItemCard({ video, onDelete, isDragging, dragHandleProps }: VideoIt
       </button>
 
       <div className="flex-1 min-w-0 flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={`https://img.youtube.com/vi/${video.videoId}/default.jpg`}
           alt="サムネイル"
+          width={80}
+          height={60}
           className="w-20 h-15 object-cover rounded"
+          unoptimized
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">
