@@ -1,8 +1,8 @@
 import {
   getAllCategories,
-  getSectionsByCategory,
-  getAllSectionDefinitions,
-} from '@/lib/sections/registry'
+  getSectionMetadataByCategory as getSectionsByCategory,
+  getAllSectionMetadata as getAllSectionDefinitions,
+} from '@/lib/sections/registry-metadata'
 import type { SectionCategory } from '@/lib/sections/types'
 
 /**

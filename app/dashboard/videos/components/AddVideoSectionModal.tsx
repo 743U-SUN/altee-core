@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { getSectionsByPage, SECTION_REGISTRY, type SectionDefinition } from '@/lib/sections'
+import { getSectionsByPage, SECTION_REGISTRY, type SectionMetadata } from '@/lib/sections'
 import { createSection } from '@/app/actions/user/section-actions'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -129,7 +129,7 @@ export function AddVideoSectionModal({
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-3">
-          {videoSections.map((section: SectionDefinition) => {
+          {videoSections.map((section: SectionMetadata) => {
             const IconComponent = SECTION_ICON_MAP[section.icon]
             const isAddable = canAddSectionType(section.type)
 

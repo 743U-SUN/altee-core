@@ -1,9 +1,11 @@
 /**
  * Markdown Export Utilities
- * 記事をMarkdownファイルとしてエクスポートする機能
+ * 記事をMarkdownファイルとしてエクスポートするサーバー互換ユーティリティ
+ *
+ * ブラウザDOM APIを使うダウンロード処理は lib/markdown-export.client.ts に分離済み。
  */
 
-interface ArticleData {
+export interface ArticleData {
   title: string
   slug: string
   content: string
@@ -20,7 +22,7 @@ interface ArticleData {
 /**
  * 安全なファイル名を生成する
  */
-function sanitizeFilename(filename: string): string {
+export function sanitizeFilename(filename: string): string {
   return filename
     .replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\-_]/g, '_')
     .replace(/_+/g, '_')
@@ -30,15 +32,16 @@ function sanitizeFilename(filename: string): string {
 /**
  * 日付をYYYY-MM-DD形式でフォーマット
  */
-function formatDate(date: Date | string): string {
+export function formatDate(date: Date | string): string {
   const d = new Date(date)
   return d.toISOString().split('T')[0]
 }
 
 /**
- * Markdownファイルの内容を生成
+ * 記事のコンテンツをそのまま返す
+ * （フロントマターなどの付与は行わない）
  */
-function generateMarkdownContent(article: ArticleData): string {
+export function getArticleContentAsMarkdown(article: ArticleData): string {
   return article.content
 }
 
@@ -46,38 +49,10 @@ function generateMarkdownContent(article: ArticleData): string {
  * ファイル名を生成
  * 形式: {slug}-{YYYY-MM-DD}.md
  */
-function generateFilename(article: ArticleData): string {
+export function generateFilename(article: ArticleData): string {
   const date = formatDate(article.createdAt)
   const slug = sanitizeFilename(article.slug)
   return `${slug}-${date}.md`
-}
-
-/**
- * ブラウザでMarkdownファイルをダウンロード
- */
-export function downloadMarkdownFile(article: ArticleData): void {
-  try {
-    const content = generateMarkdownContent(article)
-    const filename = generateFilename(article)
-    
-    // BlobでMarkdownファイルを作成
-    const blob = new Blob([content], {
-      type: 'text/markdown;charset=utf-8'
-    })
-    
-    // ダウンロード実行
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Markdown export error:', error)
-    throw new Error('ファイルのエクスポートに失敗しました')
-  }
 }
 
 /**

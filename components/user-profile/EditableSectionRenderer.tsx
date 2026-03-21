@@ -9,7 +9,7 @@ import type {
   SectionSettings,
   SectionBackgroundPreset,
 } from '@/types/profile-sections'
-import { getSectionDefinition } from '@/lib/sections'
+import { getSectionDefinition } from '@/lib/sections/registry'
 import { getEditorDefinition } from '@/lib/sections/editor-registry'
 import { resolvePreset } from '@/lib/sections/background-utils'
 import { SectionBand } from '@/components/profile/SectionBand'

@@ -1,10 +1,14 @@
-'use client'
+/**
+ * セクションレジストリ - メタデータのみ（サーバー互換）
+ *
+ * React.lazy() を含まないため、Server Actions・Server Components から安全にインポートできる。
+ * コンポーネントを含むフルの SECTION_REGISTRY は lib/sections/registry.ts ('use client') を参照。
+ */
 
-import { lazy } from 'react'
 import type {
-  SectionDefinition,
-  SectionCategoryDefinition,
+  SectionMetadata,
   SectionCategory,
+  SectionCategoryDefinition,
 } from './types'
 
 /**
@@ -12,20 +16,51 @@ import type {
  */
 export type SectionCategoryKey = SectionCategory
 
-// カテゴリ定義・ユーティリティ関数はメタデータモジュールから再エクスポート
-export {
-  SECTION_CATEGORIES,
-  getCategoryDefinition,
-  getAllCategories,
-} from './registry-metadata'
-
-export type { SectionCategoryDefinition }
+/**
+ * セクションカテゴリ定義
+ */
+export const SECTION_CATEGORIES: Record<SectionCategory, SectionCategoryDefinition> = {
+  main: {
+    label: 'メインコンテンツ',
+    icon: 'User',
+    description: 'プロフィール・キャラクター情報',
+  },
+  image: {
+    label: '画像コンテンツ',
+    icon: 'Image',
+    description: 'バナー・ギャラリー・装飾画像',
+  },
+  links: {
+    label: 'リンク',
+    icon: 'Link',
+    description: 'SNS・Webサイトへのリンク',
+  },
+  content: {
+    label: 'テキストコンテンツ',
+    icon: 'FileText',
+    description: '説明文・Q&A・長文',
+  },
+  data: {
+    label: 'データ・グラフ',
+    icon: 'BarChart2',
+    description: 'スキル・数値の視覚化',
+  },
+  video: {
+    label: '動画',
+    icon: 'Video',
+    description: 'YouTube動画・ギャラリー',
+  },
+  structure: {
+    label: '構造',
+    icon: 'Heading',
+    description: '見出し・区切り・余白',
+  },
+}
 
 /**
- * セクション登録マップ
- * 各セクションに priority, fullBleed を設定し、component を lazy() でラップ
+ * セクションメタデータ登録マップ（コンポーネントなし）
  */
-export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
+export const SECTION_METADATA_REGISTRY: Record<string, SectionMetadata> = {
   'profile-card': {
     type: 'profile-card',
     label: 'プロフィール',
@@ -33,7 +68,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: '名前と自己紹介',
     category: 'main',
     priority: 'high',
-    component: lazy(() => import('@/components/user-profile/sections/ProfileCardSection').then(m => ({ default: m.ProfileCardSection }))),
     defaultData: {
       characterName: 'Character Name',
       bio: 'Tagline / Catch Copy',
@@ -50,7 +84,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     category: 'main',
     priority: 'high',
     maxInstances: 1,
-    component: lazy(() => import('@/components/user-profile/sections/CharacterProfileSection').then(m => ({ default: m.CharacterProfileSection }))),
     defaultData: {
       name: 'Character Name',
       tagline: 'Tagline / Catch Copy',
@@ -68,7 +101,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'よくある質問',
     category: 'content',
     priority: 'medium',
-    component: lazy(() => import('@/components/user-profile/sections/FAQSection').then(m => ({ default: m.FAQSection }))),
     defaultData: { questions: [] },
   },
   links: {
@@ -78,7 +110,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'SNS・Webサイトリンク',
     category: 'links',
     priority: 'medium',
-    component: lazy(() => import('@/components/user-profile/sections/LinksSection').then(m => ({ default: m.LinksSection }))),
     defaultData: { items: [] },
   },
   'icon-links': {
@@ -88,7 +119,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'SNS・連絡先のコンパクト表示',
     category: 'links',
     priority: 'medium',
-    component: lazy(() => import('@/components/user-profile/sections/IconLinksSection').then(m => ({ default: m.IconLinksSection }))),
     defaultData: { items: [] },
   },
   'link-list': {
@@ -98,7 +128,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'リンク一覧（カード形式）',
     category: 'links',
     priority: 'low',
-    component: lazy(() => import('@/components/user-profile/sections/LinkListSection').then(m => ({ default: m.LinkListSection }))),
     defaultData: { items: [] },
   },
   header: {
@@ -108,7 +137,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'セクションの区切り',
     category: 'structure',
     priority: 'medium',
-    component: lazy(() => import('@/components/user-profile/sections/HeaderSection').then(m => ({ default: m.HeaderSection }))),
     defaultData: { text: '見出し', level: 'h2' },
   },
   'long-text': {
@@ -118,7 +146,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'マークダウン対応の詳細テキスト',
     category: 'content',
     priority: 'low',
-    component: lazy(() => import('@/components/user-profile/sections/LongTextSection').then(m => ({ default: m.LongTextSection }))),
     defaultData: { content: '' },
   },
   'bar-graph': {
@@ -128,7 +155,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'スキルや数値の視覚化',
     category: 'data',
     priority: 'medium',
-    component: lazy(() => import('@/components/user-profile/sections/BarGraphSection').then(m => ({ default: m.BarGraphSection }))),
     defaultData: { items: [] },
   },
   'circular-stat': {
@@ -138,7 +164,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'ステータスや比率の円グラフ表示',
     category: 'data',
     priority: 'medium',
-    component: lazy(() => import('@/components/user-profile/sections/CircularStatSection').then(m => ({ default: m.CircularStatSection }))),
     defaultData: {
       items: [
         { id: 'sample-1', value: 80, centerChar: 'A', iconName: 'Zap', label: 'STR', color: '#f87171', sortOrder: 0 },
@@ -156,7 +181,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     fullBleed: true,
     priority: 'high',
     maxInstances: 1,
-    component: lazy(() => import('@/components/user-profile/sections/ImageHeroSection').then(m => ({ default: m.ImageHeroSection }))),
     defaultData: {
       item: {
         id: '',
@@ -181,7 +205,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     category: 'image',
     priority: 'low',
     maxInstances: 1,
-    component: lazy(() => import('@/components/user-profile/sections/ImageGrid2Section').then(m => ({ default: m.ImageGrid2Section }))),
     defaultData: {
       items: [
         { id: '', imageKey: undefined, title: '', subtitle: '', overlayText: '', linkUrl: '', sortOrder: 0 },
@@ -197,7 +220,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     category: 'image',
     priority: 'low',
     maxInstances: 1,
-    component: lazy(() => import('@/components/user-profile/sections/ImageGrid3Section').then(m => ({ default: m.ImageGrid3Section }))),
     defaultData: {
       items: [
         { id: '', imageKey: undefined, title: '', subtitle: '', overlayText: '', linkUrl: '', sortOrder: 0 },
@@ -213,7 +235,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'Youtube動画を埋め込み',
     category: 'video',
     priority: 'low',
-    component: lazy(() => import('@/components/user-profile/sections/YoutubeSection').then(m => ({ default: m.YoutubeSection }))),
     defaultData: {
       url: '',
       videoId: '',
@@ -229,7 +250,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: '1週間の予定表',
     category: 'content',
     priority: 'low',
-    component: lazy(() => import('@/components/user-profile/sections/WeeklyScheduleSection').then(m => ({ default: m.WeeklyScheduleSection }))),
     defaultData: {
       startDate: '',
       schedules: ['', '', '', '', '', '', ''],
@@ -242,7 +262,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: '時系列での活動・歴史',
     category: 'content',
     priority: 'low',
-    component: lazy(() => import('@/components/user-profile/sections/TimelineSection').then(m => ({ default: m.TimelineSection }))),
     defaultData: {
       items: [
         {
@@ -264,7 +283,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     category: 'content',
     priority: 'medium',
     maxInstances: 1,
-    component: lazy(() => import('@/components/user-profile/sections/NewsSection').then(m => ({ default: m.NewsSection }))),
     defaultData: {},
   },
   'video-gallery': {
@@ -274,7 +292,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     description: 'YouTube動画をギャラリー形式で表示',
     category: 'video',
     priority: 'low',
-    component: lazy(() => import('@/components/user-profile/sections/VideoGallerySection').then(m => ({ default: m.VideoGallerySection }))),
     defaultData: { items: [] },
   },
   'videos-profile': {
@@ -286,7 +303,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     priority: 'high',
     maxInstances: 1,
     page: 'videos',
-    component: lazy(() => import('@/components/user-profile/sections/VideosProfileSection').then(m => ({ default: m.VideosProfileSection }))),
     defaultData: {
       title: '動画',
       description: '',
@@ -301,7 +317,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     priority: 'medium',
     maxInstances: 1,
     page: 'videos',
-    component: lazy(() => import('@/components/user-profile/sections/YouTubeLatestSection').then(m => ({ default: m.YouTubeLatestSection }))),
     defaultData: {
       channelId: '',
       rssFeedLimit: 6,
@@ -316,7 +331,6 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     priority: 'medium',
     maxInstances: 1,
     page: 'videos',
-    component: lazy(() => import('@/components/user-profile/sections/YouTubeRecommendedSection').then(m => ({ default: m.YouTubeRecommendedSection }))),
     defaultData: {
       items: [],
     },
@@ -329,50 +343,72 @@ export const SECTION_REGISTRY: Record<string, SectionDefinition> = {
     category: 'video',
     priority: 'medium',
     page: 'videos',
-    component: lazy(() => import('@/components/user-profile/sections/NiconicoRecommendedSection').then(m => ({ default: m.NiconicoRecommendedSection }))),
     defaultData: {
       items: [],
     },
   },
 }
 
-// モジュールレベルでキャッシュ
-const _allDefinitions = Object.values(SECTION_REGISTRY)
+// モジュールレベルでキャッシュ（毎回 Object.values() を呼ばない）
+const _allMetadata = Object.values(SECTION_METADATA_REGISTRY)
 
 /**
- * セクション定義を取得
+ * セクションメタデータを取得
  */
-export function getSectionDefinition(
+export function getSectionMetadata(
   sectionType: string
-): SectionDefinition | undefined {
-  return SECTION_REGISTRY[sectionType]
+): SectionMetadata | undefined {
+  return SECTION_METADATA_REGISTRY[sectionType]
 }
 
 /**
- * 全てのセクション定義を取得
+ * 全てのセクションメタデータを取得
  */
-export function getAllSectionDefinitions(): SectionDefinition[] {
-  return _allDefinitions
+export function getAllSectionMetadata(): SectionMetadata[] {
+  return _allMetadata
 }
 
 /**
- * カテゴリ別にセクション定義を取得
+ * カテゴリ別にセクションメタデータを取得
  */
-export function getSectionsByCategory(
+export function getSectionMetadataByCategory(
   category: SectionCategory
-): SectionDefinition[] {
-  return _allDefinitions.filter((section) => section.category === category)
+): SectionMetadata[] {
+  return _allMetadata.filter((s) => s.category === category)
 }
 
 /**
- * ページ別にセクション定義を取得
+ * カテゴリ定義を取得
  */
-export function getSectionsByPage(page: 'profile' | 'videos'): SectionDefinition[] {
+export function getCategoryDefinition(
+  category: SectionCategory
+): SectionCategoryDefinition | undefined {
+  return SECTION_CATEGORIES[category]
+}
+
+// モジュールレベルでキャッシュ
+const _allCategories = Object.entries(SECTION_CATEGORIES).map(([key, definition]) => ({
+  key: key as SectionCategory,
+  definition,
+}))
+
+/**
+ * 全てのカテゴリ定義を取得
+ */
+export function getAllCategories(): Array<{
+  key: SectionCategory
+  definition: SectionCategoryDefinition
+}> {
+  return _allCategories
+}
+
+/**
+ * ページ別にセクションメタデータを取得
+ */
+export function getSectionMetadataByPage(page: 'profile' | 'videos'): SectionMetadata[] {
   if (page === 'videos') {
-    return _allDefinitions.filter((section) => section.page === 'videos')
+    return _allMetadata.filter((s) => s.page === 'videos')
   }
   // profile: page未指定（undefined）またはpage='profile'
-  return _allDefinitions.filter(
-    (section) => !section.page || section.page === 'profile'
-  )
+  return _allMetadata.filter((s) => !s.page || s.page === 'profile')
 }

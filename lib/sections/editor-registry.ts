@@ -1,3 +1,5 @@
+'use client'
+
 import { lazy, type ComponentType } from 'react'
 import type { BaseSectionEditorProps } from '@/types/profile-sections'
 

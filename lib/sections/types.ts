@@ -44,6 +44,25 @@ export interface SectionDefinition {
 }
 
 /**
+ * セクションメタデータ（サーバー互換）
+ * component を含まない、サーバーサイドで安全に使えるセクション情報
+ */
+export interface SectionMetadata {
+  type: string
+  label: string
+  description: string
+  icon: string // Lucide icon name
+  category: SectionCategory
+  fullBleed?: boolean
+  maxInstances?: number
+  page?: 'profile' | 'videos'
+  priority: SectionPriority
+  defaultData: unknown
+  defaultSettings?: SectionSettings
+  validate?: (data: unknown) => boolean
+}
+
+/**
  * セクションカテゴリ定義
  */
 export interface SectionCategoryDefinition {

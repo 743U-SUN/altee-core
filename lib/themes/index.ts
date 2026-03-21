@@ -36,5 +36,5 @@ export {
 // 互換性レイヤー
 export { migrateLegacyThemeId, isLegacyThemeId } from './compat'
 
-// プレビュー機能
-export { applyThemePreview, applyVariablesPreview } from './preview'
+// プレビュー機能は 'use client' モジュール専用のため、バレルからは除外
+// 使用箇所: import { applyThemePreview, applyVariablesPreview } from '@/lib/themes/preview'

@@ -21,7 +21,8 @@ import Link from "next/link"
 import { deleteArticle, toggleArticlePublished, getArticle } from "@/app/actions/content/article-actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { downloadMarkdownFile, createExportDataFromArticle } from "@/lib/markdown-export"
+import { createExportDataFromArticle } from "@/lib/markdown-export"
+import { downloadMarkdownFile } from "@/lib/markdown-export.client"
 import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import type { ArticleSummary, Pagination } from './types'
 
