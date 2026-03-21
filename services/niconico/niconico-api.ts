@@ -1,3 +1,4 @@
+import 'server-only'
 import { XMLParser } from 'fast-xml-parser'
 import {
   NICONICO_VIDEO_ID_PATTERN,

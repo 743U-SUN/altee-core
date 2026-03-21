@@ -68,7 +68,26 @@ export const itemSchema = z.object({
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),
-  amazonImageUrl: z.string().url().nullish().or(z.literal('')).transform((val) => (val === '' ? undefined : val)),
+  amazonImageUrl: z
+    .string()
+    .url('正しいURLを入力してください')
+    .refine(
+      (val) => {
+        try {
+          const { hostname } = new URL(val)
+          return (
+            hostname.endsWith('.amazon.co.jp') ||
+            hostname.endsWith('.amazon.com') ||
+            hostname.endsWith('.media-amazon.com') ||
+            hostname.endsWith('.ssl-images-amazon.com')
+          )
+        } catch { return false }
+      },
+      { message: 'Amazon画像URLを入力してください' }
+    )
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
   customImageUrl: z
     .string()
     .url('正しいURLを入力してください')

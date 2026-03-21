@@ -20,47 +20,78 @@ export async function getDashboardNews(userId: string) {
 }
 
 /**
+ * Prisma の JsonValue 型を UserSection の settings 型に変換
+ */
+function toUserSection(row: {
+  id: string
+  userId: string
+  sectionType: string
+  title: string | null
+  page: string
+  sortOrder: number
+  isVisible: boolean
+  data: unknown
+  settings: unknown
+  createdAt: Date
+  updatedAt: Date
+}): UserSection {
+  return row as UserSection
+}
+
+/**
  * ダッシュボード用: ニュースセクション取得（なければ作成）
- * UserSection には userId+page+sectionType のユニーク制約がないため findFirst + create を使用
+ * findFirst + create をトランザクションでラップして重複作成を防止
  */
 export async function getDashboardNewsSection(userId: string): Promise<UserSection> {
-  const existing = await prisma.userSection.findFirst({
-    where: {
-      userId,
-      page: 'news',
-      sectionType: 'news-list',
-    },
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.userSection.findFirst({
+      where: {
+        userId,
+        page: 'news',
+        sectionType: 'news-list',
+      },
+    })
+
+    if (existing) return toUserSection(existing)
+
+    const created = await tx.userSection.create({
+      data: {
+        userId,
+        sectionType: 'news-list',
+        page: 'news',
+        title: null,
+        sortOrder: 0,
+        isVisible: true,
+        data: {},
+        settings: null as never,
+      },
+    })
+
+    return toUserSection(created)
   })
-
-  if (existing) return existing as unknown as UserSection
-
-  return prisma.userSection.create({
-    data: {
-      userId,
-      sectionType: 'news-list',
-      page: 'news',
-      title: null,
-      sortOrder: 0,
-      isVisible: true,
-      data: {},
-      settings: null as never,
-    },
-  }) as unknown as UserSection
 }
 
 const slugSchema = z.string().min(1).max(200)
 
 /**
- * 公開ニュース一覧取得（ハンドル指定、認証不要）
+ * 公開ページ用: ハンドルからアクティブなユーザーを取得（キャッシュ付き）
+ * getPublicNewsByHandle / getPublicNewsSection で同一ハンドルの重複クエリを防止
  */
-export const getPublicNewsByHandle = cache(async (handle: string) => {
+const getPublicUserByHandle = cache(async (handle: string) => {
   const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
 
-  const user = await prisma.user.findUnique({
+  return prisma.user.findUnique({
     where: { handle: normalized },
     select: { id: true, isActive: true },
   })
+})
+
+/**
+ * 公開ニュース一覧取得（ハンドル指定、認証不要）
+ */
+export const getPublicNewsByHandle = cache(async (handle: string) => {
+  const user = await getPublicUserByHandle(handle)
 
   if (!user || !user.isActive) return []
 
@@ -81,13 +112,7 @@ export const getPublicNewsByHandle = cache(async (handle: string) => {
  * 公開ニュースセクション取得（ハンドル指定、認証不要）
  */
 export const getPublicNewsSection = cache(async (handle: string): Promise<UserSection | null> => {
-  const validatedHandle = queryHandleSchema.parse(handle)
-  const normalized = normalizeHandle(validatedHandle)
-
-  const user = await prisma.user.findUnique({
-    where: { handle: normalized },
-    select: { id: true, isActive: true },
-  })
+  const user = await getPublicUserByHandle(handle)
 
   if (!user || !user.isActive) return null
 
@@ -100,18 +125,19 @@ export const getPublicNewsSection = cache(async (handle: string): Promise<UserSe
     },
   })
 
-  return section as UserSection | null
+  return section ? toUserSection(section) : null
 })
 
 /**
  * 公開ニュース個別記事取得（ハンドル+slug、認証不要）
  */
 export const getPublicNewsArticle = cache(async (handle: string, slug: string) => {
-  const validatedHandle = queryHandleSchema.parse(handle)
-  const validatedSlug = slugSchema.parse(slug)
-  const normalized = normalizeHandle(validatedHandle)
+  // Finding B: decode BEFORE validation so the validated value matches what's stored in DB
+  const decodedSlug = decodeURIComponent(slug)
+  const validatedSlug = slugSchema.parse(decodedSlug)
 
-  const decodedSlug = decodeURIComponent(validatedSlug)
+  const validatedHandle = queryHandleSchema.parse(handle)
+  const normalized = normalizeHandle(validatedHandle)
 
   const user = await prisma.user.findUnique({
     where: { handle: normalized },
@@ -127,7 +153,7 @@ export const getPublicNewsArticle = cache(async (handle: string, slug: string) =
   const news = await prisma.userNews.findFirst({
     where: {
       userId: user.id,
-      slug: decodedSlug,
+      slug: validatedSlug,
       published: true,
       adminHidden: false,
     },

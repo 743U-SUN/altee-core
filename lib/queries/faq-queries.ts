@@ -21,6 +21,7 @@ export const getDashboardFaqCategories = cache(async (userId: string) => {
 
 /**
  * 公開FAQ取得（ハンドルから）
+ * ユーザー検索とFAQカテゴリ取得を1クエリに統合
  */
 export const getPublicFaqByHandle = cache(async (
   handle: string
@@ -31,27 +32,28 @@ export const getPublicFaqByHandle = cache(async (
   try {
     const user = await prisma.user.findUnique({
       where: { handle: normalized },
-      select: { id: true, isActive: true },
+      select: {
+        id: true,
+        isActive: true,
+        faqCategories: {
+          where: { isVisible: true },
+          include: {
+            questions: {
+              where: { isVisible: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
     })
 
     if (!user || !user.isActive) {
       return { success: false, error: 'ユーザーが見つかりません' }
     }
 
-    const categories = await prisma.faqCategory.findMany({
-      where: { userId: user.id, isVisible: true },
-      include: {
-        questions: {
-          where: { isVisible: true },
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
-      orderBy: { sortOrder: 'asc' },
-    })
-
-    return { success: true, data: categories }
-  } catch (error) {
-    console.error('公開FAQ取得エラー:', error)
+    return { success: true, data: user.faqCategories }
+  } catch {
     return { success: false, error: 'FAQの取得に失敗しました' }
   }
 })

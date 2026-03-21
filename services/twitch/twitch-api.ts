@@ -15,7 +15,6 @@ async function getTwitchAppAccessToken(): Promise<string | null> {
   const clientSecret = process.env.TWITCH_CLIENT_SECRET
 
   if (!clientId || !clientSecret) {
-    console.error("[Twitch API] Missing TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET")
     return null
   }
 
@@ -33,14 +32,12 @@ async function getTwitchAppAccessToken(): Promise<string | null> {
     })
 
     if (!response.ok) {
-      console.error("[Twitch API] Failed to get app access token:", response.status)
       return null
     }
 
     const data = await response.json()
     return data.access_token
-  } catch (error) {
-    console.error("[Twitch API] Error getting app access token:", error)
+  } catch {
     return null
   }
 }
@@ -69,7 +66,6 @@ export async function getTwitchUserId(username: string): Promise<{
     })
 
     if (!response.ok) {
-      console.error("[Twitch API] Failed to get user ID:", response.status)
       return { success: false, error: `Failed to get user ID: ${response.status}` }
     }
 
@@ -80,8 +76,7 @@ export async function getTwitchUserId(username: string): Promise<{
     }
 
     return { success: true, userId: data.data[0].id }
-  } catch (error) {
-    console.error("[Twitch API] Error getting user ID:", error)
+  } catch {
     return { success: false, error: "Failed to get user ID" }
   }
 }
@@ -111,7 +106,8 @@ export async function createTwitchEventSub(
     // stream.online と stream.offline の2つのサブスクリプションを並列作成
     const subscriptionTypes = ["stream.online", "stream.offline"]
 
-    const results = await Promise.all(subscriptionTypes.map(async (type) => {
+    // API呼び出しを先に並列実行してサブスクリプション情報を取得
+    const subscriptionData = await Promise.all(subscriptionTypes.map(async (type) => {
       const response = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
         method: "POST",
         headers: {
@@ -134,8 +130,6 @@ export async function createTwitchEventSub(
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`[Twitch EventSub] Failed to create ${type} subscription:`, errorText)
         throw new Error(`Failed to create EventSub subscription: ${response.status}`)
       }
 
@@ -147,23 +141,18 @@ export async function createTwitchEventSub(
         throw new Error("No subscription ID returned")
       }
 
-      return prisma.twitchEventSubSubscription.create({
-        data: {
-          userId,
-          subscriptionId,
-          type,
-          status: status || "unknown",
-        },
-      })
+      return { userId, subscriptionId, type, status: status || "unknown" }
     }))
 
-    if (results.length !== subscriptionTypes.length) {
-      return { success: false, error: "Not all subscriptions were created" }
-    }
+    // DB書き込みをトランザクションでまとめて実行（原子性を保証）
+    await prisma.$transaction(
+      subscriptionData.map((d) =>
+        prisma.twitchEventSubSubscription.create({ data: d })
+      )
+    )
 
     return { success: true }
-  } catch (error) {
-    console.error("[Twitch EventSub] Error creating subscription:", error)
+  } catch {
     return { success: false, error: "Failed to create EventSub subscription" }
   }
 }
@@ -188,9 +177,9 @@ export async function deleteTwitchEventSub(userId: string): Promise<{
       where: { userId },
     })
 
-    // 各サブスクリプションをTwitch APIから並列削除
-    await Promise.allSettled(subscriptions.map(async (subscription) => {
-      const response = await fetch(
+    // 各サブスクリプションをTwitch APIから並列削除（失敗しても続行）
+    await Promise.allSettled(subscriptions.map((subscription) =>
+      fetch(
         `https://api.twitch.tv/helix/eventsub/subscriptions?id=${encodeURIComponent(subscription.subscriptionId)}`,
         {
           method: "DELETE",
@@ -200,11 +189,7 @@ export async function deleteTwitchEventSub(userId: string): Promise<{
           },
         }
       )
-
-      if (!response.ok) {
-        console.error(`[Twitch EventSub] Failed to delete subscription ${subscription.subscriptionId}:`, response.status)
-      }
-    }))
+    ))
 
     // データベースから削除
     await prisma.twitchEventSubSubscription.deleteMany({
@@ -212,8 +197,7 @@ export async function deleteTwitchEventSub(userId: string): Promise<{
     })
 
     return { success: true }
-  } catch (error) {
-    console.error("[Twitch EventSub] Error deleting subscriptions:", error)
+  } catch {
     return { success: false, error: "Failed to delete EventSub subscriptions" }
   }
 }
@@ -241,8 +225,7 @@ export async function getTwitchEventSubStatus(userId: string): Promise<{
       isSubscribed: subscriptions.length > 0,
       subscriptions,
     }
-  } catch (error) {
-    console.error("[Twitch EventSub] Error getting subscription status:", error)
+  } catch {
     return { success: false, isSubscribed: false, error: "Failed to get subscription status" }
   }
 }

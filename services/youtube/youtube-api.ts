@@ -3,6 +3,7 @@
  * YouTube oEmbed API と RSS Feed の取得を担当
  */
 
+import 'server-only'
 import { XMLParser } from "fast-xml-parser"
 import { RSS_FEED_CACHE_SECONDS } from "./constants"
 
@@ -22,7 +23,6 @@ export async function fetchYoutubeVideoMetadata(videoId: string): Promise<{
     const response = await fetch(oembedUrl)
 
     if (!response.ok) {
-      console.error("[YouTube oEmbed API] Response not OK:", response.status)
       return {
         success: false,
         error: "動画情報の取得に失敗しました"
@@ -36,8 +36,7 @@ export async function fetchYoutubeVideoMetadata(videoId: string): Promise<{
       title: data.title || undefined,
       thumbnail: data.thumbnail_url || undefined,
     }
-  } catch (error) {
-    console.error("[YouTube oEmbed API] Error:", error)
+  } catch {
     return {
       success: false,
       error: "動画情報の取得中にエラーが発生しました"
@@ -79,7 +78,6 @@ export async function fetchYoutubeRssFeed(
     })
 
     if (!response.ok) {
-      console.error("[YouTube RSS Feed] Response not OK:", response.status, response.statusText)
       return { success: false, error: "RSS Feedの取得に失敗しました" }
     }
 
@@ -110,8 +108,7 @@ export async function fetchYoutubeRssFeed(
     }))
 
     return { success: true, data: videos }
-  } catch (error) {
-    console.error("[YouTube RSS Feed] Error:", error)
+  } catch {
     return { success: false, error: "RSS Feedの解析に失敗しました" }
   }
 }

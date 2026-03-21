@@ -106,7 +106,17 @@ export type BasicInfoInput = z.infer<typeof basicInfoSchema>
 
 const safeUrlSchema = z.string()
   .url("URLの形式が正しくありません")
-  .refine(val => /^https?:\/\//.test(val), { message: "URLはhttp://またはhttps://で始まる必要があります" })
+  .refine(val => /^https:\/\//.test(val), { message: "URLはhttps://で始まる必要があります" })
+  .refine(
+    (val) => {
+      try {
+        const { hostname } = new URL(val)
+        // プライベート・内部ネットワークのIPアドレスを拒否
+        return !/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostname)
+      } catch { return false }
+    },
+    { message: "無効なURLです" }
+  )
 
 const platformAccountSchema = z.object({
   platform: z.enum(PLATFORM_OPTIONS.map((o) => o.value) as [string, ...string[]]),

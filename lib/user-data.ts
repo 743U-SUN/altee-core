@@ -1,3 +1,4 @@
+import 'server-only'
 import { cache } from 'react'
 import { cachedAuth } from '@/lib/auth'
 import { resolveAvatarUrl } from '@/lib/avatar-utils'
