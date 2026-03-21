@@ -5,10 +5,10 @@ import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import type { ThemeSettings, BackgroundSettings } from '@/types/profile-sections'
-import { DEFAULT_THEME_SETTINGS } from '@/types/profile-sections'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { hasTheme } from '@/lib/themes/registry'
 import { migrateLegacyThemeId } from '@/lib/themes/compat'
+import { getUserThemeSettings } from '@/lib/queries/theme-queries'
 
 // 許可されたフォント（FontSelector.tsx と同期）
 const ALLOWED_FONTS = [
@@ -38,27 +38,6 @@ const themeSettingsSchema = z.object({
     })
     .optional(),
 })
-
-/**
- * ユーザーのテーマ設定を取得
- */
-export async function getUserThemeSettings(
-  userId: string
-): Promise<ThemeSettings | null> {
-  try {
-    const profile = await prisma.userProfile.findUnique({
-      where: { userId },
-      select: { themeSettings: true },
-    })
-
-    return (
-      (profile?.themeSettings as unknown as ThemeSettings) ??
-      DEFAULT_THEME_SETTINGS
-    )
-  } catch {
-    return null
-  }
-}
 
 /**
  * テーマ設定を更新

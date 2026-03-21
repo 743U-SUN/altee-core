@@ -8,7 +8,7 @@ import { ThemePresetSelector } from './components/ThemePresetSelector'
 import { VisibilityToggles } from './components/VisibilityToggles'
 import { BackgroundSelector } from './components/BackgroundSelector'
 import { ColorPresetSelector } from './components/ColorPresetSelector'
-import { getUserThemeSettings } from '@/app/actions/user/theme-actions'
+import { getUserThemeSettings } from '@/lib/queries/theme-queries'
 import { DEFAULT_THEME_SETTINGS } from '@/types/profile-sections'
 import { Type, Palette, Eye, Edit, ImageIcon, Pipette, HelpCircle } from 'lucide-react'
 

@@ -9,7 +9,7 @@ import { SECTION_REGISTRY } from '@/lib/sections'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { sectionSettingsSchema } from '@/lib/validations/section-settings'
 import { unsubscribeFromYoutubePush } from '@/services/youtube/youtube-pubsubhubbub'
-import { cuidArraySchema } from '@/lib/validations/shared'
+import { cuidSchema, cuidArraySchema } from '@/lib/validations/shared'
 
 const VALID_PAGES = ['profile', 'videos'] as const
 type SectionPage = (typeof VALID_PAGES)[number]
@@ -275,10 +275,11 @@ export async function updateSection(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await requireAuth()
+    const validatedSectionId = cuidSchema.parse(sectionId)
 
     // セクションの所有者確認
     const section = await prisma.userSection.findUnique({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       select: { userId: true, page: true },
     })
 
@@ -294,7 +295,7 @@ export async function updateSection(
     }
 
     await prisma.userSection.update({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.isVisible !== undefined && { isVisible: data.isVisible }),
@@ -322,10 +323,11 @@ export async function deleteSection(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await requireAuth()
+    const validatedSectionId = cuidSchema.parse(sectionId)
 
     // セクションの所有者確認 + データ取得（画像クリーンアップ用）
     const section = await prisma.userSection.findUnique({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       select: { userId: true, sectionType: true, data: true },
     })
 
@@ -351,7 +353,7 @@ export async function deleteSection(
     }
 
     await prisma.userSection.delete({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
     })
 
     revalidatePath(`/@${session.user.handle}`)
@@ -414,6 +416,7 @@ export async function updateSectionSettings(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await requireAuth()
+    const validatedSectionId = cuidSchema.parse(sectionId)
 
     // 入力バリデーション
     if (settings !== null) {
@@ -425,7 +428,7 @@ export async function updateSectionSettings(
 
     // セクションの所有者確認
     const section = await prisma.userSection.findUnique({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       select: { userId: true },
     })
 
@@ -434,7 +437,7 @@ export async function updateSectionSettings(
     }
 
     await prisma.userSection.update({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       data: { settings: settings as never },
     })
 
@@ -456,10 +459,11 @@ export async function moveSectionOrder(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await requireAuth()
+    const validatedSectionId = cuidSchema.parse(sectionId)
 
     // セクションの所有者確認と現在の情報を取得
     const section = await prisma.userSection.findUnique({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       select: { userId: true, sortOrder: true, page: true },
     })
 
@@ -474,7 +478,7 @@ export async function moveSectionOrder(
       select: { id: true, sortOrder: true },
     })
 
-    const currentIndex = allSections.findIndex((s) => s.id === sectionId)
+    const currentIndex = allSections.findIndex((s) => s.id === validatedSectionId)
     if (currentIndex === -1) {
       return { success: false, error: 'セクションが見つかりません' }
     }
@@ -492,7 +496,7 @@ export async function moveSectionOrder(
     const targetSection = allSections[targetIndex]
     await prisma.$transaction([
       prisma.userSection.update({
-        where: { id: sectionId },
+        where: { id: validatedSectionId },
         data: { sortOrder: targetSection.sortOrder },
       }),
       prisma.userSection.update({
