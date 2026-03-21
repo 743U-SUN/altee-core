@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -6,7 +7,7 @@ import { CategoryList } from './components/CategoryList'
 import { Skeleton } from '@/components/ui/skeleton'
 import { requireAdmin } from '@/lib/auth'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'カテゴリ管理 | 管理画面',
   description: 'アイテムカテゴリの管理',
 }

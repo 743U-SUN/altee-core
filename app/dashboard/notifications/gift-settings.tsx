@@ -5,6 +5,16 @@ import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { InlineEdit } from "@/components/inline-edit"
 import { ImageUploader } from "@/components/image-uploader/image-uploader"
 import { PRESET_AVATAR } from "@/lib/image-uploader/image-processing-presets"
@@ -20,6 +30,7 @@ interface GiftSettingsProps {
 
 export function GiftSettings({ initialData, compact = false }: GiftSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isEnabled, setIsEnabled] = useState(initialData?.isEnabled ?? false)
   const [linkUrl, setLinkUrl] = useState(initialData?.linkUrl ?? '')
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(
@@ -133,11 +144,7 @@ export function GiftSettings({ initialData, compact = false }: GiftSettingsProps
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm('ギフト設定を削除しますか？この操作は取り消せません。')) {
-      return
-    }
-
+  const handleDeleteConfirm = async () => {
     setIsSubmitting(true)
     try {
       const result = await deleteUserGift()
@@ -222,7 +229,7 @@ export function GiftSettings({ initialData, compact = false }: GiftSettingsProps
             <Button
               type="button"
               variant="destructive"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteDialog(true)}
               disabled={isSubmitting}
             >
               設定を削除
@@ -230,6 +237,26 @@ export function GiftSettings({ initialData, compact = false }: GiftSettingsProps
           )}
         </div>
       )}
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ギフト設定を削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

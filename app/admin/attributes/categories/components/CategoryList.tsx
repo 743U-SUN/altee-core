@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ interface CategoryListProps {
 export function CategoryList({ categories, pagination }: CategoryListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const handleDeleteClick = (category: Category) => {
@@ -30,21 +30,21 @@ export function CategoryList({ categories, pagination }: CategoryListProps) {
     setDeleteDialogOpen(true)
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!categoryToDelete) return
-    
-    setIsDeleting(true)
-    try {
-      await deleteCategory(categoryToDelete.id)
-      toast.success('カテゴリが削除されました')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '削除に失敗しました')
-    } finally {
-      setIsDeleting(false)
-      setDeleteDialogOpen(false)
-      setCategoryToDelete(null)
-    }
+
+    startTransition(async () => {
+      try {
+        await deleteCategory(categoryToDelete.id)
+        toast.success('カテゴリが削除されました')
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '削除に失敗しました')
+      } finally {
+        setDeleteDialogOpen(false)
+        setCategoryToDelete(null)
+      }
+    })
   }
 
   if (categories.length === 0) {
@@ -144,10 +144,10 @@ export function CategoryList({ categories, pagination }: CategoryListProps) {
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              disabled={isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? "削除中..." : "削除"}
+              {isPending ? "削除中..." : "削除"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

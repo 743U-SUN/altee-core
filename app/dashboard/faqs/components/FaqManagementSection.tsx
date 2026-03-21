@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback } from 'react'
+import React from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { arrayMove } from '@dnd-kit/sortable'
@@ -50,7 +50,7 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
 
   // ===== カテゴリー操作 =====
 
-  const handleCategoryReorder = useCallback(async (reorderedCategories: FaqCategory[]) => {
+  const handleCategoryReorder = async (reorderedCategories: FaqCategory[]) => {
     const categoryIds = reorderedCategories.map((cat) => cat.id)
     try {
       await mutate(reorderedCategories, false)
@@ -60,21 +60,21 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの並び替えに失敗しました')
     }
-  }, [mutate])
+  }
 
-  const handleCategoryMoveUp = useCallback(async (categoryId: string) => {
+  const handleCategoryMoveUp = async (categoryId: string) => {
     const index = faqCategories.findIndex((c) => c.id === categoryId)
     if (index <= 0) return
     await handleCategoryReorder(arrayMove(faqCategories, index, index - 1))
-  }, [faqCategories, handleCategoryReorder])
+  }
 
-  const handleCategoryMoveDown = useCallback(async (categoryId: string) => {
+  const handleCategoryMoveDown = async (categoryId: string) => {
     const index = faqCategories.findIndex((c) => c.id === categoryId)
     if (index < 0 || index >= faqCategories.length - 1) return
     await handleCategoryReorder(arrayMove(faqCategories, index, index + 1))
-  }, [faqCategories, handleCategoryReorder])
+  }
 
-  const handleCategoryAdd = useCallback(async () => {
+  const handleCategoryAdd = async () => {
     try {
       const result = await createFaqCategory({
         name: `新しいカテゴリー`,
@@ -89,9 +89,9 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの作成に失敗しました')
     }
-  }, [mutate])
+  }
 
-  const handleCategoryEdit = useCallback(async (categoryId: string, updates: Partial<FaqCategory>) => {
+  const handleCategoryEdit = async (categoryId: string, updates: Partial<FaqCategory>) => {
     try {
       const result = await updateFaqCategory(categoryId, {
         name: updates.name,
@@ -108,9 +108,9 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
       toast.error(error instanceof Error ? error.message : 'カテゴリーの更新に失敗しました')
       throw error
     }
-  }, [mutate])
+  }
 
-  const handleCategoryDelete = useCallback(async (categoryId: string) => {
+  const handleCategoryDelete = async (categoryId: string) => {
     try {
       const result = await deleteFaqCategory(categoryId)
       if (!result.success) throw new Error(result.error)
@@ -122,9 +122,9 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'カテゴリーの削除に失敗しました')
     }
-  }, [mutate])
+  }
 
-  const handleStyleSave = useCallback(async (categoryId: string, settings: SectionSettings | null) => {
+  const handleStyleSave = async (categoryId: string, settings: SectionSettings | null) => {
     try {
       const result = await updateFaqCategorySettings(categoryId, settings)
       if (!result.success) throw new Error(result.error)
@@ -137,11 +137,11 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
       toast.error(error instanceof Error ? error.message : 'スタイルの保存に失敗しました')
       throw error
     }
-  }, [mutate])
+  }
 
   // ===== 質問操作 =====
 
-  const handleQuestionReorder = useCallback(async (categoryId: string, reorderedQuestions: FaqQuestion[]) => {
+  const handleQuestionReorder = async (categoryId: string, reorderedQuestions: FaqQuestion[]) => {
     const questionIds = reorderedQuestions.map((q) => q.id)
     try {
       await mutate((current) => {
@@ -156,23 +156,23 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の並び替えに失敗しました')
     }
-  }, [mutate])
+  }
 
-  const handleQuestionMoveUp = useCallback(async (categoryId: string, questionId: string) => {
+  const handleQuestionMoveUp = async (categoryId: string, questionId: string) => {
     const questions = faqCategories.find((c) => c.id === categoryId)?.questions ?? []
     const index = questions.findIndex((q) => q.id === questionId)
     if (index <= 0) return
     await handleQuestionReorder(categoryId, arrayMove(questions, index, index - 1))
-  }, [faqCategories, handleQuestionReorder])
+  }
 
-  const handleQuestionMoveDown = useCallback(async (categoryId: string, questionId: string) => {
+  const handleQuestionMoveDown = async (categoryId: string, questionId: string) => {
     const questions = faqCategories.find((c) => c.id === categoryId)?.questions ?? []
     const index = questions.findIndex((q) => q.id === questionId)
     if (index < 0 || index >= questions.length - 1) return
     await handleQuestionReorder(categoryId, arrayMove(questions, index, index + 1))
-  }, [faqCategories, handleQuestionReorder])
+  }
 
-  const handleQuestionAdd = useCallback(async (categoryId: string) => {
+  const handleQuestionAdd = async (categoryId: string) => {
     try {
       const result = await createFaqQuestion(categoryId, {
         question: '新しい質問',
@@ -196,9 +196,9 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の作成に失敗しました')
     }
-  }, [mutate])
+  }
 
-  const handleQuestionEdit = useCallback(async (categoryId: string, questionId: string, updates: Partial<FaqQuestion>) => {
+  const handleQuestionEdit = async (categoryId: string, questionId: string, updates: Partial<FaqQuestion>) => {
     try {
       const result = await updateFaqQuestion(questionId, {
         question: updates.question,
@@ -223,9 +223,9 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
       toast.error(error instanceof Error ? error.message : '質問の更新に失敗しました')
       throw error
     }
-  }, [mutate])
+  }
 
-  const handleQuestionDelete = useCallback(async (categoryId: string, questionId: string) => {
+  const handleQuestionDelete = async (categoryId: string, questionId: string) => {
     try {
       const result = await deleteFaqQuestion(questionId)
       if (!result.success) throw new Error(result.error)
@@ -243,7 +243,7 @@ export function FaqManagementSection({ initialFaqCategories, presets }: FaqManag
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '質問の削除に失敗しました')
     }
-  }, [mutate])
+  }
 
   return (
     <div>

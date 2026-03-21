@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,7 @@ interface SetupFormProps {
 
 export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [handleCheckStatus, setHandleCheckStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [handleError, setHandleError] = useState<string>('');
   const [submitError, setSubmitError] = useState<string>('');
@@ -69,24 +69,22 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
     }
   }, [watchedHandle, watchedRole]);
 
-  const onSubmit = async (data: UserSetupSchema) => {
-    setIsSubmitting(true);
+  const onSubmit = (data: UserSetupSchema) => {
     setSubmitError('');
+    startTransition(async () => {
+      try {
+        const result = await completeUserSetup(data);
 
-    try {
-      const result = await completeUserSetup(data);
-
-      if (result.success) {
-        router.push('/dashboard');
-        router.refresh();
-      } else {
-        setSubmitError(result.error || 'セットアップ中にエラーが発生しました');
+        if (result.success) {
+          router.push('/dashboard');
+          router.refresh();
+        } else {
+          setSubmitError(result.error || 'セットアップ中にエラーが発生しました');
+        }
+      } catch {
+        setSubmitError('セットアップ中にエラーが発生しました');
       }
-    } catch {
-      setSubmitError('セットアップ中にエラーが発生しました');
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const getHandleStatusIcon = () => {
@@ -206,11 +204,11 @@ export function SetupForm({ initialCharacterName, initialRole }: SetupFormProps)
             type="submit"
             className="w-full"
             disabled={
-              isSubmitting ||
+              isPending ||
               (watchedRole === 'USER' && handleCheckStatus !== 'available')
             }
           >
-            {isSubmitting ? (
+            {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 設定中...

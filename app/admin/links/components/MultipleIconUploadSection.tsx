@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition } from "react"
 import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Star, StarOff, Trash2, Upload } from "lucide-react"
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import Image from "next/image"
@@ -38,6 +47,7 @@ export function MultipleIconUploadSection({
   onIconsChanged
 }: MultipleIconUploadSectionProps) {
   const [, startTransition] = useTransition()
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const { data: icons = initialIcons, mutate } = useSWR<LinkTypeIcon[]>(
     linkTypeId ? ['link-type-icons', linkTypeId] : null,
@@ -99,8 +109,7 @@ export function MultipleIconUploadSection({
           toast.error(`${errors.length}個のアイコンの追加に失敗しました`)
         }
 
-      } catch (error) {
-        console.error("アイコンアップロードエラー:", error)
+      } catch {
         toast.error("アイコンのアップロードに失敗しました")
       }
     })
@@ -125,16 +134,21 @@ export function MultipleIconUploadSection({
           toast.error(result.error || "デフォルト設定に失敗しました")
           mutate() // ロールバック
         }
-      } catch (error) {
-        console.error("デフォルト設定エラー:", error)
+      } catch {
         toast.error("デフォルト設定に失敗しました")
         mutate() // ロールバック
       }
     })
   }
 
-  const handleDeleteIcon = (iconId: string) => {
-    if (!confirm("このアイコンを削除しますか？")) return
+  const handleDeleteIconConfirm = (iconId: string) => {
+    setDeleteTargetId(iconId)
+  }
+
+  const handleDeleteIconExecute = () => {
+    if (!deleteTargetId) return
+    const iconId = deleteTargetId
+    setDeleteTargetId(null)
 
     startTransition(async () => {
       try {
@@ -152,8 +166,7 @@ export function MultipleIconUploadSection({
           toast.error(result.error || "削除に失敗しました")
           mutate() // ロールバック
         }
-      } catch (error) {
-        console.error("アイコン削除エラー:", error)
+      } catch {
         toast.error("削除に失敗しました")
         mutate() // ロールバック
       }
@@ -249,7 +262,7 @@ export function MultipleIconUploadSection({
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDeleteIcon(icon.id)}
+                            onClick={() => handleDeleteIconConfirm(icon.id)}
                             className="text-destructive"
                           >
                             <Trash2 className="mr-2 h-3 w-3" />
@@ -273,6 +286,23 @@ export function MultipleIconUploadSection({
           <p className="text-sm">上のアップロード機能を使用してアイコンを追加しましょう</p>
         </div>
       )}
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => { if (!open) setDeleteTargetId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>このアイコンを削除しますか？</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteIconExecute}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

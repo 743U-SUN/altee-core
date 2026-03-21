@@ -21,6 +21,7 @@ const BulkActionsBar = dynamic(() => import("./BulkActionsBar").then(mod => ({ d
 })
 import { UserRole, AccountType } from "@prisma/client"
 import Link from "next/link"
+import { getRoleBadgeVariant } from "@/lib/utils/role-badge"
 
 interface User {
   id: string
@@ -148,7 +149,7 @@ export function UserListClient({
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  <Badge variant={user.role === "ADMIN" ? "destructive" : user.role === "USER" ? "default" : "secondary"}>
+                  <Badge variant={getRoleBadgeVariant(user.role)}>
                     {user.role}
                   </Badge>
                   {user.accountType === "MANAGED" && (

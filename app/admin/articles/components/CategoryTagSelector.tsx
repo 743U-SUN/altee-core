@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,7 +42,7 @@ function CheckboxSelectorCard<T extends { id: string; name: string; color: strin
 }: CheckboxSelectorCardProps<T>) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [newName, setNewName] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const handleChange = (id: string, checked: boolean) => {
     if (checked) {
@@ -52,20 +52,21 @@ function CheckboxSelectorCard<T extends { id: string; name: string; color: strin
     }
   }
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!newName.trim()) return
 
-    setIsCreating(true)
-    try {
-      const created = await onCreate(newName.trim())
-      if (created) {
-        onSelectionChange([...selectedIds, created.id])
-        setNewName('')
-        setDialogOpen(false)
+    startTransition(async () => {
+      try {
+        const created = await onCreate(newName.trim())
+        if (created) {
+          onSelectionChange([...selectedIds, created.id])
+          setNewName('')
+          setDialogOpen(false)
+        }
+      } catch {
+        // エラーはonCreate内でハンドリング済み
       }
-    } finally {
-      setIsCreating(false)
-    }
+    })
   }
 
   return (
@@ -100,9 +101,9 @@ function CheckboxSelectorCard<T extends { id: string; name: string; color: strin
                 <div className="flex gap-2">
                   <Button
                     onClick={handleCreate}
-                    disabled={isCreating || !newName.trim()}
+                    disabled={isPending || !newName.trim()}
                   >
-                    {isCreating ? '作成中...' : '作成'}
+                    {isPending ? '作成中...' : '作成'}
                   </Button>
                   <Button
                     variant="outline"

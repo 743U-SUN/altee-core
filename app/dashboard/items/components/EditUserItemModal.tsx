@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -35,7 +35,7 @@ export function EditUserItemModal({
   userItem,
   onUpdate
 }: EditUserItemModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<z.infer<typeof userItemSchema>>({
     resolver: zodResolver(userItemSchema),
@@ -45,29 +45,28 @@ export function EditUserItemModal({
     }
   })
 
-  const onSubmit = async (data: z.infer<typeof userItemSchema>) => {
-    setIsSubmitting(true)
-    try {
-      const result = await updateUserItem(userItem.id, data)
+  const onSubmit = (data: z.infer<typeof userItemSchema>) => {
+    startTransition(async () => {
+      try {
+        const result = await updateUserItem(userItem.id, data)
 
-      if (result.success) {
-        toast.success('アイテム情報を更新しました')
-        // 更新されたデータで親コンポーネントに通知
-        const updatedUserItem = {
-          ...userItem,
-          isPublic: data.isPublic,
-          review: data.review || null,
+        if (result.success) {
+          toast.success('アイテム情報を更新しました')
+          // 更新されたデータで親コンポーネントに通知
+          const updatedUserItem = {
+            ...userItem,
+            isPublic: data.isPublic,
+            review: data.review || null,
+          }
+          onUpdate(updatedUserItem)
+          onClose()
+        } else {
+          toast.error(result.error || 'アイテム情報の更新に失敗しました')
         }
-        onUpdate(updatedUserItem)
-        onClose()
-      } else {
-        toast.error(result.error || 'アイテム情報の更新に失敗しました')
+      } catch {
+        toast.error('更新に失敗しました')
       }
-    } catch {
-      toast.error('更新に失敗しました')
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -178,8 +177,8 @@ export function EditUserItemModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 キャンセル
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 更新
               </Button>
             </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Download, Loader2 } from "lucide-react"
 import { getUsersForCsvExport } from "@/app/actions/admin/user-management"
@@ -22,41 +22,40 @@ export function CsvExportButton({
   createdFrom,
   createdTo
 }: CsvExportButtonProps) {
-  const [isExporting, setIsExporting] = useState(false)
+  const [isExporting, startExporting] = useTransition()
 
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const filters = {
-        ...(search && { search }),
-        ...(role && { role }),
-        ...(isActive !== undefined && { isActive }),
-        ...(createdFrom && { createdFrom }),
-        ...(createdTo && { createdTo }),
+  const handleExport = () => {
+    startExporting(async () => {
+      try {
+        const filters = {
+          ...(search && { search }),
+          ...(role && { role }),
+          ...(isActive !== undefined && { isActive }),
+          ...(createdFrom && { createdFrom }),
+          ...(createdTo && { createdTo }),
+        }
+
+        const { csvContent, userCount, filename } = await getUsersForCsvExport(filters)
+
+        // BOMを追加してUTF-8として正しく認識されるようにする
+        const bom = "\uFEFF"
+        const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" })
+
+        // ダウンロード処理
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        toast.success(`${userCount}件のユーザーデータをエクスポートしました`)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "CSVエクスポートに失敗しました")
       }
-
-      const { csvContent, userCount, filename } = await getUsersForCsvExport(filters)
-
-      // BOMを追加してUTF-8として正しく認識されるようにする
-      const bom = "\uFEFF"
-      const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" })
-      
-      // ダウンロード処理
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
-      toast.success(`${userCount}件のユーザーデータをエクスポートしました`)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "CSVエクスポートに失敗しました")
-    } finally {
-      setIsExporting(false)
-    }
+    })
   }
 
   return (

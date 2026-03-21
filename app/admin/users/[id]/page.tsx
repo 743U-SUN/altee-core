@@ -185,7 +185,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                       <div>
                         <p className="text-sm font-medium">セッション</p>
                         <p className="text-xs text-muted-foreground">
-                          期限: {new Date(session.expires).toLocaleString("ja-JP")}
+                          期限: {new Date(session.expires).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
                         </p>
                       </div>
                       <Badge variant={new Date(session.expires) > new Date() ? "default" : "secondary"}>

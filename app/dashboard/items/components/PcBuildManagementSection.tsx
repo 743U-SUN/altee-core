@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import dynamic from 'next/dynamic'
@@ -45,7 +45,7 @@ interface PcBuildManagementSectionProps {
 
 export function PcBuildManagementSection({ initialPcBuild }: PcBuildManagementSectionProps) {
   const [parts, setParts] = useState<UserPcBuildPart[]>(initialPcBuild?.parts ?? [])
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [showAddPartModal, setShowAddPartModal] = useState(false)
   const [editingPart, setEditingPart] = useState<UserPcBuildPart | null>(null)
   const [deletingPartId, setDeletingPartId] = useState<string | null>(null)
@@ -60,20 +60,19 @@ export function PcBuildManagementSection({ initialPcBuild }: PcBuildManagementSe
     },
   })
 
-  const onSubmitBuild = async (data: PcBuildInput) => {
-    setIsSubmitting(true)
-    try {
-      const result = await upsertUserPcBuild(data)
-      if (result.success) {
-        toast.success('PCビルド情報を保存しました')
-      } else {
-        toast.error(result.error ?? 'PCビルドの保存に失敗しました')
+  const onSubmitBuild = (data: PcBuildInput) => {
+    startTransition(async () => {
+      try {
+        const result = await upsertUserPcBuild(data)
+        if (result.success) {
+          toast.success('PCビルド情報を保存しました')
+        } else {
+          toast.error(result.error ?? 'PCビルドの保存に失敗しました')
+        }
+      } catch {
+        toast.error('PCビルドの保存に失敗しました')
       }
-    } catch {
-      toast.error('PCビルドの保存に失敗しました')
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   const handlePartAdded = (part: UserPcBuildPart) => {
@@ -178,8 +177,8 @@ export function PcBuildManagementSection({ initialPcBuild }: PcBuildManagementSe
             />
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 保存
               </Button>
             </div>

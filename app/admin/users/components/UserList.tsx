@@ -56,8 +56,7 @@ export async function UserList({
         createdTo={createdTo}
       />
     )
-  } catch (error) {
-    console.error("UserList error:", error)
+  } catch {
     return (
       <div className="text-center py-8 text-red-500">
         ユーザー一覧の読み込みに失敗しました

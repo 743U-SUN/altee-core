@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -192,65 +192,56 @@ export function UserNewsListClient({ initialData }: UserNewsListClientProps) {
     })
   )
 
-  const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id || !newsItems) return
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id || !newsItems) return
 
-      const oldIndex = newsItems.findIndex((item) => item.id === active.id)
-      const newIndex = newsItems.findIndex((item) => item.id === over.id)
-      const reordered = arrayMove(newsItems, oldIndex, newIndex)
+    const oldIndex = newsItems.findIndex((item) => item.id === active.id)
+    const newIndex = newsItems.findIndex((item) => item.id === over.id)
+    const reordered = arrayMove(newsItems, oldIndex, newIndex)
 
-      await mutate(reordered, false)
+    await mutate(reordered, false)
 
-      try {
-        await reorderUserNews(reordered.map((item) => item.id))
-      } catch {
-        toast.error('並べ替えに失敗しました')
-        await mutate()
-      }
-    },
-    [newsItems, mutate]
-  )
+    try {
+      await reorderUserNews(reordered.map((item) => item.id))
+    } catch {
+      toast.error('並べ替えに失敗しました')
+      await mutate()
+    }
+  }
 
-  const handleTogglePublished = useCallback(
-    async (id: string) => {
-      try {
-        await toggleUserNewsPublished(id)
-        await mutate(
-          (current) =>
-            current?.map((item) =>
-              item.id === id
-                ? { ...item, published: !item.published }
-                : item
-            ),
-          false
-        )
-        toast.success('公開状態を変更しました')
-      } catch {
-        toast.error('公開状態の変更に失敗しました')
-      }
-    },
-    [mutate]
-  )
+  const handleTogglePublished = async (id: string) => {
+    try {
+      await toggleUserNewsPublished(id)
+      await mutate(
+        (current) =>
+          current?.map((item) =>
+            item.id === id
+              ? { ...item, published: !item.published }
+              : item
+          ),
+        false
+      )
+      toast.success('公開状態を変更しました')
+    } catch {
+      toast.error('公開状態の変更に失敗しました')
+    }
+  }
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        await deleteUserNews(id)
-        await mutate(
-          (current) => current?.filter((item) => item.id !== id),
-          false
-        )
-        toast.success('記事を削除しました')
-      } catch {
-        toast.error('削除に失敗しました')
-      } finally {
-        setDeleteTarget(null)
-      }
-    },
-    [mutate]
-  )
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteUserNews(id)
+      await mutate(
+        (current) => current?.filter((item) => item.id !== id),
+        false
+      )
+      toast.success('記事を削除しました')
+    } catch {
+      toast.error('削除に失敗しました')
+    } finally {
+      setDeleteTarget(null)
+    }
+  }
 
   const items = newsItems ?? []
   const canCreate = items.length < USER_NEWS_LIMITS.MAX_ARTICLES

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ interface TagListProps {
 export function TagList({ tags, pagination }: TagListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [tagToDelete, setTagToDelete] = useState<TagType | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const handleDeleteClick = (tag: TagType) => {
@@ -30,21 +30,21 @@ export function TagList({ tags, pagination }: TagListProps) {
     setDeleteDialogOpen(true)
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!tagToDelete) return
-    
-    setIsDeleting(true)
-    try {
-      await deleteTag(tagToDelete.id)
-      toast.success('タグが削除されました')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '削除に失敗しました')
-    } finally {
-      setIsDeleting(false)
-      setDeleteDialogOpen(false)
-      setTagToDelete(null)
-    }
+
+    startTransition(async () => {
+      try {
+        await deleteTag(tagToDelete.id)
+        toast.success('タグが削除されました')
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '削除に失敗しました')
+      } finally {
+        setDeleteDialogOpen(false)
+        setTagToDelete(null)
+      }
+    })
   }
 
   if (tags.length === 0) {
@@ -154,10 +154,10 @@ export function TagList({ tags, pagination }: TagListProps) {
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              disabled={isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? "削除中..." : "削除"}
+              {isPending ? "削除中..." : "削除"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -9,7 +9,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import type { MediaPaginationData } from "@/types/media"
 
 interface MediaPaginationProps {
@@ -18,11 +18,12 @@ interface MediaPaginationProps {
 
 export function MediaPagination({ pagination }: MediaPaginationProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   if (pagination.totalPages <= 1) return null
 
   const getPageUrl = (page: number) => {
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(searchParams.toString())
     params.set('page', page.toString())
     return `?${params.toString()}`
   }

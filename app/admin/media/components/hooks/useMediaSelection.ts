@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState } from 'react'
 
 interface MediaFileBase {
   id: string
@@ -7,15 +7,15 @@ interface MediaFileBase {
 export function useMediaSelection<T extends MediaFileBase>(mediaFiles: T[]) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
 
-  const handleSelectAll = useCallback((checked: boolean) => {
+  const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedFiles(new Set(mediaFiles.map(file => file.id)))
     } else {
       setSelectedFiles(new Set())
     }
-  }, [mediaFiles])
+  }
 
-  const handleSelectFile = useCallback((fileId: string, checked: boolean) => {
+  const handleSelectFile = (fileId: string, checked: boolean) => {
     setSelectedFiles(prev => {
       const newSelected = new Set(prev)
       if (checked) {
@@ -25,19 +25,15 @@ export function useMediaSelection<T extends MediaFileBase>(mediaFiles: T[]) {
       }
       return newSelected
     })
-  }, [])
+  }
 
-  const clearSelection = useCallback(() => {
+  const clearSelection = () => {
     setSelectedFiles(new Set())
-  }, [])
+  }
 
-  const isAllSelected = useMemo(() => {
-    return mediaFiles.length > 0 && mediaFiles.every(file => selectedFiles.has(file.id))
-  }, [mediaFiles, selectedFiles])
+  const isAllSelected = mediaFiles.length > 0 && mediaFiles.every(file => selectedFiles.has(file.id))
 
-  const isIndeterminate = useMemo(() => {
-    return selectedFiles.size > 0 && selectedFiles.size < mediaFiles.length
-  }, [selectedFiles, mediaFiles])
+  const isIndeterminate = selectedFiles.size > 0 && selectedFiles.size < mediaFiles.length
 
   return {
     selectedFiles,

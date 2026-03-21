@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import { Suspense } from "react"
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { AttributeNavigation } from "./components/AttributeNavigation"
+
+export const metadata: Metadata = {
+  title: '属性管理 | Admin',
+}
 
 export default async function AttributesLayout({
   children,

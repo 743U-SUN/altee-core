@@ -9,6 +9,7 @@ import { Upload, FileText, CheckCircle2, XCircle } from 'lucide-react'
 import { importItemsFromCSVAction } from '../../actions'
 import type { ItemCSVRow, CSVImportResult } from '@/lib/validations/item'
 import { useRouter } from 'next/navigation'
+import { formatFileSize } from '@/lib/format-utils'
 
 export function CSVImportForm() {
   const [file, setFile] = useState<File | null>(null)
@@ -126,7 +127,7 @@ export function CSVImportForm() {
             {file && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4" />
-                {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                {file.name} ({formatFileSize(file.size)})
               </div>
             )}
           </form>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -71,7 +71,7 @@ export function AttributeForm<T extends AttributeItem>({
   hasOrder = false,
   onSubmit,
 }: AttributeFormProps<T>) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   const schema = hasOrder ? formSchemaWithOrder : formSchemaWithoutOrder
@@ -88,17 +88,16 @@ export function AttributeForm<T extends AttributeItem>({
     },
   })
 
-  const handleSubmit = async (values: FormValuesWithOrder) => {
-    setIsSubmitting(true)
-    try {
-      await onSubmit(values, item?.id)
-      router.push(listPath)
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '操作に失敗しました')
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handleSubmit = (values: FormValuesWithOrder) => {
+    startTransition(async () => {
+      try {
+        await onSubmit(values, item?.id)
+        router.push(listPath)
+        router.refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '操作に失敗しました')
+      }
+    })
   }
 
   const isEditing = mode === 'edit'
@@ -258,9 +257,9 @@ export function AttributeForm<T extends AttributeItem>({
 
               {/* 送信ボタン */}
               <div className="flex gap-4">
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isPending}>
                   <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting ? `${submitText}中...` : submitText}
+                  {isPending ? `${submitText}中...` : submitText}
                 </Button>
                 <Link href={listPath}>
                   <Button variant="outline" type="button">

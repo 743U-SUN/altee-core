@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -38,7 +38,7 @@ type UploadFormData = z.infer<typeof uploadSchema>
 
 export function MediaUploadForm() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm<UploadFormData>({
     resolver: zodResolver(uploadSchema),
@@ -54,60 +54,58 @@ export function MediaUploadForm() {
     setUploadedFiles(files)
   }
 
-  const onSubmit = async (data: UploadFormData) => {
+  const onSubmit = (data: UploadFormData) => {
     if (uploadedFiles.length === 0) {
       toast.error('ファイルを選択してください。')
       return
     }
 
-    setIsSubmitting(true)
+    startTransition(async () => {
+      try {
+        const latestFile = uploadedFiles[uploadedFiles.length - 1]
 
-    try {
-      const latestFile = uploadedFiles[uploadedFiles.length - 1]
+        if (!latestFile) {
+          throw new Error('アップロード済みファイルが見つかりません')
+        }
 
-      if (!latestFile) {
-        throw new Error('アップロード済みファイルが見つかりません')
+        if (!latestFile.file) {
+          throw new Error('ファイルデータが見つかりません。ファイルを再選択してください。')
+        }
+
+        // 画像処理を実行
+        const fileToUpload = await processImageFile(latestFile.file)
+
+        // タグの処理（カンマ区切り文字列を配列に変換）
+        const tags = data.tags
+          ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+          : []
+
+        // メタデータ付きでアップロード
+        const formData = new FormData()
+        formData.append('file', fileToUpload)
+
+        const result = await uploadMediaFileAction(formData, {
+          uploadType: data.uploadType as MediaType,
+          description: data.description || undefined,
+          altText: data.altText || undefined,
+          tags: tags.length > 0 ? tags : undefined,
+        })
+
+        if (!result) {
+          throw new Error('アップロード処理でエラーが発生しました')
+        }
+
+        if (result.success) {
+          toast.success('ファイルのアップロードとメタデータの保存が完了しました。')
+          form.reset()
+          setUploadedFiles([])
+        } else {
+          toast.error(result?.error || 'アップロードに失敗しました。')
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'アップロード中にエラーが発生しました。')
       }
-
-      if (!latestFile.file) {
-        throw new Error('ファイルデータが見つかりません。ファイルを再選択してください。')
-      }
-
-      // 画像処理を実行
-      const fileToUpload = await processImageFile(latestFile.file)
-
-      // タグの処理（カンマ区切り文字列を配列に変換）
-      const tags = data.tags
-        ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-        : []
-
-      // メタデータ付きでアップロード
-      const formData = new FormData()
-      formData.append('file', fileToUpload)
-
-      const result = await uploadMediaFileAction(formData, {
-        uploadType: data.uploadType as MediaType,
-        description: data.description || undefined,
-        altText: data.altText || undefined,
-        tags: tags.length > 0 ? tags : undefined,
-      })
-
-      if (!result) {
-        throw new Error('アップロード処理でエラーが発生しました')
-      }
-
-      if (result.success) {
-        toast.success('ファイルのアップロードとメタデータの保存が完了しました。')
-        form.reset()
-        setUploadedFiles([])
-      } else {
-        toast.error(result?.error || 'アップロードに失敗しました。')
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'アップロード中にエラーが発生しました。')
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -197,9 +195,9 @@ export function MediaUploadForm() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting}
+              disabled={isPending}
             >
-              {isSubmitting ? 'アップロード中...' : 'メタデータを追加してアップロード'}
+              {isPending ? 'アップロード中...' : 'メタデータを追加してアップロード'}
             </Button>
           </form>
         </CardContent>

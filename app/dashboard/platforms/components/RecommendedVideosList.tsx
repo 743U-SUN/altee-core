@@ -2,6 +2,16 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { GripVertical, Trash2, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -40,6 +50,7 @@ interface RecommendedVideosListProps {
 
 export function RecommendedVideosList({ videos, onVideosChange }: RecommendedVideosListProps) {
   const [activeItem, setActiveItem] = useState<Video | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   // DnD センサー設定（モバイル対応）
   const sensors = useSensors(
@@ -83,8 +94,10 @@ export function RecommendedVideosList({ videos, onVideosChange }: RecommendedVid
     }
   }
 
-  const handleDelete = async (videoId: string) => {
-    if (!confirm("この動画を削除しますか？")) return
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return
+    const videoId = deleteTargetId
+    setDeleteTargetId(null)
 
     const result = await deleteRecommendedVideo(videoId)
 
@@ -109,7 +122,7 @@ export function RecommendedVideosList({ videos, onVideosChange }: RecommendedVid
             <SortableVideoItem
               key={video.id}
               video={video}
-              onDelete={() => handleDelete(video.id)}
+              onDelete={() => setDeleteTargetId(video.id)}
             />
           ))}
         </div>
@@ -123,6 +136,26 @@ export function RecommendedVideosList({ videos, onVideosChange }: RecommendedVid
           />
         )}
       </DragOverlay>
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={() => setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>動画を削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DndContext>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useTransition } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -94,18 +94,15 @@ export function AddSectionModal({
   const [step, setStep] = useState<Step>('category')
   const [selectedCategory, setSelectedCategory] =
     useState<SectionCategoryKey | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const categories = getAllCategories()
 
   // 各セクションタイプの現在の数をカウント
-  const sectionTypeCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    existingSections.forEach((section) => {
-      counts[section.sectionType] = (counts[section.sectionType] || 0) + 1
-    })
-    return counts
-  }, [existingSections])
+  const sectionTypeCounts: Record<string, number> = {}
+  existingSections.forEach((section) => {
+    sectionTypeCounts[section.sectionType] = (sectionTypeCounts[section.sectionType] || 0) + 1
+  })
 
   // セクションタイプが追加可能かチェック
   const canAddSectionType = (sectionType: string): boolean => {
@@ -125,23 +122,21 @@ export function AddSectionModal({
     setSelectedCategory(null)
   }
 
-  const handleTypeSelect = async (sectionType: string, defaultData: unknown) => {
-    setIsCreating(true)
-    const result = await createSection(userId, sectionType, defaultData)
-    setIsCreating(false)
+  const handleTypeSelect = (sectionType: string, defaultData: unknown) => {
+    startTransition(async () => {
+      const result = await createSection(userId, sectionType, defaultData)
 
-    if (result.success) {
-      onOpenChange(false)
-      setStep('category')
-      setSelectedCategory(null)
-      router.refresh()
-    } else {
-      console.error('Failed to create section:', result.error)
-    }
+      if (result.success) {
+        onOpenChange(false)
+        setStep('category')
+        setSelectedCategory(null)
+        router.refresh()
+      }
+    })
   }
 
   const handleClose = () => {
-    if (!isCreating) {
+    if (!isPending) {
       onOpenChange(false)
       setStep('category')
       setSelectedCategory(null)
@@ -159,7 +154,7 @@ export function AddSectionModal({
                 variant="ghost"
                 className="h-8 w-8"
                 onClick={handleBack}
-                disabled={isCreating}
+                disabled={isPending}
               >
                 <ChevronLeft className="size-4" />
               </Button>
@@ -243,7 +238,7 @@ export function AddSectionModal({
           </div>
         )}
 
-        {isCreating && (
+        {isPending && (
           <div className="text-center py-4 text-muted-foreground">
             セクションを作成中...
           </div>

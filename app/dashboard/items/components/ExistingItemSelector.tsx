@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -47,7 +47,7 @@ export function ExistingItemSelector({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all')
   const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
   const [isSearching, setIsSearching] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [selectedItem, setSelectedItem] = useState<SearchItemResult | null>(null)
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
@@ -107,39 +107,38 @@ export function ExistingItemSelector({
   }
 
   // 既存アイテムからの登録
-  const handleSubmit = async (data: z.infer<typeof userItemSchema>) => {
+  const handleSubmit = (data: z.infer<typeof userItemSchema>) => {
     if (!selectedItem) return
 
-    setIsSubmitting(true)
-    try {
-      // ユーザーアイテムの重複チェック
-      const alreadyRegistered = await checkUserItemExists(selectedItem.id)
-      if (alreadyRegistered) {
-        toast.error('このアイテムは既に登録されています')
-        return
-      }
+    startTransition(async () => {
+      try {
+        // ユーザーアイテムの重複チェック
+        const alreadyRegistered = await checkUserItemExists(selectedItem.id)
+        if (alreadyRegistered) {
+          toast.error('このアイテムは既に登録されています')
+          return
+        }
 
-      const result = await createUserItem({
-        itemId: selectedItem.id,
-        ...data,
-      })
+        const result = await createUserItem({
+          itemId: selectedItem.id,
+          ...data,
+        })
 
-      if (result.success && result.data) {
-        toast.success('アイテムを登録しました')
-        onItemAdded(result.data as UserItemWithDetails)
-        // Reset form
-        form.reset()
-        setSelectedItem(null)
-        setSearchQuery('')
-        setSearchResults([])
-      } else {
-        toast.error(result.error || 'アイテムの登録に失敗しました')
+        if (result.success && result.data) {
+          toast.success('アイテムを登録しました')
+          onItemAdded(result.data as UserItemWithDetails)
+          // Reset form
+          form.reset()
+          setSelectedItem(null)
+          setSearchQuery('')
+          setSearchResults([])
+        } else {
+          toast.error(result.error || 'アイテムの登録に失敗しました')
+        }
+      } catch {
+        toast.error('登録に失敗しました')
       }
-    } catch {
-      toast.error('登録に失敗しました')
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -252,8 +251,8 @@ export function ExistingItemSelector({
               )}
             />
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button type="submit" disabled={isPending} className="w-full">
+              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               登録
             </Button>
           </form>

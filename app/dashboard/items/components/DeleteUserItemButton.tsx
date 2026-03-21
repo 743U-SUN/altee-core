@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Loader2, Trash2 } from "lucide-react"
@@ -19,25 +19,24 @@ export function DeleteUserItemButton({
   onDelete
 }: DeleteUserItemButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
-  const handleDelete = async () => {
-    setIsDeleting(true)
-    try {
-      const result = await deleteUserItem(userItemId)
+  const handleDelete = () => {
+    startTransition(async () => {
+      try {
+        const result = await deleteUserItem(userItemId)
 
-      if (result.success) {
-        toast.success('アイテムを削除しました')
-        onDelete()
-        setIsOpen(false)
-      } else {
-        toast.error(result.error || 'アイテムの削除に失敗しました')
+        if (result.success) {
+          toast.success('アイテムを削除しました')
+          onDelete()
+          setIsOpen(false)
+        } else {
+          toast.error(result.error || 'アイテムの削除に失敗しました')
+        }
+      } catch {
+        toast.error('削除に失敗しました')
       }
-    } catch {
-      toast.error('削除に失敗しました')
-    } finally {
-      setIsDeleting(false)
-    }
+    })
   }
 
   return (
@@ -65,15 +64,15 @@ export function DeleteUserItemButton({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
+            <AlertDialogCancel disabled={isPending}>
               キャンセル
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               削除する
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { UserCircle, Bell, Tv } from "lucide-react"
 import { SetupChecker } from "./setup-checker"
+
+export const metadata: Metadata = {
+  title: 'ダッシュボード',
+}
 
 const settingsItems = [
   {

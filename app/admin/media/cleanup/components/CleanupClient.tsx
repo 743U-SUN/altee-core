@@ -5,6 +5,16 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { detectOrphanFiles, cleanupOrphanFiles, getDeletionStats } from '@/app/actions/admin/cleanup-actions'
 import { cleanupExpiredFiles, getDeletedMediaFiles, restoreMediaFile } from '@/app/actions/media/media-actions'
 import { StorageStatsCard } from './StorageStatsCard'
@@ -35,6 +45,8 @@ interface Stats {
   folders: Record<string, number>
 }
 
+type DialogType = 'cleanupOrphans' | 'cleanupExpired' | 'restoreFile' | null
+
 export function CleanupClient() {
   const [orphanFiles, setOrphanFiles] = useState<OrphanFile[]>([])
   const [deletedFiles, setDeletedFiles] = useState<DeletedFile[]>([])
@@ -43,6 +55,8 @@ export function CleanupClient() {
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [expiredCleanupLoading, setExpiredCleanupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
+  const [dialogType, setDialogType] = useState<DialogType>(null)
+  const [pendingRestoreId, setPendingRestoreId] = useState<string | null>(null)
 
   const handleDetectOrphans = async () => {
     setLoading(true)
@@ -52,10 +66,10 @@ export function CleanupClient() {
         setOrphanFiles(result.orphans)
         toast.success(`孤立ファイル検出完了: ${result.count}件`)
       } else {
-        toast.error(`検出エラー: ${result.error}`)
+        toast.error('孤立ファイルの検出に失敗しました')
       }
-    } catch (error) {
-      toast.error(`検出に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch {
+      toast.error('孤立ファイルの検出に失敗しました')
     } finally {
       setLoading(false)
     }
@@ -69,24 +83,25 @@ export function CleanupClient() {
         setStats(result.stats)
         toast.success('統計情報を取得しました')
       } else {
-        toast.error(`統計取得エラー: ${result.error}`)
+        toast.error('統計情報の取得に失敗しました')
       }
-    } catch (error) {
-      toast.error(`統計取得に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch {
+      toast.error('統計情報の取得に失敗しました')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCleanupOrphans = async () => {
+  const handleCleanupOrphans = () => {
     if (orphanFiles.length === 0) {
       toast.error('削除対象の孤立ファイルがありません')
       return
     }
+    setDialogType('cleanupOrphans')
+  }
 
-    const confirmed = confirm(`${orphanFiles.length}個の孤立ファイルを削除しますか？\n\nこの操作は取り消せません。`)
-    if (!confirmed) return
-
+  const handleCleanupOrphansConfirm = async () => {
+    setDialogType(null)
     setCleanupLoading(true)
     try {
       const orphanKeys = orphanFiles.map(f => f.storageKey)
@@ -99,10 +114,10 @@ export function CleanupClient() {
         }
         await handleDetectOrphans()
       } else {
-        toast.error(`削除エラー: ${result.error}`)
+        toast.error('孤立ファイルの削除に失敗しました')
       }
-    } catch (error) {
-      toast.error(`削除に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch {
+      toast.error('孤立ファイルの削除に失敗しました')
     } finally {
       setCleanupLoading(false)
     }
@@ -114,17 +129,19 @@ export function CleanupClient() {
       const result = await getDeletedMediaFiles()
       setDeletedFiles(result.mediaFiles)
       toast.success(`削除済みファイル: ${result.mediaFiles.length}件`)
-    } catch (error) {
-      toast.error(`取得に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch {
+      toast.error('削除済みファイルの取得に失敗しました')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCleanupExpiredFiles = async () => {
-    const confirmed = confirm('期限切れ論理削除ファイルを物理削除しますか？\n\nこの操作は取り消せません。')
-    if (!confirmed) return
+  const handleCleanupExpiredFiles = () => {
+    setDialogType('cleanupExpired')
+  }
 
+  const handleCleanupExpiredConfirm = async () => {
+    setDialogType(null)
     setExpiredCleanupLoading(true)
     try {
       const result = await cleanupExpiredFiles()
@@ -137,17 +154,23 @@ export function CleanupClient() {
         await handleGetStats()
         await handleLoadDeletedFiles()
       }
-    } catch (error) {
-      toast.error(`削除に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch {
+      toast.error('期限切れファイルの削除に失敗しました')
     } finally {
       setExpiredCleanupLoading(false)
     }
   }
 
-  const handleRestoreFile = async (fileId: string) => {
-    const confirmed = confirm('このファイルを復旧しますか？')
-    if (!confirmed) return
+  const handleRestoreFile = (fileId: string) => {
+    setPendingRestoreId(fileId)
+    setDialogType('restoreFile')
+  }
 
+  const handleRestoreConfirm = async () => {
+    if (!pendingRestoreId) return
+    const fileId = pendingRestoreId
+    setPendingRestoreId(null)
+    setDialogType(null)
     setRestoreLoading(true)
     try {
       const result = await restoreMediaFile(fileId)
@@ -157,8 +180,8 @@ export function CleanupClient() {
         await handleLoadDeletedFiles()
         await handleGetStats()
       }
-    } catch (error) {
-      toast.error(`復旧に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch {
+      toast.error('ファイルの復旧に失敗しました')
     } finally {
       setRestoreLoading(false)
     }
@@ -204,6 +227,72 @@ export function CleanupClient() {
         onCleanupExpired={handleCleanupExpiredFiles}
         onRestoreFile={handleRestoreFile}
       />
+
+      {/* 孤立ファイル削除確認ダイアログ */}
+      <AlertDialog
+        open={dialogType === 'cleanupOrphans'}
+        onOpenChange={(open) => { if (!open) setDialogType(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{orphanFiles.length}個の孤立ファイルを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCleanupOrphansConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 期限切れファイル物理削除確認ダイアログ */}
+      <AlertDialog
+        open={dialogType === 'cleanupExpired'}
+        onOpenChange={(open) => { if (!open) setDialogType(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>期限切れ論理削除ファイルを物理削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCleanupExpiredConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ファイル復旧確認ダイアログ */}
+      <AlertDialog
+        open={dialogType === 'restoreFile'}
+        onOpenChange={(open) => { if (!open) { setDialogType(null); setPendingRestoreId(null) } }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>このファイルを復旧しますか？</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreConfirm}>
+              復旧
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useTransition } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -83,17 +83,14 @@ export function AddVideoSectionModal({
   existingSections = [],
 }: AddVideoSectionModalProps) {
   const router = useRouter()
-  const [isCreating, setIsCreating] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const videoSections = getSectionsByPage('videos')
 
-  const sectionTypeCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    existingSections.forEach((section) => {
-      counts[section.sectionType] = (counts[section.sectionType] || 0) + 1
-    })
-    return counts
-  }, [existingSections])
+  const sectionTypeCounts: Record<string, number> = {}
+  existingSections.forEach((section) => {
+    sectionTypeCounts[section.sectionType] = (sectionTypeCounts[section.sectionType] || 0) + 1
+  })
 
   const canAddSectionType = (sectionType: string): boolean => {
     const definition = SECTION_REGISTRY[sectionType]
@@ -102,21 +99,21 @@ export function AddVideoSectionModal({
     return currentCount < definition.maxInstances
   }
 
-  const handleTypeSelect = async (sectionType: string, defaultData: unknown) => {
-    setIsCreating(true)
-    const result = await createSection(userId, sectionType, defaultData, 'videos')
-    setIsCreating(false)
+  const handleTypeSelect = (sectionType: string, defaultData: unknown) => {
+    startTransition(async () => {
+      const result = await createSection(userId, sectionType, defaultData, 'videos')
 
-    if (result.success) {
-      onOpenChange(false)
-      router.refresh()
-    } else {
-      toast.error(result.error || 'セクションの作成に失敗しました')
-    }
+      if (result.success) {
+        onOpenChange(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'セクションの作成に失敗しました')
+      }
+    })
   }
 
   const handleClose = () => {
-    if (!isCreating) {
+    if (!isPending) {
       onOpenChange(false)
     }
   }
@@ -169,7 +166,7 @@ export function AddVideoSectionModal({
           })}
         </div>
 
-        {isCreating && (
+        {isPending && (
           <div className="text-center py-4 text-muted-foreground">
             セクションを作成中...
           </div>

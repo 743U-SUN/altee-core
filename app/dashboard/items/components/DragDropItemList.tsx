@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from "@/components/ui/button"
 import { GripVertical, ExternalLink, Eye, EyeOff, Trash2 } from "lucide-react"
@@ -53,7 +53,7 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
   const [activeItem, setActiveItem] = useState<UserItemWithDetails | null>(null)
   const [editingItem, setEditingItem] = useState<UserItemWithDetails | null>(null)
   const [deletingItem, setDeletingItem] = useState<UserItemWithDetails | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   // DnD センサー設定（モバイル対応）
   const sensors = useSensors(
@@ -115,25 +115,24 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
     setDeletingItem(item)
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!deletingItem) return
-    setIsDeleting(true)
-    try {
-      const result = await deleteUserItem(deletingItem.id)
+    startTransition(async () => {
+      try {
+        const result = await deleteUserItem(deletingItem.id)
 
-      if (result.success) {
-        const updatedItems = userItems.filter(p => p.id !== deletingItem.id)
-        onItemsChange(updatedItems)
-        toast.success("アイテムを削除しました")
-        setDeletingItem(null)
-      } else {
+        if (result.success) {
+          const updatedItems = userItems.filter(p => p.id !== deletingItem.id)
+          onItemsChange(updatedItems)
+          toast.success("アイテムを削除しました")
+          setDeletingItem(null)
+        } else {
+          toast.error("アイテムの削除に失敗しました")
+        }
+      } catch {
         toast.error("アイテムの削除に失敗しました")
       }
-    } catch {
-      toast.error("アイテムの削除に失敗しました")
-    } finally {
-      setIsDeleting(false)
-    }
+    })
   }
 
   const handleUpdate = (updatedItem: UserItemWithDetails) => {
@@ -199,10 +198,10 @@ export function DragDropItemList({ userItems, userId, onItemsChange }: DragDropI
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>キャンセル</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPending}>キャンセル</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              disabled={isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               削除する

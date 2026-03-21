@@ -19,10 +19,10 @@ interface MediaFiltersProps {
   totalCount: number
 }
 
-// 月の選択肢を生成（過去24ヶ月）
+// 月の選択肢を生成（過去24ヶ月）- JST基準
 function generateMonthOptions() {
   const options = []
-  const now = new Date()
+  const now = new Date(new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }))
 
   for (let i = 0; i < 24; i++) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1)

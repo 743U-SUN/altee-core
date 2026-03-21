@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import { Suspense } from "react"
 import { cachedAuth } from '@/lib/auth'
 import { redirect } from "next/navigation"
 import { PlatformNavigation } from "./components/PlatformNavigation"
+
+export const metadata: Metadata = {
+  title: 'プラットフォーム設定',
+}
 
 export default async function PlatformsLayout({
   children,

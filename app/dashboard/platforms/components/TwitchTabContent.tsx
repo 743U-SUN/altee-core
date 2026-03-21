@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -46,94 +46,90 @@ export function TwitchTabContent({ initialData, initialIsSubscribed = false }: T
   const [livePriority, setLivePriority] = useState<"youtube" | "twitch">(
     (initialData?.livePriority as "youtube" | "twitch") || "youtube"
   )
-  const [isSaving, setIsSaving] = useState(false)
-  const [isSavingPriority, setIsSavingPriority] = useState(false)
+  const [isSaving, startSaving] = useTransition()
+  const [isSavingPriority, startSavingPriority] = useTransition()
   const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed)
-  const [isCreatingWebhook, setIsCreatingWebhook] = useState(false)
-  const [isDeletingWebhook, setIsDeletingWebhook] = useState(false)
+  const [isCreatingWebhook, startCreatingWebhook] = useTransition()
+  const [isDeletingWebhook, startDeletingWebhook] = useTransition()
   const [twitchUserId, setTwitchUserId] = useState(initialData?.twitchUserId || null)
 
-  const handleSaveChannel = async () => {
+  const handleSaveChannel = () => {
     if (!username.trim()) {
       toast.error("Twitch Usernameを入力してください")
       return
     }
 
-    setIsSaving(true)
-    try {
-      const result = await updateTwitchChannel({ username: username.trim() })
+    startSaving(async () => {
+      try {
+        const result = await updateTwitchChannel({ username: username.trim() })
 
-      if (result.success) {
-        toast.success("Twitch設定を保存しました")
-        if (result.data?.twitchUserId) {
-          setTwitchUserId(result.data.twitchUserId)
+        if (result.success) {
+          toast.success("Twitch設定を保存しました")
+          if (result.data?.twitchUserId) {
+            setTwitchUserId(result.data.twitchUserId)
+          }
+        } else {
+          toast.error(result.error || "保存に失敗しました")
         }
-      } else {
-        toast.error(result.error || "保存に失敗しました")
+      } catch {
+        toast.error("予期しないエラーが発生しました")
       }
-    } catch {
-      toast.error("予期しないエラーが発生しました")
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
-  const handleCreateWebhook = async () => {
+  const handleCreateWebhook = () => {
     if (!twitchUserId) {
       toast.error("先にTwitch Usernameを保存してください")
       return
     }
 
-    setIsCreatingWebhook(true)
-    try {
-      const result = await createTwitchEventSubSubscription()
+    startCreatingWebhook(async () => {
+      try {
+        const result = await createTwitchEventSubSubscription()
 
-      if (result.success) {
-        toast.success("Webhook登録に成功しました")
-        setIsSubscribed(true)
-      } else {
-        toast.error(result.error || "Webhook登録に失敗しました")
+        if (result.success) {
+          toast.success("Webhook登録に成功しました")
+          setIsSubscribed(true)
+        } else {
+          toast.error(result.error || "Webhook登録に失敗しました")
+        }
+      } catch {
+        toast.error("予期しないエラーが発生しました")
       }
-    } catch {
-      toast.error("予期しないエラーが発生しました")
-    } finally {
-      setIsCreatingWebhook(false)
-    }
+    })
   }
 
-  const handleDeleteWebhook = async () => {
-    setIsDeletingWebhook(true)
-    try {
-      const result = await deleteTwitchEventSubSubscription()
+  const handleDeleteWebhook = () => {
+    startDeletingWebhook(async () => {
+      try {
+        const result = await deleteTwitchEventSubSubscription()
 
-      if (result.success) {
-        toast.success("Webhook登録を解除しました")
-        setIsSubscribed(false)
-      } else {
-        toast.error(result.error || "Webhook解除に失敗しました")
+        if (result.success) {
+          toast.success("Webhook登録を解除しました")
+          setIsSubscribed(false)
+        } else {
+          toast.error(result.error || "Webhook解除に失敗しました")
+        }
+      } catch {
+        toast.error("予期しないエラーが発生しました")
       }
-    } catch {
-      toast.error("予期しないエラーが発生しました")
-    } finally {
-      setIsDeletingWebhook(false)
-    }
+    })
   }
 
-  const handleSavePriority = async () => {
-    setIsSavingPriority(true)
-    try {
-      const result = await updateLivePriority(livePriority)
+  const handleSavePriority = () => {
+    startSavingPriority(async () => {
+      try {
+        const result = await updateLivePriority(livePriority)
 
-      if (result.success) {
-        toast.success("ライブ配信優先度を保存しました")
-      } else {
-        toast.error(result.error || "保存に失敗しました")
+        if (result.success) {
+          toast.success("ライブ配信優先度を保存しました")
+        } else {
+          toast.error(result.error || "保存に失敗しました")
+        }
+      } catch {
+        toast.error("予期しないエラーが発生しました")
       }
-    } catch {
-      toast.error("予期しないエラーが発生しました")
-    } finally {
-      setIsSavingPriority(false)
-    }
+    })
   }
 
   return (

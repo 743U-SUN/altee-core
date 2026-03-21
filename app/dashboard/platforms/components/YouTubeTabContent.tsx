@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -55,8 +55,8 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
   const [channelInput, setChannelInput] = useState(initialData?.youtubeChannelId || "")
   const [rssFeedLimit, setRssFeedLimit] = useState(initialData?.youtubeRssFeedLimit?.toString() || "6")
   const [videoUrl, setVideoUrl] = useState("")
-  const [isSavingChannel, setIsSavingChannel] = useState(false)
-  const [isAddingVideo, setIsAddingVideo] = useState(false)
+  const [isSavingChannel, startSavingChannel] = useTransition()
+  const [isAddingVideo, startAddingVideo] = useTransition()
   const [videos, setVideos] = useState(initialData?.youtubeRecommendedVideos || [])
   const [showVideos, setShowVideos] = useState(
     initialData?.youtubeRecommendedVideos?.[0]?.isVisible ?? true
@@ -68,43 +68,42 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
   }>>(initialRssFeedVideos)
   const [isLoadingRss, setIsLoadingRss] = useState(false)
 
-  const handleSaveChannel = async () => {
-    setIsSavingChannel(true)
-    try {
-      // Channel ID抽出
-      const extractResult = await extractChannelIdFromUrl(channelInput)
-      if (!extractResult.success || !extractResult.channelId) {
-        toast.error(extractResult.error || "有効なChannel IDまたはURLを入力してください")
-        return
-      }
-
-      const result = await updateYoutubeChannel({
-        channelId: extractResult.channelId,
-        rssFeedLimit: parseInt(rssFeedLimit, 10),
-      })
-
-      if (result.success) {
-        toast.success("YouTube設定を保存しました")
-        setChannelInput(extractResult.channelId)
-
-        // RSS Feed動画を取得
-        setIsLoadingRss(true)
-        const rssResult = await getMyRssFeedVideos()
-        if (rssResult.success && rssResult.data) {
-          setRssFeedVideos(rssResult.data)
+  const handleSaveChannel = () => {
+    startSavingChannel(async () => {
+      try {
+        // Channel ID抽出
+        const extractResult = await extractChannelIdFromUrl(channelInput)
+        if (!extractResult.success || !extractResult.channelId) {
+          toast.error(extractResult.error || "有効なChannel IDまたはURLを入力してください")
+          return
         }
-        setIsLoadingRss(false)
-      } else {
-        toast.error(result.error || "保存に失敗しました")
+
+        const result = await updateYoutubeChannel({
+          channelId: extractResult.channelId,
+          rssFeedLimit: parseInt(rssFeedLimit, 10),
+        })
+
+        if (result.success) {
+          toast.success("YouTube設定を保存しました")
+          setChannelInput(extractResult.channelId)
+
+          // RSS Feed動画を取得
+          setIsLoadingRss(true)
+          const rssResult = await getMyRssFeedVideos()
+          if (rssResult.success && rssResult.data) {
+            setRssFeedVideos(rssResult.data)
+          }
+          setIsLoadingRss(false)
+        } else {
+          toast.error(result.error || "保存に失敗しました")
+        }
+      } catch {
+        toast.error("予期しないエラーが発生しました")
       }
-    } catch {
-      toast.error("予期しないエラーが発生しました")
-    } finally {
-      setIsSavingChannel(false)
-    }
+    })
   }
 
-  const handleAddVideo = async () => {
+  const handleAddVideo = () => {
     if (!videoUrl.trim()) {
       toast.error("YouTube動画のURLを入力してください")
       return
@@ -115,22 +114,21 @@ export function YouTubeTabContent({ initialData, initialRssFeedVideos }: YouTube
       return
     }
 
-    setIsAddingVideo(true)
-    try {
-      const result = await addRecommendedVideo(videoUrl)
+    startAddingVideo(async () => {
+      try {
+        const result = await addRecommendedVideo(videoUrl)
 
-      if (result.success && result.data) {
-        toast.success("おすすめ動画を追加しました")
-        setVideos([...videos, result.data])
-        setVideoUrl("")
-      } else {
-        toast.error(result.error || "追加に失敗しました")
+        if (result.success && result.data) {
+          toast.success("おすすめ動画を追加しました")
+          setVideos([...videos, result.data])
+          setVideoUrl("")
+        } else {
+          toast.error(result.error || "追加に失敗しました")
+        }
+      } catch {
+        toast.error("予期しないエラーが発生しました")
       }
-    } catch {
-      toast.error("予期しないエラーが発生しました")
-    } finally {
-      setIsAddingVideo(false)
-    }
+    })
   }
 
   return (

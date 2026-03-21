@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -28,22 +28,22 @@ export function AddItemModal({
 
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen
 
-  const handleItemAdded = useCallback((userItem: UserItemWithDetails) => {
+  const handleItemAdded = (userItem: UserItemWithDetails) => {
     onItemAdded(userItem)
     if (controlledOnClose) {
       controlledOnClose()
     } else {
       setInternalOpen(false)
     }
-  }, [onItemAdded, controlledOnClose])
+  }
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (controlledOnClose) {
       controlledOnClose()
     } else {
       setInternalOpen(false)
     }
-  }, [controlledOnClose])
+  }
 
   const handleOpenChange = (open: boolean) => {
     if (controlledIsOpen === undefined) {
