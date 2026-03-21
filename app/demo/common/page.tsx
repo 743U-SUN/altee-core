@@ -1,13 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { NestedSortableList } from '@/components/sortable-list';
-import type { 
-  SortableParentItemType, 
-  SortableChildItemType, 
-  NestedSortableListConfig, 
-  EditableField 
+import dynamic from 'next/dynamic';
+import type {
+  SortableParentItemType,
+  SortableChildItemType,
+  NestedSortableListConfig,
+  EditableField
 } from '@/components/sortable-list';
+
+const NestedSortableList = dynamic(
+  () => import('@/components/sortable-list').then(m => m.NestedSortableList),
+  { ssr: false }
+);
 
 // デモ用のデータ型
 interface DemoCategory extends SortableParentItemType {
@@ -236,8 +241,9 @@ export default function CommonDemoPage() {
       </div>
 
       {/* ネストしたリスト */}
-      <NestedSortableList<DemoCategory, DemoQuestion>
-        config={nestedConfig}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <NestedSortableList
+        config={nestedConfig as any}
         loading={loading}
       />
 

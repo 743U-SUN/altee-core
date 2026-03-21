@@ -60,8 +60,7 @@ export function HeaderEditModal({
       } else {
         toast.error(result.error || '見出しの更新に失敗しました')
       }
-    } catch (error) {
-      console.error('見出し更新エラー:', error)
+    } catch {
       toast.error('見出しの更新中にエラーが発生しました')
     } finally {
       setIsSaving(false)

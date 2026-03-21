@@ -3,9 +3,11 @@
 import dynamic from 'next/dynamic'
 import { EditModal } from './EditModal'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { AvatarEditTab } from './header-edit/AvatarEditTab'
 import type { ThemeSettings } from '@/types/profile-sections'
 
+const AvatarEditTab = dynamic(() =>
+  import('./header-edit/AvatarEditTab').then(m => ({ default: m.AvatarEditTab }))
+)
 const CharacterNameEditTab = dynamic(() =>
   import('./header-edit/CharacterNameEditTab').then(m => ({ default: m.CharacterNameEditTab }))
 )

@@ -1,12 +1,17 @@
 'use client'
 
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import type { BaseSectionProps, YoutubeSectionData } from '@/types/profile-sections'
 import { IMAGE_SIZES } from '@/lib/image-sizes'
 import { Youtube } from 'lucide-react'
-import { YouTubeEmbed } from '@next/third-parties/google'
 import { ThemedCard } from '@/components/sections/_shared/ThemedCard'
 import { Badge } from '@/components/decorations'
+
+const YouTubeEmbed = dynamic(
+  () => import('@next/third-parties/google').then(m => m.YouTubeEmbed),
+  { ssr: false }
+)
 
 /**
  * YouTubeセクション
