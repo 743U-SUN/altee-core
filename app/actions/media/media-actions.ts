@@ -4,9 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { requireAdmin } from '@/lib/auth'
-import { storageClient, STORAGE_BUCKET as DEFAULT_BUCKET } from '@/lib/storage'
+import { cuidArraySchema } from '@/lib/validations/shared'
+import { storageClient } from '@/lib/storage'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { MediaType } from '@prisma/client'
+import { parseStorageKey } from '@/lib/utils/storage-key'
 
 export interface MediaFilesFilter {
   containerName?: string
@@ -225,9 +227,8 @@ export async function deleteMediaFile(fileId: string) {
   }
 
   try {
-    // 論理削除実行（5分後に物理削除予定 - テスト用）
     const now = new Date()
-    const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
+    const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000)
 
     await prisma.mediaFile.update({
       where: { id: fileId },
@@ -241,8 +242,7 @@ export async function deleteMediaFile(fileId: string) {
     revalidatePath('/admin/media')
     return { success: true }
 
-  } catch (error) {
-    console.error('Media file logical deletion error:', error)
+  } catch {
     throw new Error('ファイルの削除中にエラーが発生しました')
   }
 }
@@ -254,12 +254,14 @@ export async function bulkDeleteMediaFiles(fileIds: string[]) {
     throw new Error('削除するファイルが選択されていません')
   }
 
-  if (fileIds.length > 100) {
+  const validatedIds = cuidArraySchema.parse(fileIds)
+
+  if (validatedIds.length > 100) {
     throw new Error('一度に削除できるファイルは最大100件です')
   }
 
   const mediaFiles = await prisma.mediaFile.findMany({
-    where: { id: { in: fileIds }, deletedAt: null },
+    where: { id: { in: validatedIds }, deletedAt: null },
     include: {
       articles: {
         select: {
@@ -278,12 +280,11 @@ export async function bulkDeleteMediaFiles(fileIds: string[]) {
   }
 
   try {
-    // 論理削除実行（5分後に物理削除予定 - テスト用）
     const now = new Date()
-    const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000) // 5分後
+    const scheduledDeletionAt = new Date(now.getTime() + 5 * 60 * 1000)
 
     await prisma.mediaFile.updateMany({
-      where: { id: { in: fileIds } },
+      where: { id: { in: validatedIds } },
       data: {
         deletedAt: now,
         deletedBy: session.user.id,
@@ -292,10 +293,9 @@ export async function bulkDeleteMediaFiles(fileIds: string[]) {
     })
 
     revalidatePath('/admin/media')
-    return { success: true, deletedCount: fileIds.length }
+    return { success: true, deletedCount: validatedIds.length }
 
-  } catch (error) {
-    console.error('Bulk media file logical deletion error:', error)
+  } catch {
     throw new Error('ファイルの一括削除中にエラーが発生しました')
   }
 }
@@ -361,8 +361,7 @@ export async function restoreMediaFile(fileId: string) {
     revalidatePath('/admin/media')
     return { success: true }
 
-  } catch (error) {
-    console.error('Media file restoration error:', error)
+  } catch {
     throw new Error('ファイルの復旧中にエラーが発生しました')
   }
 }
@@ -385,57 +384,50 @@ export async function cleanupExpiredFiles() {
     return { success: true, deletedCount: 0, message: '削除対象のファイルはありません' }
   }
 
-  const s3Client = storageClient
   const errors: string[] = []
-  let successCount = 0
+  const deletedIds: string[] = []
 
-  // ストレージから物理削除
-  for (const file of expiredFiles) {
-    try {
-      // storageKeyの形式を判定して適切なBucketとKeyを決定
-      let bucket: string
-      let objectKey: string
-
-      if (file.storageKey.startsWith('altee-images/')) {
-        // 新形式: "altee-images/folder/YYYY/MM/filename.ext"
-        // Bucket: altee-images
-        // Key: folder/YYYY/MM/filename.ext
-        const [bucketPart, ...keyParts] = file.storageKey.split('/')
-        bucket = bucketPart
-        objectKey = keyParts.join('/')
-      } else {
-        // 旧形式（ConoHa時代）: "folder/YYYY/MM/filename.ext"
-        // Bucket: altee-images（現在のバケット）
-        // Key: folder/YYYY/MM/filename.ext（全体をKeyとして使用）
-        bucket = DEFAULT_BUCKET
-        objectKey = file.storageKey
-      }
-
-      await s3Client.send(new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: objectKey,
-      }))
-
-      // DBから完全削除
-      await prisma.mediaFile.delete({
-        where: { id: file.id },
+  // ストレージから並列削除（並列度10）
+  const CONCURRENCY = 10
+  for (let i = 0; i < expiredFiles.length; i += CONCURRENCY) {
+    const batch = expiredFiles.slice(i, i + CONCURRENCY)
+    const results = await Promise.allSettled(
+      batch.map(async (file) => {
+        const { bucket, objectKey } = parseStorageKey(file.storageKey)
+        await storageClient.send(new DeleteObjectCommand({
+          Bucket: bucket,
+          Key: objectKey,
+        }))
+        return file.id
       })
+    )
 
-      successCount++
-    } catch (error) {
-      console.error(`Failed to delete file ${file.storageKey}:`, error)
-      errors.push(`${file.originalName}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    for (let j = 0; j < results.length; j++) {
+      const result = results[j]
+      if (result.status === 'fulfilled') {
+        deletedIds.push(result.value)
+      } else {
+        const file = batch[j]
+        errors.push(`${file.originalName}: ${result.reason instanceof Error ? result.reason.message : 'Unknown error'}`)
+      }
     }
   }
 
+  // DBから一括削除
+  if (deletedIds.length > 0) {
+    await prisma.mediaFile.deleteMany({
+      where: { id: { in: deletedIds } },
+    })
+  }
+
   revalidatePath('/admin/media')
-  
+
   return {
     success: true,
-    deletedCount: successCount,
+    deletedCount: deletedIds.length,
     totalFound: expiredFiles.length,
     errors: errors.length > 0 ? errors : null,
-    message: `${successCount}/${expiredFiles.length}件のファイルを物理削除しました`,
+    message: `${deletedIds.length}/${expiredFiles.length}件のファイルを物理削除しました`,
   }
 }
 

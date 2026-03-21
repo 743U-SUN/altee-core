@@ -61,8 +61,7 @@ export async function checkUserBuildCompatibility() {
 
     const result = checkBuildCompatibility(partsWithSpecs)
     return { success: true, data: result }
-  } catch (error) {
-    console.error('Failed to check compatibility:', error)
+  } catch {
     return { success: false, error: '互換性チェックに失敗しました' }
   }
 }
@@ -104,23 +103,18 @@ export async function searchPcPartCatalog(query: string, partType?: string): Pro
     })
 
     return { success: true, data: items }
-  } catch (error) {
-    console.error('Failed to search PC part catalog:', error)
+  } catch {
     return { success: false, error: 'カタログ検索に失敗しました' }
   }
 }
 
 // ===== ヘルパー =====
 
-function revalidateUserPaths(userId: string) {
-  after(async () => {
+function revalidateUserPaths(handle: string | null | undefined) {
+  after(() => {
     revalidatePath('/dashboard/items')
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { handle: true },
-    })
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}/items`)
+    if (handle) {
+      revalidatePath(`/@${handle}/items`)
     }
   })
 }
@@ -156,8 +150,7 @@ export async function getPublicPcBuildByHandle(handle: string) {
     })
 
     return { success: true, data: pcBuild }
-  } catch (error) {
-    console.error('Failed to fetch public PC build:', error)
+  } catch {
     return { success: false, error: 'PCビルドの取得に失敗しました' }
   }
 }
@@ -189,8 +182,7 @@ export async function getUserPcBuild() {
     })
 
     return { success: true, data: pcBuild }
-  } catch (error) {
-    console.error('Failed to fetch user PC build:', error)
+  } catch {
     return { success: false, error: 'PCビルドの取得に失敗しました' }
   }
 }
@@ -228,11 +220,10 @@ export async function upsertUserPcBuild(data: PcBuildInput) {
       },
     })
 
-    revalidateUserPaths(userId)
+    revalidateUserPaths(session.user.handle)
 
     return { success: true, data: pcBuild }
-  } catch (error) {
-    console.error('Failed to upsert PC build:', error)
+  } catch {
     return { success: false, error: 'PCビルドの保存に失敗しました' }
   }
 }
@@ -279,11 +270,10 @@ export async function addPcBuildPart(data: PcPartInput) {
       })
     })
 
-    revalidateUserPaths(userId)
+    revalidateUserPaths(session.user.handle)
 
     return { success: true, data: part }
-  } catch (error) {
-    console.error('Failed to add PC build part:', error)
+  } catch {
     return { success: false, error: 'パーツの追加に失敗しました' }
   }
 }
@@ -320,11 +310,10 @@ export async function updatePcBuildPart(partId: string, data: PcPartInput) {
       },
     })
 
-    revalidateUserPaths(userId)
+    revalidateUserPaths(session.user.handle)
 
     return { success: true, data: updated }
-  } catch (error) {
-    console.error('Failed to update PC build part:', error)
+  } catch {
     return { success: false, error: 'パーツの更新に失敗しました' }
   }
 }
@@ -350,11 +339,10 @@ export async function deletePcBuildPart(partId: string) {
 
     await prisma.userPcBuildPart.delete({ where: { id: validatedPartId } })
 
-    revalidateUserPaths(userId)
+    revalidateUserPaths(session.user.handle)
 
     return { success: true }
-  } catch (error) {
-    console.error('Failed to delete PC build part:', error)
+  } catch {
     return { success: false, error: 'パーツの削除に失敗しました' }
   }
 }
@@ -393,11 +381,10 @@ export async function reorderPcBuildParts(partIds: string[]) {
       )
     )
 
-    revalidateUserPaths(userId)
+    revalidateUserPaths(session.user.handle)
 
     return { success: true }
-  } catch (error) {
-    console.error('Failed to reorder PC build parts:', error)
+  } catch {
     return { success: false, error: 'パーツの並び替えに失敗しました' }
   }
 }

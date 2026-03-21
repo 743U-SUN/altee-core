@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { cuidSchema } from '@/lib/validations/shared'
+import { generateSlug } from '@/lib/utils/slug'
 
 // バリデーションスキーマ
 const tagSchema = z.object({
@@ -12,16 +14,6 @@ const tagSchema = z.object({
   description: z.string().max(200, '説明は200文字以内で入力してください').optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, '正しいカラーコードを入力してください').optional(),
 })
-
-// スラッグ生成用ヘルパー
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 100)
-}
 
 // タグ作成
 export async function createTag(formData: FormData) {
@@ -63,7 +55,6 @@ export async function createTag(formData: FormData) {
     revalidatePath('/admin/attributes')
     return { success: true, tag }
   } catch (error) {
-    console.error('Tag creation error:', error)
     throw new Error(error instanceof Error ? error.message : 'タグの作成に失敗しました')
   }
 }
@@ -71,7 +62,9 @@ export async function createTag(formData: FormData) {
 // タグ更新
 export async function updateTag(id: string, formData: FormData) {
   await requireAdmin()
-  
+
+  const validatedId = cuidSchema.parse(id)
+
   const validatedFields = tagSchema.safeParse({
     name: formData.get('name'),
     slug: formData.get('slug'),
@@ -87,7 +80,7 @@ export async function updateTag(id: string, formData: FormData) {
 
   try {
     const existingTag = await prisma.tag.findUnique({
-      where: { id }
+      where: { id: validatedId }
     })
 
     if (!existingTag) {
@@ -96,9 +89,9 @@ export async function updateTag(id: string, formData: FormData) {
 
     // スラッグの重複チェック（自分以外）
     const duplicateSlug = await prisma.tag.findFirst({
-      where: { 
+      where: {
         slug,
-        id: { not: id }
+        id: { not: validatedId }
       }
     })
 
@@ -107,7 +100,7 @@ export async function updateTag(id: string, formData: FormData) {
     }
 
     const tag = await prisma.tag.update({
-      where: { id },
+      where: { id: validatedId },
       data: {
         name,
         slug,
@@ -117,11 +110,10 @@ export async function updateTag(id: string, formData: FormData) {
     })
 
     revalidatePath('/admin/attributes/tags')
-    revalidatePath(`/admin/attributes/tags/${id}`)
+    revalidatePath(`/admin/attributes/tags/${validatedId}`)
     revalidatePath('/admin/attributes')
     return { success: true, tag }
   } catch (error) {
-    console.error('Tag update error:', error)
     throw new Error(error instanceof Error ? error.message : 'タグの更新に失敗しました')
   }
 }
@@ -130,9 +122,11 @@ export async function updateTag(id: string, formData: FormData) {
 export async function deleteTag(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const tag = await prisma.tag.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: { 
         articles: { 
           include: { article: true }
@@ -150,14 +144,13 @@ export async function deleteTag(id: string) {
     }
 
     await prisma.tag.delete({
-      where: { id }
+      where: { id: validatedId }
     })
 
     revalidatePath('/admin/attributes/tags')
     revalidatePath('/admin/attributes')
     return { success: true }
   } catch (error) {
-    console.error('Tag deletion error:', error)
     throw new Error(error instanceof Error ? error.message : 'タグの削除に失敗しました')
   }
 }
@@ -192,8 +185,7 @@ export async function getTags(page: number = 1, limit: number = 20) {
         totalPages: Math.ceil(total / limit)
       }
     }
-  } catch (error) {
-    console.error('Tags fetch error:', error)
+  } catch {
     throw new Error('タグの取得に失敗しました')
   }
 }
@@ -202,9 +194,11 @@ export async function getTags(page: number = 1, limit: number = 20) {
 export async function getTag(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const tag = await prisma.tag.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         articles: {
           take: 50,
@@ -226,7 +220,6 @@ export async function getTag(id: string) {
 
     return tag
   } catch (error) {
-    console.error('Tag fetch error:', error)
     throw new Error(error instanceof Error ? error.message : 'タグの取得に失敗しました')
   }
 }
@@ -241,8 +234,7 @@ export async function getAllTags() {
     })
 
     return tags
-  } catch (error) {
-    console.error('All tags fetch error:', error)
+  } catch {
     throw new Error('タグの取得に失敗しました')
   }
 }

@@ -3,6 +3,7 @@
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
+import { cuidSchema } from "@/lib/validations/shared"
 
 const emailSchema = z.string().email().max(254)
 
@@ -24,8 +25,7 @@ export async function getBlacklistedEmails() {
     })
 
     return blacklistedEmails
-  } catch (error) {
-    console.error("getBlacklistedEmails error:", error)
+  } catch {
     throw new Error("ブラックリストの取得に失敗しました")
   }
 }
@@ -64,8 +64,7 @@ export async function addBlacklistedEmail(email: string, reason?: string) {
 
     return blacklistedEmail
   } catch (error) {
-    console.error("addBlacklistedEmail error:", error)
-    if (error instanceof Error && error.message.includes("既にブラックリスト")) {
+    if (error instanceof Error) {
       throw error
     }
     throw new Error("ブラックリストへの追加に失敗しました")
@@ -78,14 +77,12 @@ export async function addBlacklistedEmail(email: string, reason?: string) {
 export async function removeBlacklistedEmail(id: string) {
   await requireAdmin()
 
-  if (!id) {
-    throw new Error("削除対象のIDが指定されていません")
-  }
+  const validatedId = cuidSchema.parse(id)
 
   try {
     // 存在するかチェック
     const existing = await prisma.blacklistedEmail.findUnique({
-      where: { id },
+      where: { id: validatedId },
       select: { email: true },
     })
 
@@ -95,12 +92,11 @@ export async function removeBlacklistedEmail(id: string) {
 
     // ブラックリストから削除
     await prisma.blacklistedEmail.delete({
-      where: { id },
+      where: { id: validatedId },
     })
 
     return { success: true, deletedEmail: existing.email }
   } catch (error) {
-    console.error("removeBlacklistedEmail error:", error)
     if (error instanceof Error && error.message.includes("削除対象の")) {
       throw error
     }
@@ -165,8 +161,7 @@ export async function addBlacklistedEmailsBulk(
       totalProcessed: normalizedEmails.length,
     }
   } catch (error) {
-    console.error("addBlacklistedEmailsBulk error:", error)
-    if (error instanceof Error && error.message.includes("すべてのメール")) {
+    if (error instanceof Error) {
       throw error
     }
     throw new Error("一括追加に失敗しました")
@@ -201,8 +196,7 @@ export async function checkEmailBlacklisted(email: string) {
       isBlacklisted: !!blacklistedEmail,
       details: blacklistedEmail,
     }
-  } catch (error) {
-    console.error("checkEmailBlacklisted error:", error)
+  } catch {
     throw new Error("ブラックリストチェックに失敗しました")
   }
 }

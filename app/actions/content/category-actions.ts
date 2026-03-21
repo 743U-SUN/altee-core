@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { cuidSchema } from '@/lib/validations/shared'
+import { generateSlug } from '@/lib/utils/slug'
 
 // バリデーションスキーマ
 const categorySchema = z.object({
@@ -13,16 +15,6 @@ const categorySchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i, '正しいカラーコードを入力してください').optional(),
   order: z.number().int().min(0).optional(),
 })
-
-// スラッグ生成用ヘルパー
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 100)
-}
 
 // カテゴリ作成
 export async function createCategory(formData: FormData) {
@@ -66,7 +58,6 @@ export async function createCategory(formData: FormData) {
     revalidatePath('/admin/attributes')
     return { success: true, category }
   } catch (error) {
-    console.error('Category creation error:', error)
     throw new Error(error instanceof Error ? error.message : 'カテゴリの作成に失敗しました')
   }
 }
@@ -74,7 +65,9 @@ export async function createCategory(formData: FormData) {
 // カテゴリ更新
 export async function updateCategory(id: string, formData: FormData) {
   await requireAdmin()
-  
+
+  const validatedId = cuidSchema.parse(id)
+
   const validatedFields = categorySchema.safeParse({
     name: formData.get('name'),
     slug: formData.get('slug'),
@@ -91,7 +84,7 @@ export async function updateCategory(id: string, formData: FormData) {
 
   try {
     const existingCategory = await prisma.category.findUnique({
-      where: { id }
+      where: { id: validatedId }
     })
 
     if (!existingCategory) {
@@ -100,9 +93,9 @@ export async function updateCategory(id: string, formData: FormData) {
 
     // スラッグの重複チェック（自分以外）
     const duplicateSlug = await prisma.category.findFirst({
-      where: { 
+      where: {
         slug,
-        id: { not: id }
+        id: { not: validatedId }
       }
     })
 
@@ -111,7 +104,7 @@ export async function updateCategory(id: string, formData: FormData) {
     }
 
     const category = await prisma.category.update({
-      where: { id },
+      where: { id: validatedId },
       data: {
         name,
         slug,
@@ -122,11 +115,10 @@ export async function updateCategory(id: string, formData: FormData) {
     })
 
     revalidatePath('/admin/attributes/categories')
-    revalidatePath(`/admin/attributes/categories/${id}`)
+    revalidatePath(`/admin/attributes/categories/${validatedId}`)
     revalidatePath('/admin/attributes')
     return { success: true, category }
   } catch (error) {
-    console.error('Category update error:', error)
     throw new Error(error instanceof Error ? error.message : 'カテゴリの更新に失敗しました')
   }
 }
@@ -135,9 +127,11 @@ export async function updateCategory(id: string, formData: FormData) {
 export async function deleteCategory(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const category = await prisma.category.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: { 
         articles: { 
           include: { article: true }
@@ -155,14 +149,13 @@ export async function deleteCategory(id: string) {
     }
 
     await prisma.category.delete({
-      where: { id }
+      where: { id: validatedId }
     })
 
     revalidatePath('/admin/attributes/categories')
     revalidatePath('/admin/attributes')
     return { success: true }
   } catch (error) {
-    console.error('Category deletion error:', error)
     throw new Error(error instanceof Error ? error.message : 'カテゴリの削除に失敗しました')
   }
 }
@@ -200,8 +193,7 @@ export async function getCategories(page: number = 1, limit: number = 20) {
         totalPages: Math.ceil(total / limit)
       }
     }
-  } catch (error) {
-    console.error('Categories fetch error:', error)
+  } catch {
     throw new Error('カテゴリの取得に失敗しました')
   }
 }
@@ -210,9 +202,11 @@ export async function getCategories(page: number = 1, limit: number = 20) {
 export async function getCategory(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const category = await prisma.category.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         articles: {
           take: 50,
@@ -234,7 +228,6 @@ export async function getCategory(id: string) {
 
     return category
   } catch (error) {
-    console.error('Category fetch error:', error)
     throw new Error(error instanceof Error ? error.message : 'カテゴリの取得に失敗しました')
   }
 }
@@ -252,8 +245,7 @@ export async function getAllCategories() {
     })
 
     return categories
-  } catch (error) {
-    console.error('All categories fetch error:', error)
+  } catch {
     throw new Error('カテゴリの取得に失敗しました')
   }
 }

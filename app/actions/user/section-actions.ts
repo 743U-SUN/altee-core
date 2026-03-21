@@ -1,6 +1,6 @@
 'use server'
 
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, cachedAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import type { UserSection, SectionSettings } from '@/types/profile-sections'
@@ -27,13 +27,12 @@ export async function getUserSections(
 ): Promise<UserSection[] | null> {
   try {
     if (!isValidPage(page)) {
-      console.error(`[getUserSections] 無効なページ: ${page}`)
+
       return null
     }
 
     // 認証状態を確認し、非オーナーには isVisible: true のみ返す
-    const { auth } = await import('@/auth')
-    const session = await auth()
+    const session = await cachedAuth()
     const isOwner = session?.user?.id === userId
 
     const sections = await prisma.userSection.findMany({
@@ -46,8 +45,7 @@ export async function getUserSections(
     })
 
     return sections as UserSection[]
-  } catch (error) {
-    console.error('Failed to get user sections:', error)
+  } catch {
     return null
   }
 }
@@ -224,7 +222,7 @@ export async function createSection(
     // sectionType ホワイトリスト検証
     const definition = SECTION_REGISTRY[sectionType]
     if (!definition) {
-      console.error(`[createSection] 無効なセクションタイプ: ${sectionType}`)
+
       return { success: false, error: '無効なセクションタイプです' }
     }
 
@@ -263,7 +261,7 @@ export async function createSection(
 
     return { success: true, section: section as UserSection }
   } catch (error) {
-    console.error('Failed to create section:', error)
+
     return { success: false, error: 'セクションの作成に失敗しました' }
   }
 }
@@ -311,7 +309,7 @@ export async function updateSection(
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to update section:', error)
+
     return { success: false, error: 'セクションの更新に失敗しました' }
   }
 }
@@ -346,9 +344,9 @@ export async function deleteSection(
       const sectionData = section.data as Record<string, unknown> | null
       const channelId = sectionData?.channelId as string | undefined
       if (channelId) {
-        await unsubscribeFromYoutubePush(channelId).catch((e) =>
-          console.error('PubSubHubbub unsubscribe error on delete:', e)
-        )
+        await unsubscribeFromYoutubePush(channelId).catch(() => {
+          // unsubscribe失敗は無視
+        })
       }
     }
 
@@ -360,7 +358,7 @@ export async function deleteSection(
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to delete section:', error)
+
     return { success: false, error: 'セクションの削除に失敗しました' }
   }
 }
@@ -402,7 +400,7 @@ export async function reorderSections(
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to reorder sections:', error)
+
     return { success: false, error: 'セクションの並び替えに失敗しました' }
   }
 }
@@ -444,7 +442,7 @@ export async function updateSectionSettings(
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to update section settings:', error)
+
     return { success: false, error: 'セクション設定の更新に失敗しました' }
   }
 }
@@ -507,7 +505,7 @@ export async function moveSectionOrder(
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to move section:', error)
+
     return { success: false, error: 'セクションの移動に失敗しました' }
   }
 }

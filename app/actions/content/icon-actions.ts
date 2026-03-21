@@ -14,8 +14,9 @@ export async function getPublicCustomIcons(): Promise<{
   icons?: CustomIcon[]
   error?: string
 }> {
+  await requireAuth()
+
   try {
-    await requireAuth()
 
     const mediaFiles = await prisma.mediaFile.findMany({
       where: {

@@ -13,6 +13,7 @@ import {
   YOUTUBE_CHANNEL_ID_PATTERN,
   YOUTUBE_VIDEO_ID_PATTERN
 } from "@/services/youtube/constants"
+import { cuidSchema } from "@/lib/validations/shared"
 
 // =============================================================================
 // バリデーションスキーマ
@@ -31,7 +32,7 @@ const recommendedVideoSchema = z.object({
 
 // 並び替えスキーマ
 const reorderVideosSchema = z.object({
-  videoIds: z.array(z.string()).min(1, "並び替える動画が必要です"),
+  videoIds: z.array(cuidSchema).min(1, "並び替える動画が必要です").max(MAX_RECOMMENDED_VIDEOS),
 })
 
 // =============================================================================
@@ -46,9 +47,9 @@ export async function extractChannelIdFromUrl(url: string): Promise<{
   channelId?: string
   error?: string
 }> {
-  try {
-    await requireAuth()
+  await requireAuth()
 
+  try {
     // すでにChannel IDの形式ならそのまま返す
     if (YOUTUBE_CHANNEL_ID_PATTERN.test(url)) {
       return { success: true, channelId: url }
@@ -87,9 +88,9 @@ export async function extractChannelIdFromUrl(url: string): Promise<{
  * YouTube Channel設定を更新
  */
 export async function updateYoutubeChannel(data: z.infer<typeof youtubeChannelSchema>) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const validatedData = youtubeChannelSchema.parse(data)
 
     // Get current channel ID to check if it changed
@@ -119,14 +120,13 @@ export async function updateYoutubeChannel(data: z.infer<typeof youtubeChannelSc
     }
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    console.error("YouTube Channel更新エラー:", error)
     return { success: false, error: "YouTube Channel設定の更新に失敗しました" }
   }
 }
@@ -139,9 +139,9 @@ export async function updateYoutubeChannel(data: z.infer<typeof youtubeChannelSc
  * おすすめ動画を追加
  */
 export async function addRecommendedVideo(videoUrl: string) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     // URL長さ制限
     if (!videoUrl || videoUrl.length > 500) {
       return { success: false, error: "URLが無効です（500文字以内）" }
@@ -166,24 +166,24 @@ export async function addRecommendedVideo(videoUrl: string) {
     // Video ID検証
     const validatedData = recommendedVideoSchema.parse({ videoId })
 
-    // 最大本数チェック
-    const existingCount = await prisma.youTubeRecommendedVideo.count({
-      where: { userId: session.user.id }
-    })
+    // 最大本数チェックと重複チェックを並列実行
+    const [existingCount, existing] = await Promise.all([
+      prisma.youTubeRecommendedVideo.count({
+        where: { userId: session.user.id }
+      }),
+      prisma.youTubeRecommendedVideo.findUnique({
+        where: {
+          userId_videoId: {
+            userId: session.user.id,
+            videoId: validatedData.videoId
+          }
+        }
+      })
+    ])
 
     if (existingCount >= MAX_RECOMMENDED_VIDEOS) {
       return { success: false, error: `おすすめ動画は最大${MAX_RECOMMENDED_VIDEOS}本まで設定できます` }
     }
-
-    // 重複チェック
-    const existing = await prisma.youTubeRecommendedVideo.findUnique({
-      where: {
-        userId_videoId: {
-          userId: session.user.id,
-          videoId: validatedData.videoId
-        }
-      }
-    })
 
     if (existing) {
       return { success: false, error: "この動画は既に追加されています" }
@@ -225,14 +225,13 @@ export async function addRecommendedVideo(videoUrl: string) {
     })
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true, data: video }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    console.error("おすすめ動画追加エラー:", error)
     return { success: false, error: "おすすめ動画の追加に失敗しました" }
   }
 }
@@ -241,9 +240,9 @@ export async function addRecommendedVideo(videoUrl: string) {
  * おすすめ動画を削除
  */
 export async function deleteRecommendedVideo(id: string) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     // 所有権チェック
     const video = await prisma.youTubeRecommendedVideo.findUnique({
       where: { id },
@@ -261,23 +260,26 @@ export async function deleteRecommendedVideo(id: string) {
 
       const remainingVideos = await tx.youTubeRecommendedVideo.findMany({
         where: { userId: session.user.id },
-        orderBy: { sortOrder: "asc" }
+        orderBy: { sortOrder: "asc" },
+        select: { id: true }
       })
 
-      for (let i = 0; i < remainingVideos.length; i++) {
-        await tx.youTubeRecommendedVideo.update({
-          where: { id: remainingVideos[i].id },
-          data: { sortOrder: i }
-        })
-      }
+      // 並列更新で再採番
+      await Promise.all(
+        remainingVideos.map((v, i) =>
+          tx.youTubeRecommendedVideo.update({
+            where: { id: v.id },
+            data: { sortOrder: i }
+          })
+        )
+      )
     })
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true }
-  } catch (error) {
-    console.error("おすすめ動画削除エラー:", error)
+  } catch {
     return { success: false, error: "おすすめ動画の削除に失敗しました" }
   }
 }
@@ -286,9 +288,9 @@ export async function deleteRecommendedVideo(id: string) {
  * おすすめ動画を並び替え
  */
 export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideosSchema>) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const validatedData = reorderVideosSchema.parse(data)
 
     // 所有権チェック
@@ -314,14 +316,13 @@ export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideo
     )
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    console.error("おすすめ動画並び替えエラー:", error)
     return { success: false, error: "おすすめ動画の並び替えに失敗しました" }
   }
 }
@@ -330,20 +331,19 @@ export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideo
  * おすすめ動画の表示/非表示を切り替え
  */
 export async function toggleRecommendedVideosVisibility(isVisible: boolean) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     await prisma.youTubeRecommendedVideo.updateMany({
       where: { userId: session.user.id },
       data: { isVisible }
     })
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true }
-  } catch (error) {
-    console.error("おすすめ動画表示切替エラー:", error)
+  } catch {
     return { success: false, error: "表示設定の更新に失敗しました" }
   }
 }
@@ -356,9 +356,9 @@ export async function toggleRecommendedVideosVisibility(isVisible: boolean) {
  * 現在のユーザーのRSS Feed動画を取得（Dashboard用）
  */
 export async function getMyRssFeedVideos() {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -372,8 +372,7 @@ export async function getMyRssFeedVideos() {
     }
 
     return await fetchYoutubeRssFeed(user.youtubeChannelId, user.youtubeRssFeedLimit)
-  } catch (error) {
-    console.error("RSS Feed取得エラー:", error)
+  } catch {
     return { success: false, error: "RSS Feedの取得に失敗しました" }
   }
 }
@@ -382,9 +381,9 @@ export async function getMyRssFeedVideos() {
  * ユーザーのYouTube設定を取得
  */
 export async function getUserYoutubeSettings() {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -401,8 +400,7 @@ export async function getUserYoutubeSettings() {
     }
 
     return { success: true, data: user }
-  } catch (error) {
-    console.error("YouTube設定取得エラー:", error)
+  } catch {
     return { success: false, error: "YouTube設定の取得に失敗しました" }
   }
 }
@@ -414,9 +412,9 @@ export async function updateYouTubeLatestSection(
   sectionId: string,
   newData: { channelId: string; rssFeedLimit: number }
 ) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     // バリデーション
     const validated = youtubeChannelSchema.parse(newData)
 
@@ -453,24 +451,23 @@ export async function updateYouTubeLatestSection(
     // PubSubHubbub管理（channelId変更時のみ）
     if (channelChanged && validated.channelId) {
       if (oldChannelId) {
-        await unsubscribeFromYoutubePush(oldChannelId).catch((e) =>
-          console.error('PubSubHubbub unsubscribe error:', e)
-        )
+        await unsubscribeFromYoutubePush(oldChannelId).catch(() => {
+          // unsubscribe失敗は無視
+        })
       }
-      await subscribeToYoutubePush(validated.channelId).catch((e) =>
-        console.error('PubSubHubbub subscribe error:', e)
-      )
+      await subscribeToYoutubePush(validated.channelId).catch(() => {
+        // subscribe失敗は無視
+      })
     }
 
     revalidatePath('/dashboard/videos')
-    revalidatePath(`/[handle]`, 'page')
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    console.error('YouTube Latest Section更新エラー:', error)
     return { success: false, error: 'セクションの更新に失敗しました' }
   }
 }
@@ -479,9 +476,9 @@ export async function updateYouTubeLatestSection(
  * YouTube RSS Feedを取得（認証必須 - SSRF/帯域消費対策）
  */
 export async function fetchPublicYoutubeRss(channelId: string, limit: number) {
-  try {
-    await requireAuth()
+  await requireAuth()
 
+  try {
     if (!channelId || limit <= 0) {
       return { success: true as const, data: [] }
     }
@@ -495,8 +492,7 @@ export async function fetchPublicYoutubeRss(channelId: string, limit: number) {
     const clampedLimit = Math.min(Math.max(1, limit), MAX_RSS_FEED_LIMIT)
 
     return await fetchYoutubeRssFeed(channelId, clampedLimit)
-  } catch (error) {
-    console.error('公開RSS Feed取得エラー:', error)
+  } catch {
     return { success: false as const, error: 'RSS Feedの取得に失敗しました' }
   }
 }
@@ -505,9 +501,9 @@ export async function fetchPublicYoutubeRss(channelId: string, limit: number) {
  * YouTube URLからメタデータを取得（プロフィールセクション用）
  */
 export async function getYouTubeMetadata(url: string) {
-  try {
-    await requireAuth()
+  await requireAuth()
 
+  try {
     if (!url || url.length > 500) {
       return { success: false, error: "URLが無効です（500文字以内）" }
     }
@@ -548,8 +544,7 @@ export async function getYouTubeMetadata(url: string) {
         thumbnail: metadataResult.thumbnail || getYoutubeThumbnailUrl(videoId),
       }
     }
-  } catch (error) {
-    console.error("YouTubeメタデータ取得エラー:", error)
+  } catch {
     return { success: false, error: "メタデータの取得に失敗しました" }
   }
 }

@@ -16,8 +16,9 @@ export async function getCustomIcons(tags?: string[]): Promise<{
   icons?: CustomIcon[]
   error?: string
 }> {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
 
     const where: {
       containerName: string
@@ -64,8 +65,7 @@ export async function getCustomIcons(tags?: string[]): Promise<{
     }))
 
     return { success: true, icons }
-  } catch (error) {
-    console.error('Failed to fetch custom icons:', error)
+  } catch {
     return { success: false, error: 'カスタムアイコンの取得に失敗しました' }
   }
 }
@@ -78,8 +78,9 @@ export async function getIconTags(): Promise<{
   tags?: string[]
   error?: string
 }> {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
 
     // admin-iconsのすべてのタグを取得
     const mediaFiles = await prisma.mediaFile.findMany({
@@ -108,8 +109,7 @@ export async function getIconTags(): Promise<{
 
     const tags = Array.from(allTags).sort()
     return { success: true, tags }
-  } catch (error) {
-    console.error('Failed to fetch icon tags:', error)
+  } catch {
     return { success: false, error: 'タグの取得に失敗しました' }
   }
 }

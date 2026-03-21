@@ -7,8 +7,9 @@ import { extractNiconicoVideoId, fetchNiconicoVideoMetadata } from '@/services/n
  * ニコニコ動画 URL からメタデータを取得
  */
 export async function getNiconicoMetadata(url: string) {
+  await requireAuth()
+
   try {
-    await requireAuth()
 
     if (!url || url.length > 500) {
       return { success: false as const, error: '有効なニコニコ動画URLまたはIDではありません' }
@@ -28,8 +29,7 @@ export async function getNiconicoMetadata(url: string) {
       success: true as const,
       data: metadata,
     }
-  } catch (error) {
-    console.error('ニコニコメタデータ取得エラー:', error)
+  } catch {
     return { success: false as const, error: 'メタデータの取得に失敗しました' }
   }
 }

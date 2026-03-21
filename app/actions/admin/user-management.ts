@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
+import { revalidatePath } from "next/cache"
 import { UserRole, AccountType } from "@prisma/client"
 import { cuidSchema, cuidArraySchema } from "@/lib/validations/shared"
 import { handleSchema } from "@/lib/validations/user-setup"
@@ -95,8 +96,7 @@ export async function getUserList(
       totalPages: Math.ceil(totalCount / pagination.limit),
       currentPage: pagination.page,
     }
-  } catch (error) {
-    console.error("getUserList error:", error)
+  } catch {
     throw new Error("ユーザー一覧の取得に失敗しました")
   }
 }
@@ -145,8 +145,7 @@ export async function getUserDetail(userId: string) {
     }
 
     return user
-  } catch (error) {
-    console.error("getUserDetail error:", error)
+  } catch {
     throw new Error("ユーザー詳細の取得に失敗しました")
   }
 }
@@ -174,9 +173,9 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
       },
     })
 
+    revalidatePath('/admin/users')
     return updatedUser
-  } catch (error) {
-    console.error("updateUserRole error:", error)
+  } catch {
     throw new Error("ユーザーロールの更新に失敗しました")
   }
 }
@@ -209,9 +208,9 @@ export async function toggleUserActive(userId: string) {
       },
     })
 
+    revalidatePath('/admin/users')
     return updatedUser
-  } catch (error) {
-    console.error("toggleUserActive error:", error)
+  } catch {
     throw new Error("ユーザー状態の更新に失敗しました")
   }
 }
@@ -244,8 +243,7 @@ export async function deleteUser(userId: string, reason: string) {
     })
 
     return { success: true, deletedUser: user }
-  } catch (error) {
-    console.error("deleteUser error:", error)
+  } catch {
     throw new Error("ユーザーの削除に失敗しました")
   }
 }
@@ -277,8 +275,7 @@ export async function forceLogout(userId: string) {
       user,
       deletedSessionsCount: deletedSessions.count
     }
-  } catch (error) {
-    console.error("forceLogout error:", error)
+  } catch {
     throw new Error("強制ログアウトに失敗しました")
   }
 }
@@ -304,8 +301,7 @@ export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
         role: newRole
       }
     })
-  } catch (error) {
-    console.error("Bulk role update error:", error)
+  } catch {
     throw new Error("一括ロール変更に失敗しました")
   }
 }
@@ -327,8 +323,7 @@ export async function bulkToggleUserActive(userIds: string[], isActive: boolean)
         isActive
       }
     })
-  } catch (error) {
-    console.error("Bulk active toggle error:", error)
+  } catch {
     throw new Error("一括状態変更に失敗しました")
   }
 }
@@ -383,7 +378,7 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
         escapeCsvValue(user.handle || ""),
         escapeCsvValue(user.role),
         escapeCsvValue(user.isActive ? "アクティブ" : "非アクティブ"),
-        escapeCsvValue(new Date(user.createdAt).toLocaleDateString("ja-JP")),
+        escapeCsvValue(new Date(user.createdAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })),
       ].join(",")
     )
 
@@ -396,8 +391,7 @@ export async function getUsersForCsvExport(filters: UserListFilters = {}) {
       filename: `users_export_${new Date().toISOString().split('T')[0]}.csv`,
       isTruncated: shouldUseBatching && users.length === BATCH_SIZE
     }
-  } catch (error) {
-    console.error("CSV export error:", error)
+  } catch {
     throw new Error("CSVエクスポートに失敗しました")
   }
 }
@@ -431,21 +425,21 @@ export async function updateUserHandle(
       throw new Error("このハンドルは予約語のため使用できません")
     }
 
-    // 重複チェック
-    const existingUser = await prisma.user.findUnique({
-      where: { handle: normalizedHandle },
-      select: { id: true },
-    })
+    // 重複チェックと現在のユーザー情報を並列取得
+    const [existingUser, currentUser] = await Promise.all([
+      prisma.user.findUnique({
+        where: { handle: normalizedHandle },
+        select: { id: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: validatedUserId },
+        select: { handle: true, name: true, email: true },
+      }),
+    ])
 
     if (existingUser && existingUser.id !== validatedUserId) {
       throw new Error("このハンドルは既に使用されています")
     }
-
-    // 現在のユーザー情報を取得
-    const currentUser = await prisma.user.findUnique({
-      where: { id: validatedUserId },
-      select: { handle: true, name: true, email: true },
-    })
 
     if (!currentUser) {
       throw new Error("ユーザーが見つかりません")
@@ -463,6 +457,13 @@ export async function updateUserHandle(
       },
     })
 
+    // 旧ハンドルと新ハンドルのキャッシュを両方無効化
+    if (currentUser.handle) {
+      revalidatePath(`/@${currentUser.handle}`)
+    }
+    revalidatePath(`/@${normalizedHandle}`)
+    revalidatePath('/admin/users')
+
     return {
       success: true,
       oldHandle: currentUser.handle,
@@ -470,7 +471,6 @@ export async function updateUserHandle(
       user: updatedUser,
     }
   } catch (error) {
-    console.error("updateUserHandle error:", error)
     if (error instanceof Error) {
       throw error
     }

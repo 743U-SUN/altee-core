@@ -34,8 +34,9 @@ const contactSchema = z.object({
 
 // ユーザーの連絡方法設定を取得
 export async function getUserContact() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     const contact = await prisma.userContact.findUnique({
       where: { userId: session.user.id },
@@ -60,8 +61,9 @@ export async function getUserContact() {
 
 // 連絡方法設定を作成・更新
 export async function updateUserContact(data: z.infer<typeof contactSchema>) {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {
@@ -124,8 +126,9 @@ export async function updateUserContact(data: z.infer<typeof contactSchema>) {
 
 // 連絡方法設定を削除
 export async function deleteUserContact() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {

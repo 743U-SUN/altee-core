@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { cuidArraySchema } from '@/lib/validations/shared'
 import { userItemSchema, type UserItemInput } from '@/lib/validations/item'
 
 // 公開用読み取り関数は lib/queries/item-queries.ts に移動済み
@@ -58,8 +59,7 @@ export async function getItems(params?: {
       success: true,
       data: items,
     }
-  } catch (error) {
-    console.error('Failed to fetch items:', error)
+  } catch {
     return {
       success: false,
       error: 'アイテムの取得に失敗しました',
@@ -173,23 +173,14 @@ export async function createUserItem(data: UserItemInput) {
       },
     })
 
-    // handleを取得してパスをrevalidate
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { handle: true },
-    })
-
     revalidatePath('/dashboard/items')
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}/items`)
-    }
+    revalidatePath(`/@${session.user.handle}/items`)
 
     return {
       success: true,
       data: userItem,
     }
   } catch (error) {
-    console.error('Failed to create user item:', error)
     if (error instanceof Error) {
       return {
         success: false,
@@ -242,23 +233,14 @@ export async function updateUserItem(
       },
     })
 
-    // handleを取得してパスをrevalidate
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { handle: true },
-    })
-
     revalidatePath('/dashboard/items')
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}/items`)
-    }
+    revalidatePath(`/@${session.user.handle}/items`)
 
     return {
       success: true,
       data: updated,
     }
-  } catch (error) {
-    console.error('Failed to update user item:', error)
+  } catch {
     return {
       success: false,
       error: 'ユーザーアイテムの更新に失敗しました',
@@ -290,20 +272,11 @@ export async function deleteUserItem(userItemId: string) {
       where: { id: userItemId },
     })
 
-    // handleを取得してパスをrevalidate
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { handle: true },
-    })
-
     revalidatePath('/dashboard/items')
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}/items`)
-    }
+    revalidatePath(`/@${session.user.handle}/items`)
 
     return { success: true }
-  } catch (error) {
-    console.error('Failed to delete user item:', error)
+  } catch {
     return {
       success: false,
       error: 'ユーザーアイテムの削除に失敗しました',
@@ -319,10 +292,12 @@ export async function reorderUserItems(
 ) {
   const session = await requireAuth()
   const userId = session.user.id
+  const validatedIds = cuidArraySchema.parse(itemIds)
+
   try {
     // トランザクションで一括更新
     await prisma.$transaction(
-      itemIds.map((id, index) =>
+      validatedIds.map((id, index) =>
         prisma.userItem.update({
           where: {
             id,
@@ -335,20 +310,11 @@ export async function reorderUserItems(
       )
     )
 
-    // handleを取得してパスをrevalidate
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { handle: true },
-    })
-
     revalidatePath('/dashboard/items')
-    if (user?.handle) {
-      revalidatePath(`/@${user.handle}/items`)
-    }
+    revalidatePath(`/@${session.user.handle}/items`)
 
     return { success: true }
-  } catch (error) {
-    console.error('Failed to reorder user items:', error)
+  } catch {
     return {
       success: false,
       error: 'ユーザーアイテムの並び替えに失敗しました',

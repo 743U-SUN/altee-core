@@ -14,16 +14,15 @@ import {
 // ===== 一覧取得 =====
 
 export async function getPresetsAction() {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
     const presets = await prisma.sectionBackgroundPreset.findMany({
       orderBy: { sortOrder: 'asc' },
     })
 
     return { success: true as const, data: presets }
-  } catch (error) {
-    console.error('Failed to fetch presets:', error)
+  } catch {
     return { success: false as const, error: 'プリセットの取得に失敗しました' }
   }
 }
@@ -31,9 +30,9 @@ export async function getPresetsAction() {
 // ===== 詳細取得 =====
 
 export async function getPresetByIdAction(id: string) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
     const validatedId = cuidSchema.parse(id)
 
     const preset = await prisma.sectionBackgroundPreset.findUnique({
@@ -46,7 +45,6 @@ export async function getPresetByIdAction(id: string) {
 
     return { success: true as const, data: preset }
   } catch (error) {
-    console.error('Failed to fetch preset:', error)
     if (error instanceof z.ZodError) {
       return { success: false as const, error: '無効なIDフォーマットです' }
     }
@@ -57,8 +55,9 @@ export async function getPresetByIdAction(id: string) {
 // ===== 作成 =====
 
 export async function createPresetAction(input: PresetInput) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
 
     const validated = presetInputSchema.parse(input)
 
@@ -82,7 +81,6 @@ export async function createPresetAction(input: PresetInput) {
     revalidatePath('/admin/section-backgrounds')
     return { success: true as const, data: preset }
   } catch (error) {
-    console.error('Failed to create preset:', error)
     if (error instanceof z.ZodError) {
       return { success: false as const, error: error.errors[0].message }
     }
@@ -93,9 +91,9 @@ export async function createPresetAction(input: PresetInput) {
 // ===== 更新 =====
 
 export async function updatePresetAction(id: string, input: PresetInput) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
     const validatedId = cuidSchema.parse(id)
     const validated = presetInputSchema.parse(input)
 
@@ -128,7 +126,6 @@ export async function updatePresetAction(id: string, input: PresetInput) {
     revalidatePath('/admin/section-backgrounds')
     return { success: true as const, data: preset }
   } catch (error) {
-    console.error('Failed to update preset:', error)
     if (error instanceof z.ZodError) {
       return { success: false as const, error: error.errors[0].message }
     }
@@ -139,8 +136,9 @@ export async function updatePresetAction(id: string, input: PresetInput) {
 // ===== 削除 =====
 
 export async function deletePresetAction(id: string) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
 
     const validatedId = cuidSchema.parse(id)
 
@@ -160,7 +158,6 @@ export async function deletePresetAction(id: string) {
     revalidatePath('/', 'layout')
     return { success: true as const }
   } catch (error) {
-    console.error('Failed to delete preset:', error)
     if (error instanceof z.ZodError) {
       return { success: false as const, error: '無効なIDフォーマットです' }
     }
@@ -171,9 +168,9 @@ export async function deletePresetAction(id: string) {
 // ===== isActive トグル =====
 
 export async function togglePresetActiveAction(id: string, isActive: boolean) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
     const validatedId = cuidSchema.parse(id)
 
     await prisma.sectionBackgroundPreset.update({
@@ -185,7 +182,6 @@ export async function togglePresetActiveAction(id: string, isActive: boolean) {
     revalidatePath('/', 'layout')
     return { success: true as const }
   } catch (error) {
-    console.error('Failed to toggle preset active:', error)
     if (error instanceof z.ZodError) {
       return { success: false as const, error: '無効なIDフォーマットです' }
     }
@@ -198,9 +194,9 @@ export async function togglePresetActiveAction(id: string, isActive: boolean) {
 export async function updatePresetSortOrderAction(
   items: { id: string; sortOrder: number }[]
 ) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
     const itemsSchema = z.array(z.object({ id: cuidSchema, sortOrder: z.number().int() })).min(1).max(100)
     const validatedItems = itemsSchema.parse(items)
 
@@ -215,8 +211,7 @@ export async function updatePresetSortOrderAction(
 
     revalidatePath('/admin/section-backgrounds')
     return { success: true as const }
-  } catch (error) {
-    console.error('Failed to update sort order:', error)
+  } catch {
     return { success: false as const, error: '並び替えに失敗しました' }
   }
 }

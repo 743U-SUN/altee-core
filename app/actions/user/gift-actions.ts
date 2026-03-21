@@ -32,8 +32,9 @@ const giftSchema = z.object({
 
 // ユーザーのギフト設定を取得
 export async function getUserGift() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     const gift = await prisma.userGift.findUnique({
       where: { userId: session.user.id },
@@ -58,8 +59,9 @@ export async function getUserGift() {
 
 // ギフト設定を作成・更新
 export async function updateUserGift(data: z.infer<typeof giftSchema>) {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {
@@ -118,15 +120,15 @@ export async function updateUserGift(data: z.infer<typeof giftSchema>) {
       }
     }
 
-    console.error('ギフト設定更新エラー:', error)
     return { success: false, error: "ギフト設定の更新に失敗しました" }
   }
 }
 
 // ギフト設定を削除
 export async function deleteUserGift() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {

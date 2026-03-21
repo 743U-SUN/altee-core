@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { handleSchema, characterNameSchema } from "@/lib/validations/user-setup"
 import { basicInfoSchema } from "@/lib/validations/character"
 import { z } from "zod"
+import { cuidSchema } from "@/lib/validations/shared"
 
 // ===== ヘルパー =====
 
@@ -96,7 +97,9 @@ export async function createManagedProfile(data: {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力が不正です" }
     }
-    console.error("createManagedProfile error:", error)
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      return { success: false, error: "このハンドルは既に使用されています" }
+    }
     return { success: false, error: "プロフィールの作成に失敗しました" }
   }
 }
@@ -148,8 +151,7 @@ export async function getManagedProfiles(
       totalPages: Math.ceil(totalCount / pagination.limit),
       currentPage: pagination.page,
     }
-  } catch (error) {
-    console.error("getManagedProfiles error:", error)
+  } catch {
     throw new Error("プロフィール一覧の取得に失敗しました")
   }
 }
@@ -160,9 +162,13 @@ export async function getManagedProfiles(
 export async function getManagedProfileDetail(userId: string) {
   await requireAdmin()
 
+  const validatedUserId = cuidSchema.parse(userId)
+
   try {
+    await requireManagedUser(validatedUserId)
+
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       select: {
         id: true,
         handle: true,
@@ -181,13 +187,8 @@ export async function getManagedProfileDetail(userId: string) {
       throw new Error("ユーザーが見つかりません")
     }
 
-    if (user.accountType !== "MANAGED") {
-      throw new Error("このユーザーはMANAGEDプロフィールではありません")
-    }
-
     return user
   } catch (error) {
-    console.error("getManagedProfileDetail error:", error)
     if (error instanceof Error) {
       throw error
     }
@@ -201,18 +202,19 @@ export async function getManagedProfileDetail(userId: string) {
 export async function deleteManagedProfile(userId: string) {
   await requireAdmin()
 
+  const validatedUserId = cuidSchema.parse(userId)
+
   try {
-    await requireManagedUser(userId)
+    await requireManagedUser(validatedUserId)
 
     await prisma.user.delete({
-      where: { id: userId },
+      where: { id: validatedUserId },
     })
 
     revalidatePath("/admin/managed-profiles")
 
     return { success: true }
   } catch (error) {
-    console.error("deleteManagedProfile error:", error)
     if (error instanceof Error) {
       throw error
     }
@@ -228,16 +230,17 @@ export async function deleteManagedProfile(userId: string) {
 export async function adminGetCharacterInfo(userId: string) {
   await requireAdmin()
 
+  const validatedUserId = cuidSchema.parse(userId)
+
   try {
-    await requireManagedUser(userId)
+    await requireManagedUser(validatedUserId)
 
     const characterInfo = await prisma.characterInfo.findUnique({
-      where: { userId },
+      where: { userId: validatedUserId },
     })
 
     return { success: true, data: characterInfo }
-  } catch (error) {
-    console.error("adminGetCharacterInfo error:", error)
+  } catch {
     return { success: false, error: "キャラクター情報の取得に失敗しました" }
   }
 }
@@ -251,26 +254,24 @@ export async function adminUpdateCharacterInfo(
 ) {
   await requireAdmin()
 
+  const validatedUserId = cuidSchema.parse(userId)
+
   try {
-    await requireManagedUser(userId)
+    await requireManagedUser(validatedUserId)
 
     const validated = basicInfoSchema.parse(data)
 
+    const characterData = {
+      ...validated,
+      debutDate: validated.debutDate ? new Date(validated.debutDate) : null,
+      affiliationType: validated.affiliationType || null,
+      affiliation: validated.affiliationType === "agency" ? (validated.affiliation || null) : null,
+    }
+
     await prisma.characterInfo.upsert({
-      where: { userId },
-      create: {
-        userId,
-        ...validated,
-        debutDate: validated.debutDate ? new Date(validated.debutDate) : null,
-        affiliationType: validated.affiliationType || null,
-        affiliation: validated.affiliationType === "agency" ? (validated.affiliation || null) : null,
-      },
-      update: {
-        ...validated,
-        debutDate: validated.debutDate ? new Date(validated.debutDate) : null,
-        affiliationType: validated.affiliationType || null,
-        affiliation: validated.affiliationType === "agency" ? (validated.affiliation || null) : null,
-      },
+      where: { userId: validatedUserId },
+      create: { userId: validatedUserId, ...characterData },
+      update: characterData,
     })
 
     revalidatePath("/admin/managed-profiles")
@@ -280,7 +281,6 @@ export async function adminUpdateCharacterInfo(
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力が不正です" }
     }
-    console.error("adminUpdateCharacterInfo error:", error)
     return { success: false, error: "キャラクター情報の更新に失敗しました" }
   }
 }

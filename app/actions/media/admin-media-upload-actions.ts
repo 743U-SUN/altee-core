@@ -9,6 +9,16 @@ import { sanitizeSVGFile } from '@/lib/image-uploader/svg-sanitizer'
 import { TYPE_TO_FOLDER } from '@/lib/image-uploader/upload-type-map'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 
+/** MIMEタイプから安全な拡張子を導出（ユーザー提供のファイル名に依存しない） */
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+}
+
 interface MediaUploadData {
   uploadType: MediaType
   description?: string
@@ -62,10 +72,10 @@ export async function uploadMediaFileAction(
       return { success: false, error: 'ファイルサイズが10MBを超えています' }
     }
 
-    // ユニークなファイル名を生成
+    // ユニークなファイル名を生成（MIMEタイプから安全な拡張子を導出）
     const timestamp = Date.now()
     const randomString = crypto.randomUUID().slice(0, 8)
-    const extension = fileName.split('.').pop() || ''
+    const extension = MIME_TO_EXT[fileType] || 'bin'
     const uniqueFileName = `${timestamp}_${randomString}.${extension}`
 
     // uploadTypeに基づいてフォルダを決定
@@ -99,6 +109,7 @@ export async function uploadMediaFileAction(
       Body: fileBuffer,
       ContentType: fileType,
       ContentLength: fileBuffer.length,
+      CacheControl: 'public, max-age=31536000, immutable',
     }))
 
     const storageKey = `${STORAGE_BUCKET}/${key}`
@@ -133,8 +144,7 @@ export async function uploadMediaFileAction(
     }
 
     return { success: true, file: uploadedFile }
-  } catch (error) {
-    console.error('Media upload error:', error)
+  } catch {
     return { success: false, error: 'アップロードに失敗しました' }
   }
 }

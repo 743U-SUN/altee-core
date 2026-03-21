@@ -28,9 +28,9 @@ const livePrioritySchema = z.enum(["youtube", "twitch"])
  * Twitchチャンネル設定を更新
  */
 export async function updateTwitchChannel(data: z.infer<typeof twitchChannelSchema>) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const validatedData = twitchChannelSchema.parse(data)
 
     // Twitch User IDを取得
@@ -48,14 +48,13 @@ export async function updateTwitchChannel(data: z.infer<typeof twitchChannelSche
     })
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true, data: { twitchUserId: userIdResult.userId } }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    console.error("Twitchチャンネル更新エラー:", error)
     return { success: false, error: "Twitchチャンネル設定の更新に失敗しました" }
   }
 }
@@ -64,9 +63,9 @@ export async function updateTwitchChannel(data: z.infer<typeof twitchChannelSche
  * ライブ配信優先度設定を更新
  */
 export async function updateLivePriority(priority: z.infer<typeof livePrioritySchema>) {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const validatedPriority = livePrioritySchema.parse(priority)
 
     await prisma.user.update({
@@ -77,14 +76,13 @@ export async function updateLivePriority(priority: z.infer<typeof livePrioritySc
     })
 
     revalidatePath("/dashboard/platforms")
-    revalidatePath(`/[handle]`, "page")
+    revalidatePath(`/@${session.user.handle}`)
 
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    console.error("ライブ優先度更新エラー:", error)
     return { success: false, error: "ライブ優先度設定の更新に失敗しました" }
   }
 }
@@ -97,9 +95,9 @@ export async function updateLivePriority(priority: z.infer<typeof livePrioritySc
  * Twitch EventSub Subscriptionを作成
  */
 export async function createTwitchEventSubSubscription() {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     // クライアント提供のtwitchUserIdではなくDBから取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -111,8 +109,7 @@ export async function createTwitchEventSubSubscription() {
     }
 
     return await createTwitchEventSub(user.twitchUserId, session.user.id)
-  } catch (error) {
-    console.error("EventSub作成エラー:", error)
+  } catch {
     return { success: false, error: "EventSubの作成に失敗しました" }
   }
 }
@@ -121,12 +118,11 @@ export async function createTwitchEventSubSubscription() {
  * Twitch EventSub Subscriptionを削除
  */
 export async function deleteTwitchEventSubSubscription() {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     return await deleteTwitchEventSub(session.user.id)
-  } catch (error) {
-    console.error("EventSub削除エラー:", error)
+  } catch {
     return { success: false, error: "EventSubの削除に失敗しました" }
   }
 }
@@ -135,12 +131,11 @@ export async function deleteTwitchEventSubSubscription() {
  * Twitch EventSub Subscriptionのステータスを取得
  */
 export async function getTwitchEventSubSubscriptionStatus() {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     return await getTwitchEventSubStatus(session.user.id)
-  } catch (error) {
-    console.error("EventSubステータス取得エラー:", error)
+  } catch {
     return { success: false, isSubscribed: false, error: "ステータスの取得に失敗しました" }
   }
 }
@@ -153,9 +148,9 @@ export async function getTwitchEventSubSubscriptionStatus() {
  * ユーザーのTwitch設定を取得
  */
 export async function getUserTwitchSettings() {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -170,8 +165,7 @@ export async function getUserTwitchSettings() {
     }
 
     return { success: true, data: user }
-  } catch (error) {
-    console.error("Twitch設定取得エラー:", error)
+  } catch {
     return { success: false, error: "Twitch設定の取得に失敗しました" }
   }
 }

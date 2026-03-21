@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { cuidSchema } from "@/lib/validations/shared"
 import { FAQ_LIMITS, type FaqActionResult } from "@/types/faq"
 import type { SectionSettings } from "@/types/profile-sections"
 import { sectionSettingsSchema } from "@/lib/validations/section-settings"
@@ -52,11 +53,11 @@ const updateFaqQuestionSchema = z.object({
 })
 
 const reorderCategoriesSchema = z.object({
-  categoryIds: z.array(z.string()).min(1, "並び替えるカテゴリが必要です"),
+  categoryIds: z.array(cuidSchema).min(1, "並び替えるカテゴリが必要です").max(100),
 })
 
 const reorderQuestionsSchema = z.object({
-  questionIds: z.array(z.string()).min(1, "並び替える質問が必要です"),
+  questionIds: z.array(cuidSchema).min(1, "並び替える質問が必要です").max(100),
 })
 
 // 公開FAQ取得はlib/queries/faq-queries.tsに移動済み
@@ -79,7 +80,6 @@ export async function getFaqCategories(): Promise<FaqActionResult> {
 
     return { success: true, data: categories }
   } catch (error) {
-    console.error("FAQカテゴリー取得エラー:", error)
     return { success: false, error: "FAQカテゴリーの取得に失敗しました" }
   }
 }
@@ -128,7 +128,6 @@ export async function createFaqCategory(data: z.infer<typeof createFaqCategorySc
     revalidatePath("/dashboard/faqs")
     return { success: true, data: category }
   } catch (error) {
-    console.error("FAQカテゴリー作成エラー:", error)
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力データが無効です" }
     }
@@ -171,7 +170,6 @@ export async function updateFaqCategory(categoryId: string, data: z.infer<typeof
     revalidatePath("/dashboard/faqs")
     return { success: true, data: updatedCategory }
   } catch (error) {
-    console.error("FAQカテゴリー更新エラー:", error)
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力データが無効です" }
     }
@@ -205,7 +203,6 @@ export async function deleteFaqCategory(categoryId: string): Promise<FaqActionRe
     revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
-    console.error("FAQカテゴリー削除エラー:", error)
     return { success: false, error: "FAQカテゴリーの削除に失敗しました" }
   }
 }
@@ -244,7 +241,6 @@ export async function reorderFaqCategories(data: z.infer<typeof reorderCategorie
     revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
-    console.error("FAQカテゴリー並び替えエラー:", error)
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力データが無効です" }
     }
@@ -302,7 +298,6 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
     revalidatePath("/dashboard/faqs")
     return { success: true, data: question }
   } catch (error) {
-    console.error("FAQ質問作成エラー:", error)
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力データが無効です" }
     }
@@ -340,7 +335,6 @@ export async function updateFaqQuestion(questionId: string, data: z.infer<typeof
     revalidatePath("/dashboard/faqs")
     return { success: true, data: updatedQuestion }
   } catch (error) {
-    console.error("FAQ質問更新エラー:", error)
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力データが無効です" }
     }
@@ -374,7 +368,6 @@ export async function deleteFaqQuestion(questionId: string): Promise<FaqActionRe
     revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
-    console.error("FAQ質問削除エラー:", error)
     return { success: false, error: "FAQ質問の削除に失敗しました" }
   }
 }
@@ -421,7 +414,6 @@ export async function updateFaqCategorySettings(
     revalidatePath("/dashboard/faqs")
     return { success: true, data: updatedCategory }
   } catch (error) {
-    console.error("FAQカテゴリースタイル更新エラー:", error)
     return { success: false, error: 'スタイルの更新に失敗しました' }
   }
 }
@@ -472,7 +464,6 @@ export async function reorderFaqQuestions(categoryId: string, data: z.infer<type
     revalidatePath("/dashboard/faqs")
     return { success: true }
   } catch (error) {
-    console.error("FAQ質問並び替えエラー:", error)
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0]?.message || "入力データが無効です" }
     }

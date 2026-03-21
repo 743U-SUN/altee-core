@@ -131,8 +131,7 @@ export async function uploadImageAction(
 
     return { success: true, file: uploadedFile }
 
-  } catch (error) {
-    console.error('Image upload failed:', error)
+  } catch {
     return { success: false, error: 'アップロードに失敗しました' }
   }
 }
@@ -220,8 +219,7 @@ export async function deleteImageAction(
 
     return { success: true }
 
-  } catch (error) {
-    console.error('Image delete failed:', error)
+  } catch {
     return { success: false, error: '削除に失敗しました' }
   }
 }
@@ -232,6 +230,10 @@ export async function deleteImageAction(
 export async function deleteImagesAction(
   fileKeys: string[]
 ): Promise<{ success: boolean; deletedKeys?: string[]; errors?: string[] }> {
+  if (fileKeys.length > 50) {
+    return { success: false, errors: ['一度に削除できるファイルは最大50個です'] }
+  }
+
   const deletePromises = fileKeys.map(key => deleteImageAction(key))
   const results = await Promise.all(deletePromises)
 
@@ -285,8 +287,7 @@ export async function listImagesAction(
 
     return { success: true, files: uploadedFiles }
 
-  } catch (error) {
-    console.error('List images failed:', error)
+  } catch {
     return { success: false, error: '画像一覧の取得に失敗しました' }
   }
 }

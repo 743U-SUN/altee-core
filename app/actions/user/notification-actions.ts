@@ -34,8 +34,9 @@ const notificationSchema = z.object({
 
 // ユーザーの通知設定を取得
 export async function getUserNotification() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     const notification = await prisma.userNotification.findUnique({
       where: { userId: session.user.id },
@@ -60,8 +61,9 @@ export async function getUserNotification() {
 
 // 通知設定を作成・更新
 export async function updateUserNotification(data: z.infer<typeof notificationSchema>) {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {
@@ -124,8 +126,9 @@ export async function updateUserNotification(data: z.infer<typeof notificationSc
 
 // 通知設定を削除
 export async function deleteUserNotification() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
 
     // 権限チェック（AdminまたはUserロールのみ）
     if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.USER) {
@@ -157,13 +160,9 @@ export async function deleteUserNotification() {
 
 // Cookie用の既読状態管理
 export async function markNotificationAsRead() {
+  const session = await requireAuth()
+
   try {
-    const session = await requireAuth()
-
-    // この関数は通知の既読状態をCookieで管理するため、
-    // データベース操作は不要。
-    // 実際のCookie設定はクライアントサイドで行う。
-
     // 通知の最終更新日時を取得して返す
     const notification = await prisma.userNotification.findUnique({
       where: { userId: session.user.id },

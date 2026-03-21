@@ -1,8 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { requireAuth } from "@/lib/auth"
-import { auth } from "@/auth"
+import { requireAuth, cachedAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import type { ThemeSettings } from "@/types/profile-sections"
@@ -75,8 +74,6 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
 
     return { success: true, data: result }
   } catch (error) {
-    console.error("プロフィール更新エラー:", error)
-
     if (error instanceof z.ZodError) {
       return {
         success: false,
@@ -90,7 +87,7 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
 
 export async function getUserProfile(userId?: string) {
   try {
-    const session = await auth()
+    const session = await cachedAuth()
     const targetUserId = userId || session?.user?.id
 
     if (!targetUserId) {
@@ -119,8 +116,7 @@ export async function getUserProfile(userId?: string) {
     })
 
     return { success: true, data: userProfile }
-  } catch (error) {
-    console.error("プロフィール取得エラー:", error)
+  } catch {
     return { success: false, error: "プロフィールの取得に失敗しました" }
   }
 }
@@ -168,8 +164,8 @@ export async function updateThemeSettings(
         namecard.imageKey !== existingNamecard.imageKey)
 
     if (shouldDeleteOldImage && existingNamecard?.imageKey) {
-      deleteImageAction(existingNamecard.imageKey).catch((error) => {
-        console.error('Failed to delete old namecard image:', error)
+      deleteImageAction(existingNamecard.imageKey).catch(() => {
+        // 削除失敗は無視
       })
     }
 
@@ -190,8 +186,7 @@ export async function updateThemeSettings(
     revalidatePath("/dashboard/profile-editor")
 
     return { success: true }
-  } catch (error) {
-    console.error("themeSettings更新エラー:", error)
+  } catch {
     return { success: false, error: "テーマ設定の更新に失敗しました" }
   }
 }
@@ -200,6 +195,8 @@ export async function updateThemeSettings(
  * ネームカードプリセット画像一覧を取得（tags に "namecard" を含む BACKGROUND 画像）
  */
 export async function getNamecardImages() {
+  await requireAuth()
+
   try {
     const namecardImages = await prisma.mediaFile.findMany({
       where: {
@@ -222,8 +219,7 @@ export async function getNamecardImages() {
     })
 
     return { success: true, data: namecardImages }
-  } catch (error) {
-    console.error("ネームカード画像取得エラー:", error)
+  } catch {
     return { success: false, error: "ネームカード画像の取得に失敗しました" }
   }
 }
@@ -232,6 +228,8 @@ export async function getNamecardImages() {
  * 背景画像一覧を取得
  */
 export async function getBackgroundImages() {
+  await requireAuth()
+
   try {
     const backgroundImages = await prisma.mediaFile.findMany({
       where: {
@@ -253,8 +251,7 @@ export async function getBackgroundImages() {
     })
 
     return { success: true, data: backgroundImages }
-  } catch (error) {
-    console.error("背景画像取得エラー:", error)
+  } catch {
     return { success: false, error: "背景画像の取得に失敗しました" }
   }
 }

@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { USER_NEWS_LIMITS } from '@/types/user-news'
 import type { SectionSettings } from '@/types/profile-sections'
 import { sectionSettingsSchema } from '@/lib/validations/section-settings'
+import { generateSlug } from '@/lib/utils/slug'
 
 // バリデーションスキーマ
 const userNewsSchema = z.object({
@@ -31,16 +32,6 @@ const userNewsSchema = z.object({
   bodyImageId: z.string().nullable().optional(),
   published: z.boolean().default(false),
 })
-
-// スラッグ生成ヘルパー（英数字とハイフンのみ）
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, USER_NEWS_LIMITS.SLUG)
-}
 
 // 同一ユーザー内でスラッグの重複を回避
 async function ensureUniqueSlug(
@@ -128,34 +119,42 @@ export async function createUserNews(formData: FormData) {
 
   const uniqueSlug = await ensureUniqueSlug(session.user.id, slug)
 
-  // count+create をトランザクションで実行
-  const news = await prisma.$transaction(async (tx) => {
-    const count = await tx.userNews.count({
-      where: { userId: session.user.id },
+  // count+create をトランザクションで実行（TOCTOU防止）
+  let news
+  try {
+    news = await prisma.$transaction(async (tx) => {
+      const count = await tx.userNews.count({
+        where: { userId: session.user.id },
+      })
+      if (count >= USER_NEWS_LIMITS.MAX_ARTICLES) {
+        throw new Error(`記事は最大${USER_NEWS_LIMITS.MAX_ARTICLES}つまでです`)
+      }
+
+      const maxOrder = await tx.userNews.aggregate({
+        where: { userId: session.user.id },
+        _max: { sortOrder: true },
+      })
+
+      return tx.userNews.create({
+        data: {
+          userId: session.user.id,
+          title,
+          slug: uniqueSlug,
+          excerpt,
+          content,
+          thumbnailId: thumbnailId || null,
+          bodyImageId: bodyImageId || null,
+          published,
+          sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+        },
+      })
     })
-    if (count >= USER_NEWS_LIMITS.MAX_ARTICLES) {
-      throw new Error(`記事は最大${USER_NEWS_LIMITS.MAX_ARTICLES}つまでです`)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      throw new Error('このスラッグは既に使用されています')
     }
-
-    const maxOrder = await tx.userNews.aggregate({
-      where: { userId: session.user.id },
-      _max: { sortOrder: true },
-    })
-
-    return tx.userNews.create({
-      data: {
-        userId: session.user.id,
-        title,
-        slug: uniqueSlug,
-        excerpt,
-        content,
-        thumbnailId: thumbnailId || null,
-        bodyImageId: bodyImageId || null,
-        published,
-        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
-      },
-    })
-  })
+    throw error
+  }
 
   revalidatePath('/dashboard/news')
   return { success: true, data: news }

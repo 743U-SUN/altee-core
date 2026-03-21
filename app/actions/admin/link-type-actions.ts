@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { cuidSchema } from "@/lib/validations/shared"
 
 // LinkType用のinclude定義
 const linkTypeInclude = {
@@ -30,6 +31,9 @@ const linkTypeIconSchema = z.object({
   sortOrder: z.number().default(0),
 })
 
+// 並び替えスキーマ
+const reorderLinkTypesSchema = z.array(z.object({ id: cuidSchema, sortOrder: z.number().int() })).min(1).max(100)
+
 // 利用可能なリンクタイプ一覧を取得（管理者用）
 export async function getLinkTypes() {
   await requireAdmin()
@@ -50,9 +54,9 @@ export async function getLinkTypes() {
 
 // 管理者用: リンクタイプを作成
 export async function createLinkType(data: z.infer<typeof linkTypeSchema>) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
     const validatedData = linkTypeSchema.parse(data)
 
     // 最大sortOrderを取得
@@ -86,13 +90,14 @@ export async function createLinkType(data: z.infer<typeof linkTypeSchema>) {
 
 // 管理者用: リンクタイプを更新
 export async function updateLinkType(linkTypeId: string, data: Partial<z.infer<typeof linkTypeSchema>>) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
+    const validatedId = cuidSchema.parse(linkTypeId)
     const validatedData = linkTypeSchema.partial().parse(data)
 
     const linkType = await prisma.linkType.update({
-      where: { id: linkTypeId },
+      where: { id: validatedId },
       data: validatedData
     })
 
@@ -113,22 +118,26 @@ export async function updateLinkType(linkTypeId: string, data: Partial<z.infer<t
 
 // 管理者用: リンクタイプを削除
 export async function deleteLinkType(linkTypeId: string, _force: boolean = false) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
+    const validatedId = cuidSchema.parse(linkTypeId)
 
     // Note: UserLinkテーブルは削除済みのため、使用チェックはスキップ
     // 将来的にUserSectionでリンクタイプを使用する場合は、ここにチェックを追加
 
     // リンクタイプを削除（カスケードでLinkTypeIconも削除される）
     await prisma.linkType.delete({
-      where: { id: linkTypeId }
+      where: { id: validatedId }
     })
 
     revalidatePath("/admin/links")
     return { success: true }
 
   } catch (error) {
-    console.error('LinkType deletion error:', error)
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "無効なIDフォーマットです" }
+    }
     return { success: false, error: "リンクタイプの削除に失敗しました" }
   }
 }
@@ -137,31 +146,37 @@ export async function deleteLinkType(linkTypeId: string, _force: boolean = false
 
 // 管理者用: リンクタイプのアイコン一覧を取得
 export async function getLinkTypeIcons(linkTypeId: string) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
+    const validatedId = cuidSchema.parse(linkTypeId)
 
     const icons = await prisma.linkTypeIcon.findMany({
-      where: { linkTypeId },
+      where: { linkTypeId: validatedId },
       orderBy: { sortOrder: "asc" }
     })
 
     return { success: true, data: icons }
 
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "無効なIDフォーマットです" }
+    }
     return { success: false, error: "アイコンの取得に失敗しました" }
   }
 }
 
 // 管理者用: リンクタイプアイコンを作成
 export async function createLinkTypeIcon(linkTypeId: string, data: z.infer<typeof linkTypeIconSchema>) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
+    const validatedLinkTypeId = cuidSchema.parse(linkTypeId)
     const validatedData = linkTypeIconSchema.parse(data)
 
     // リンクタイプが存在するかチェック
     const linkType = await prisma.linkType.findUnique({
-      where: { id: linkTypeId }
+      where: { id: validatedLinkTypeId }
     })
 
     if (!linkType) {
@@ -170,28 +185,30 @@ export async function createLinkTypeIcon(linkTypeId: string, data: z.infer<typeo
 
     // 最大sortOrderを取得
     const maxSortOrder = await prisma.linkTypeIcon.aggregate({
-      where: { linkTypeId },
+      where: { linkTypeId: validatedLinkTypeId },
       _max: { sortOrder: true }
     })
 
     const newSortOrder = validatedData.sortOrder || (maxSortOrder._max.sortOrder || 0) + 1
 
-    // デフォルトアイコンに設定する場合は、他のアイコンのデフォルトを解除
-    if (validatedData.isDefault) {
-      await prisma.linkTypeIcon.updateMany({
-        where: { linkTypeId },
-        data: { isDefault: false }
-      })
-    }
-
-    const icon = await prisma.linkTypeIcon.create({
-      data: {
-        linkTypeId,
-        iconKey: validatedData.iconKey,
-        iconName: validatedData.iconName || "",
-        isDefault: validatedData.isDefault,
-        sortOrder: newSortOrder,
+    // デフォルトアイコン設定と作成をトランザクションで実行
+    const icon = await prisma.$transaction(async (tx) => {
+      if (validatedData.isDefault) {
+        await tx.linkTypeIcon.updateMany({
+          where: { linkTypeId: validatedLinkTypeId },
+          data: { isDefault: false }
+        })
       }
+
+      return tx.linkTypeIcon.create({
+        data: {
+          linkTypeId: validatedLinkTypeId,
+          iconKey: validatedData.iconKey,
+          iconName: validatedData.iconName || "",
+          isDefault: validatedData.isDefault,
+          sortOrder: newSortOrder,
+        }
+      })
     })
 
     revalidatePath("/admin/links")
@@ -211,13 +228,14 @@ export async function createLinkTypeIcon(linkTypeId: string, data: z.infer<typeo
 
 // 管理者用: リンクタイプアイコンを更新
 export async function updateLinkTypeIcon(iconId: string, data: Partial<z.infer<typeof linkTypeIconSchema>>) {
-  try {
-    await requireAdmin()
+  await requireAdmin()
 
+  try {
+    const validatedId = cuidSchema.parse(iconId)
     const validatedData = linkTypeIconSchema.partial().parse(data)
 
     const existingIcon = await prisma.linkTypeIcon.findUnique({
-      where: { id: iconId }
+      where: { id: validatedId }
     })
 
     if (!existingIcon) {
@@ -229,14 +247,14 @@ export async function updateLinkTypeIcon(iconId: string, data: Partial<z.infer<t
       await prisma.linkTypeIcon.updateMany({
         where: {
           linkTypeId: existingIcon.linkTypeId,
-          id: { not: iconId }
+          id: { not: validatedId }
         },
         data: { isDefault: false }
       })
     }
 
     const icon = await prisma.linkTypeIcon.update({
-      where: { id: iconId },
+      where: { id: validatedId },
       data: validatedData
     })
 
@@ -257,28 +275,35 @@ export async function updateLinkTypeIcon(iconId: string, data: Partial<z.infer<t
 
 // 管理者用: リンクタイプアイコンを削除
 export async function deleteLinkTypeIcon(iconId: string) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
+    const validatedId = cuidSchema.parse(iconId)
 
     await prisma.linkTypeIcon.delete({
-      where: { id: iconId }
+      where: { id: validatedId }
     })
 
     revalidatePath("/admin/links")
     return { success: true }
 
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "無効なIDフォーマットです" }
+    }
     return { success: false, error: "アイコンの削除に失敗しました" }
   }
 }
 
 // 管理者用: デフォルトアイコンを設定
 export async function setDefaultLinkTypeIcon(iconId: string) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
+    const validatedId = cuidSchema.parse(iconId)
 
     const targetIcon = await prisma.linkTypeIcon.findUnique({
-      where: { id: iconId }
+      where: { id: validatedId }
     })
 
     if (!targetIcon) {
@@ -291,13 +316,13 @@ export async function setDefaultLinkTypeIcon(iconId: string) {
       prisma.linkTypeIcon.updateMany({
         where: {
           linkTypeId: targetIcon.linkTypeId,
-          id: { not: iconId }
+          id: { not: validatedId }
         },
         data: { isDefault: false }
       }),
       // 指定したアイコンをデフォルトに設定
       prisma.linkTypeIcon.update({
-        where: { id: iconId },
+        where: { id: validatedId },
         data: { isDefault: true }
       })
     ])
@@ -305,18 +330,23 @@ export async function setDefaultLinkTypeIcon(iconId: string) {
     revalidatePath("/admin/links")
     return { success: true }
 
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "無効なIDフォーマットです" }
+    }
     return { success: false, error: "デフォルトアイコンの設定に失敗しました" }
   }
 }
 
 // 管理者用: リンクタイプの一括並び替え
 export async function reorderLinkTypes(items: { id: string; sortOrder: number }[]) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
+    const validatedItems = reorderLinkTypesSchema.parse(items)
 
     await prisma.$transaction(
-      items.map((item) =>
+      validatedItems.map((item) =>
         prisma.linkType.update({
           where: { id: item.id },
           data: { sortOrder: item.sortOrder },
@@ -333,24 +363,27 @@ export async function reorderLinkTypes(items: { id: string; sortOrder: number }[
 
 // 管理者用: アイコンの並び替え
 export async function reorderLinkTypeIcons(linkTypeId: string, iconIds: string[]) {
+  await requireAdmin()
+
   try {
-    await requireAdmin()
+    const validatedLinkTypeId = cuidSchema.parse(linkTypeId)
+    const validatedIconIds = iconIds.map(id => cuidSchema.parse(id))
 
     // すべてのアイコンが指定したリンクタイプに属するかチェック
     const icons = await prisma.linkTypeIcon.findMany({
       where: {
-        id: { in: iconIds },
-        linkTypeId
+        id: { in: validatedIconIds },
+        linkTypeId: validatedLinkTypeId
       }
     })
 
-    if (icons.length !== iconIds.length) {
+    if (icons.length !== validatedIconIds.length) {
       return { success: false, error: "無効なアイコンが含まれています" }
     }
 
     // トランザクションで並び順を更新
     await prisma.$transaction(
-      iconIds.map((iconId, index) =>
+      validatedIconIds.map((iconId, index) =>
         prisma.linkTypeIcon.update({
           where: { id: iconId },
           data: { sortOrder: index }
@@ -361,7 +394,10 @@ export async function reorderLinkTypeIcons(linkTypeId: string, iconIds: string[]
     revalidatePath("/admin/links")
     return { success: true }
 
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "無効なIDフォーマットです" }
+    }
     return { success: false, error: "アイコンの並び替えに失敗しました" }
   }
 }

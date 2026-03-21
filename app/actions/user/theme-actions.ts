@@ -55,8 +55,7 @@ export async function getUserThemeSettings(
       (profile?.themeSettings as unknown as ThemeSettings) ??
       DEFAULT_THEME_SETTINGS
     )
-  } catch (error) {
-    console.error('Failed to get theme settings:', error)
+  } catch {
     return null
   }
 }
@@ -78,16 +77,12 @@ export async function updateUserThemeSettings(settings: {
     notification?: boolean
   }
 }): Promise<{ success: boolean; error?: string }> {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     // 入力バリデーション（ホワイトリスト検証）
     const parseResult = themeSettingsSchema.safeParse(settings)
     if (!parseResult.success) {
-      console.error(
-        '[updateUserThemeSettings] バリデーションエラー:',
-        parseResult.error.flatten()
-      )
       return { success: false, error: '無効な設定値が含まれています' }
     }
 
@@ -165,8 +160,7 @@ export async function updateUserThemeSettings(settings: {
     revalidatePath('/dashboard/profile-editor')
 
     return { success: true }
-  } catch (error) {
-    console.error('Failed to update theme settings:', error)
+  } catch {
     return { success: false, error: 'テーマ設定の更新に失敗しました' }
   }
 }
@@ -187,16 +181,12 @@ const backgroundSettingsSchema = z
 export async function updateThemeBackground(
   background?: BackgroundSettings
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const session = await requireAuth()
+  const session = await requireAuth()
 
+  try {
     // 入力バリデーション
     const parseResult = backgroundSettingsSchema.safeParse(background)
     if (!parseResult.success) {
-      console.error(
-        '[updateThemeBackground] バリデーションエラー:',
-        parseResult.error.flatten()
-      )
       return { success: false, error: '無効な背景設定です' }
     }
 
@@ -216,8 +206,8 @@ export async function updateThemeBackground(
 
     if (shouldDeleteOldImage) {
       // 非同期で画像を削除（失敗しても背景設定の更新は続行）
-      deleteImageAction(oldImageKey).catch((error) => {
-        console.error('Failed to delete old background image:', error)
+      deleteImageAction(oldImageKey).catch(() => {
+        // 削除失敗は無視
       })
     }
 
@@ -247,8 +237,7 @@ export async function updateThemeBackground(
     revalidatePath('/dashboard/profile-editor')
 
     return { success: true }
-  } catch (error) {
-    console.error('Failed to update background settings:', error)
+  } catch {
     return { success: false, error: '背景設定の更新に失敗しました' }
   }
 }

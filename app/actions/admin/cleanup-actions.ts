@@ -5,6 +5,7 @@ import { storageClient, STORAGE_BUCKET } from '@/lib/storage'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { z } from 'zod'
+import { parseStorageKey } from '@/lib/utils/storage-key'
 
 // S3キーのパターン: "bucket/folder/YYYY/MM/filename.ext" または "folder/YYYY/MM/filename.ext"
 const s3KeySchema = z.string().min(1).max(1024).regex(/^[a-zA-Z0-9!_.*'()\-/]+$/, '不正なS3キーフォーマットです')
@@ -39,7 +40,6 @@ export async function getAllStorageFiles() {
         for (const obj of result.Contents) {
           if (obj.Key) {
             // Key形式: "folder/YYYY/MM/filename.ext"
-            // const folder = obj.Key.split('/')[0] || 'unknown'
             allFiles.push({
               container: STORAGE_BUCKET,
               key: obj.Key,
@@ -60,7 +60,6 @@ export async function getAllStorageFiles() {
       count: allFiles.length
     }
   } catch (error) {
-    console.error('Storage files fetch error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -73,7 +72,7 @@ export async function getAllStorageFiles() {
 // 孤立ファイルを検出
 export async function detectOrphanFiles() {
   await requireAdmin()
-  
+
   try {
     // 1. ストレージの全ファイル取得
     const storageResult = await getAllStorageFiles()
@@ -85,17 +84,18 @@ export async function detectOrphanFiles() {
         count: 0
       }
     }
-    
-    // 2. DBの全ファイル取得（論理削除含む - 孤立ファイル検出には全てが必要）
+
+    // 2. DBの全ファイル取得（論理削除済みを除く - 孤立ファイル検出には未削除のみ対象）
     const allDbFiles = await prisma.mediaFile.findMany({
+      where: { deletedAt: null },
       select: { storageKey: true, id: true }
     })
-    
+
     // 3. 孤立ファイルを特定（DBに記録のないストレージファイル）
-    const orphanFiles = storageResult.files.filter(storageFile => 
+    const orphanFiles = storageResult.files.filter(storageFile =>
       !allDbFiles.some(dbFile => dbFile.storageKey === storageFile.storageKey)
     )
-    
+
     return {
       success: true,
       orphans: orphanFiles,
@@ -104,7 +104,6 @@ export async function detectOrphanFiles() {
       dbTotal: allDbFiles.length
     }
   } catch (error) {
-    console.error('Orphan detection error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -124,36 +123,29 @@ export async function cleanupOrphanFiles(orphanKeys: string[]) {
   const errors: string[] = []
 
   try {
-    for (const storageKey of validatedKeys) {
-      try {
-        // storageKeyの形式を判定して適切なBucketとKeyを決定
-        let bucket: string
-        let objectKey: string
+    const CONCURRENCY = 10
+    for (let i = 0; i < validatedKeys.length; i += CONCURRENCY) {
+      const batch = validatedKeys.slice(i, i + CONCURRENCY)
+      const results = await Promise.allSettled(
+        batch.map(async (storageKey) => {
+          const { bucket, objectKey } = parseStorageKey(storageKey)
+          await storageClient.send(new DeleteObjectCommand({
+            Bucket: bucket,
+            Key: objectKey
+          }))
+          return storageKey
+        })
+      )
 
-        if (storageKey.startsWith('altee-images/')) {
-          // 新形式: "altee-images/folder/YYYY/MM/filename.ext"
-          // Bucket: altee-images
-          // Key: folder/YYYY/MM/filename.ext
-          const [bucketPart, ...keyParts] = storageKey.split('/')
-          bucket = bucketPart
-          objectKey = keyParts.join('/')
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j]
+        if (result.status === 'fulfilled') {
+          deletedFiles.push(result.value)
         } else {
-          // 旧形式（ConoHa時代）: "folder/YYYY/MM/filename.ext"
-          // Bucket: altee-images（現在のバケット）
-          // Key: folder/YYYY/MM/filename.ext（全体をKeyとして使用）
-          bucket = STORAGE_BUCKET
-          objectKey = storageKey
+          const storageKey = batch[j]
+          const errorMsg = `${storageKey}: ${result.reason instanceof Error ? result.reason.message : 'Unknown error'}`
+          errors.push(errorMsg)
         }
-
-        await storageClient.send(new DeleteObjectCommand({
-          Bucket: bucket,
-          Key: objectKey
-        }))
-
-        deletedFiles.push(storageKey)
-      } catch (error) {
-        const errorMsg = `${storageKey}: ${error instanceof Error ? error.message : 'Unknown error'}`
-        errors.push(errorMsg)
       }
     }
 
@@ -164,7 +156,6 @@ export async function cleanupOrphanFiles(orphanKeys: string[]) {
       errors: errors.length > 0 ? errors : undefined
     }
   } catch (error) {
-    console.error('Orphan cleanup error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -208,7 +199,6 @@ export async function getDeletionStats() {
       }
     }
   } catch (error) {
-    console.error('Deletion stats error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

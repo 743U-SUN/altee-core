@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { cuidArraySchema } from '@/lib/validations/shared'
+import { cuidSchema, cuidArraySchema } from '@/lib/validations/shared'
+import { generateSlug } from '@/lib/utils/slug'
 
 // バリデーションスキーマ
 const articleSchema = z.object({
@@ -15,16 +16,6 @@ const articleSchema = z.object({
   thumbnailId: z.string().nullable().optional(),
   published: z.boolean().default(false),
 })
-
-// スラッグ生成用ヘルパー
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 255)
-}
 
 // Article作成
 export async function createArticle(formData: FormData) {
@@ -113,7 +104,6 @@ export async function createArticle(formData: FormData) {
     revalidatePath('/admin/attributes')
     return { success: true, article }
   } catch (error) {
-    console.error('Article creation error:', error)
     throw new Error(error instanceof Error ? error.message : '記事の作成に失敗しました')
   }
 }
@@ -121,6 +111,8 @@ export async function createArticle(formData: FormData) {
 // Article更新
 export async function updateArticle(id: string, formData: FormData) {
   await requireAdmin()
+
+  const validatedId = cuidSchema.parse(id)
   
   const validatedFields = articleSchema.safeParse({
     title: formData.get('title'),
@@ -145,7 +137,7 @@ export async function updateArticle(id: string, formData: FormData) {
 
   try {
     const existingArticle = await prisma.article.findUnique({
-      where: { id }
+      where: { id: validatedId }
     })
 
     if (!existingArticle) {
@@ -156,7 +148,7 @@ export async function updateArticle(id: string, formData: FormData) {
     const duplicateSlug = await prisma.article.findFirst({
       where: {
         slug,
-        id: { not: id }
+        id: { not: validatedId }
       }
     })
 
@@ -180,7 +172,7 @@ export async function updateArticle(id: string, formData: FormData) {
     const article = await prisma.$transaction(async (tx) => {
       // 記事更新
       const updatedArticle = await tx.article.update({
-        where: { id },
+        where: { id: validatedId },
         data: {
           title,
           slug,
@@ -194,17 +186,17 @@ export async function updateArticle(id: string, formData: FormData) {
 
       // 既存のカテゴリ・タグ関連を削除
       await tx.articleCategory.deleteMany({
-        where: { articleId: id }
+        where: { articleId: validatedId }
       })
       await tx.articleTag.deleteMany({
-        where: { articleId: id }
+        where: { articleId: validatedId }
       })
 
       // 新しいカテゴリのリレーション作成
       if (categoryIds.length > 0) {
         await tx.articleCategory.createMany({
           data: categoryIds.map(categoryId => ({
-            articleId: id,
+            articleId: validatedId,
             categoryId,
           }))
         })
@@ -214,7 +206,7 @@ export async function updateArticle(id: string, formData: FormData) {
       if (tagIds.length > 0) {
         await tx.articleTag.createMany({
           data: tagIds.map(tagId => ({
-            articleId: id,
+            articleId: validatedId,
             tagId,
           }))
         })
@@ -224,11 +216,10 @@ export async function updateArticle(id: string, formData: FormData) {
     })
 
     revalidatePath('/admin/articles')
-    revalidatePath(`/admin/articles/${id}`)
+    revalidatePath(`/admin/articles/${validatedId}`)
     revalidatePath('/admin/attributes')
     return { success: true, article }
   } catch (error) {
-    console.error('Article update error:', error)
     throw new Error(error instanceof Error ? error.message : '記事の更新に失敗しました')
   }
 }
@@ -237,9 +228,11 @@ export async function updateArticle(id: string, formData: FormData) {
 export async function deleteArticle(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const article = await prisma.article.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: { thumbnail: true }
     })
 
@@ -256,14 +249,13 @@ export async function deleteArticle(id: string) {
       }
 
       await tx.article.delete({
-        where: { id }
+        where: { id: validatedId }
       })
     })
 
     revalidatePath('/admin/articles')
     return { success: true }
   } catch (error) {
-    console.error('Article deletion error:', error)
     throw new Error(error instanceof Error ? error.message : '記事の削除に失敗しました')
   }
 }
@@ -318,8 +310,7 @@ export async function getArticles(page: number = 1, limit: number = 10) {
         totalPages: Math.ceil(total / safeLimit)
       }
     }
-  } catch (error) {
-    console.error('Articles fetch error:', error)
+  } catch {
     throw new Error('記事の取得に失敗しました')
   }
 }
@@ -328,9 +319,11 @@ export async function getArticles(page: number = 1, limit: number = 10) {
 export async function getArticle(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const article = await prisma.article.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         author: {
           select: { id: true, name: true, email: true }
@@ -361,7 +354,6 @@ export async function getArticle(id: string) {
 
     return article
   } catch (error) {
-    console.error('Article fetch error:', error)
     throw new Error(error instanceof Error ? error.message : '記事の取得に失敗しました')
   }
 }
@@ -370,9 +362,11 @@ export async function getArticle(id: string) {
 export async function toggleArticlePublished(id: string) {
   await requireAdmin()
 
+  const validatedId = cuidSchema.parse(id)
+
   try {
     const article = await prisma.article.findUnique({
-      where: { id }
+      where: { id: validatedId }
     })
 
     if (!article) {
@@ -383,7 +377,7 @@ export async function toggleArticlePublished(id: string) {
     const newPublished = !article.published
 
     const updatedArticle = await prisma.article.update({
-      where: { id },
+      where: { id: validatedId },
       data: {
         published: newPublished,
         publishedAt: (wasUnpublished && newPublished) ? new Date() : article.publishedAt,
@@ -391,10 +385,9 @@ export async function toggleArticlePublished(id: string) {
     })
 
     revalidatePath('/admin/articles')
-    revalidatePath(`/admin/articles/${id}`)
+    revalidatePath(`/admin/articles/${validatedId}`)
     return { success: true, article: updatedArticle }
   } catch (error) {
-    console.error('Article publish toggle error:', error)
     throw new Error(error instanceof Error ? error.message : '公開状態の切り替えに失敗しました')
   }
 }
