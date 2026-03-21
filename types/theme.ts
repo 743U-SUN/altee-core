@@ -6,7 +6,6 @@
 export type {
   ThemeBase,
   ColorVariant,
-  SectionCategory,
   ThemeColorPalette,
   ThemeDecorations,
   BadgeType,

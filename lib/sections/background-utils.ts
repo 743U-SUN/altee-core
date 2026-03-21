@@ -6,6 +6,14 @@ import type {
   GradientBgConfig,
 } from '@/types/profile-sections'
 
+function isSolidBgConfig(config: SectionBackgroundPreset['config']): config is SolidBgConfig {
+  return 'color' in config && typeof (config as SolidBgConfig).color === 'string'
+}
+
+function isGradientBgConfig(config: SectionBackgroundPreset['config']): config is GradientBgConfig {
+  return 'stops' in config && Array.isArray((config as GradientBgConfig).stops) && 'type' in config
+}
+
 /**
  * プリセットの config → CSSProperties に変換
  * Phase 1 では solid + gradient のみ対応
@@ -19,14 +27,12 @@ export function resolveBackgroundStyle(
 
   switch (category) {
     case 'solid': {
-      const c = config as SolidBgConfig
-      if (!c.color || typeof c.color !== 'string') return {}
-      return { backgroundColor: c.color }
+      if (!isSolidBgConfig(config) || !config.color) return {}
+      return { backgroundColor: config.color }
     }
     case 'gradient': {
-      const c = config as GradientBgConfig
-      if (!c.stops || !Array.isArray(c.stops) || !c.type) return {}
-      const gradientString = buildGradientString(c)
+      if (!isGradientBgConfig(config) || !config.stops || !config.type) return {}
+      const gradientString = buildGradientString(config)
       return { background: gradientString }
     }
     // pattern, animated は Phase 2+ で対応
@@ -80,14 +86,12 @@ export function generateCssString(
 ): string {
   switch (category) {
     case 'solid': {
-      const c = config as SolidBgConfig
-      if (!c.color || typeof c.color !== 'string') return ''
-      return `background-color: ${c.color}`
+      if (!isSolidBgConfig(config) || !config.color) return ''
+      return `background-color: ${config.color}`
     }
     case 'gradient': {
-      const c = config as GradientBgConfig
-      if (!c.stops || !Array.isArray(c.stops) || !c.type) return ''
-      return `background: ${buildGradientString(c)}`
+      if (!isGradientBgConfig(config) || !config.stops || !config.type) return ''
+      return `background: ${buildGradientString(config)}`
     }
     default:
       return ''

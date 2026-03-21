@@ -52,7 +52,6 @@ export function applyThemePreview(themeId: string): () => void {
 
   const theme = getTheme(themeId)
   if (!theme) {
-    console.error(`[applyThemePreview] Theme not found: ${themeId}`)
     return () => {}
   }
 

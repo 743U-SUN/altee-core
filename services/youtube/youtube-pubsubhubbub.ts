@@ -19,7 +19,7 @@ async function managePubSubSubscription(
   mode: 'subscribe' | 'unsubscribe'
 ): Promise<PubSubResult> {
   try {
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/youtube`
+    const callbackUrl = `https://${process.env.NEXT_PUBLIC_DOMAIN}/api/webhooks/youtube`
     const topicUrl = `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`
     const hubUrl = "https://pubsubhubbub.appspot.com/subscribe"
 

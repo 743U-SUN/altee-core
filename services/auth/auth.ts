@@ -44,8 +44,7 @@ export async function updateUserImage(userId: string, newImageUrl: string): Prom
     })
     
     return true
-  } catch (error) {
-    console.error('Failed to update user image:', error)
+  } catch {
     return false
   }
 }

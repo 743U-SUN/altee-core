@@ -90,10 +90,3 @@ export function isReservedHandle(handle: string): boolean {
   return (RESERVED_HANDLES as readonly string[]).includes(lowerHandle);
 }
 
-/**
- * 予約語の一覧を取得（開発・デバッグ用）
- * @returns 予約語の配列
- */
-export function getReservedHandles(): readonly string[] {
-  return RESERVED_HANDLES;
-}

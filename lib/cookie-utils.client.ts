@@ -6,9 +6,9 @@ import { NOTIFICATION_CONSTRAINTS } from "@/types/notifications"
  * 通知の既読状態をCookieに保存
  */
 export function setNotificationReadCookie(userId: string, timestamp: string = new Date().toISOString()) {
-  if (typeof document === 'undefined') return
+  if (typeof window === 'undefined') return
 
-  const cookieName = `notification_read_${userId}`
+  const cookieName = `notification_read_${encodeURIComponent(userId)}`
   const expiresDate = new Date()
   expiresDate.setDate(expiresDate.getDate() + NOTIFICATION_CONSTRAINTS.COOKIE_EXPIRES_DAYS)
 
@@ -20,9 +20,9 @@ export function setNotificationReadCookie(userId: string, timestamp: string = ne
  * 通知の既読状態をCookieから取得
  */
 export function getNotificationReadCookie(userId: string): string | null {
-  if (typeof document === 'undefined') return null
+  if (typeof window === 'undefined') return null
 
-  const cookieName = `notification_read_${userId}`
+  const cookieName = `notification_read_${encodeURIComponent(userId)}`
   const cookies = document.cookie.split(';')
 
   for (const cookie of cookies) {
@@ -55,9 +55,9 @@ export function isNotificationUnread(userId: string, notificationUpdatedAt: stri
  * 通知の既読状態をCookieから削除
  */
 export function clearNotificationReadCookie(userId: string) {
-  if (typeof document === 'undefined') return
+  if (typeof window === 'undefined') return
 
-  const cookieName = `notification_read_${userId}`
+  const cookieName = `notification_read_${encodeURIComponent(userId)}`
   const secure = window.location.protocol === 'https:' ? '; Secure' : ''
   document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict${secure}`
 }

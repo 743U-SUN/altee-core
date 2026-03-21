@@ -43,8 +43,7 @@ export const getUserPublicItemsByHandle = cache(async (handle: string) => {
       success: true as const,
       data: userItems,
     }
-  } catch (error) {
-    console.error('Failed to fetch public user items:', error)
+  } catch {
     return {
       success: false as const,
       error: '公開アイテムの取得に失敗しました',

@@ -3,9 +3,6 @@
  * 3層アーキテクチャ: Base → Variant → Color
  */
 
-import type { SectionCategory } from '@/lib/sections/types'
-export type { SectionCategory }
-
 /**
  * テーマベース（スタイルの基本形）
  */

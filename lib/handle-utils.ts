@@ -56,8 +56,7 @@ export async function checkHandleAvailability(handle: string): Promise<HandleAva
     }
 
     return { available: true };
-  } catch (error) {
-    console.error('Handle availability check error:', error);
+  } catch {
     return {
       available: false,
       error: 'ハンドルの確認中にエラーが発生しました',
@@ -142,8 +141,7 @@ export const getUserByHandle = cache(async (handle: string) => {
     });
 
     return user;
-  } catch (error) {
-    console.error('Get user by handle error:', error);
+  } catch {
     return null;
   }
 });
@@ -162,8 +160,7 @@ export async function handleExists(handle: string): Promise<boolean> {
     });
 
     return !!user;
-  } catch (error) {
-    console.error('Handle exists check error:', error);
+  } catch {
     return false;
   }
 }

@@ -121,7 +121,6 @@ export function applyThemeVariables(
 ): React.CSSProperties {
   const preset = getThemePreset(presetName)
   if (!preset) {
-    console.warn(`Theme preset not found: ${presetName}`)
     return {}
   }
 
@@ -134,11 +133,11 @@ export function applyThemeVariables(
     }
   }
 
-  if (options?.headerColor) {
+  if (options?.headerColor && /^#[0-9a-fA-F]{3,8}$/.test(options.headerColor)) {
     overrides['--theme-header-bg'] = options.headerColor
   }
 
-  if (options?.headerTextColor) {
+  if (options?.headerTextColor && /^#[0-9a-fA-F]{3,8}$/.test(options.headerTextColor)) {
     overrides['--theme-header-text'] = options.headerTextColor
   }
 

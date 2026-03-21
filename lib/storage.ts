@@ -17,4 +17,3 @@ const config = {
 export const storageClient = new S3Client(config)
 
 export const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'altee-images'
-export const STORAGE_ENDPOINT = process.env.STORAGE_ENDPOINT || ''
