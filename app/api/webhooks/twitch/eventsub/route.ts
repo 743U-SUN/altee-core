@@ -15,7 +15,6 @@ function verifyTwitchSignature(
 ): boolean {
   const secret = process.env.TWITCH_WEBHOOK_SECRET
   if (!secret) {
-    console.error("[Twitch EventSub] TWITCH_WEBHOOK_SECRET is not set")
     return false
   }
 
@@ -24,7 +23,6 @@ function verifyTwitchSignature(
   const signature = request.headers.get("twitch-eventsub-message-signature")
 
   if (!messageId || !timestamp || !signature) {
-    console.error("[Twitch EventSub] Missing required headers")
     return false
   }
 
@@ -35,7 +33,6 @@ function verifyTwitchSignature(
   const tenMinutes = 10 * 60 * 1000
 
   if (timeDiff > tenMinutes) {
-    console.error("[Twitch EventSub] Timestamp is too old")
     return false
   }
 
@@ -58,22 +55,15 @@ export async function POST(request: NextRequest) {
 
     // 署名検証
     if (!verifyTwitchSignature(request, body)) {
-      console.error("[Twitch EventSub] Signature verification failed")
       return new NextResponse("Forbidden", { status: 403 })
     }
 
     const payload = JSON.parse(body)
     const messageType = request.headers.get("twitch-eventsub-message-type")
 
-    console.log("[Twitch EventSub] Received message:", {
-      type: messageType,
-      subscriptionType: payload.subscription?.type,
-    })
-
     // Challenge 検証（初回登録時）
     if (messageType === MESSAGE_TYPE_VERIFICATION) {
       const challenge = payload.challenge
-      console.log("[Twitch EventSub] Responding to challenge")
       return new NextResponse(challenge, {
         status: 200,
         headers: { "Content-Type": "text/plain" },
@@ -83,7 +73,6 @@ export async function POST(request: NextRequest) {
     // Subscription 取り消し通知
     if (messageType === MESSAGE_TYPE_REVOCATION) {
       const subscriptionId = payload.subscription?.id
-      console.log(`[Twitch EventSub] Subscription revoked: ${subscriptionId}`)
 
       // データベースから削除
       await prisma.twitchEventSubSubscription.deleteMany({
@@ -97,11 +86,6 @@ export async function POST(request: NextRequest) {
     if (messageType === MESSAGE_TYPE_NOTIFICATION) {
       const eventType = payload.subscription?.type
       const event = payload.event
-
-      console.log("[Twitch EventSub] Event notification:", {
-        type: eventType,
-        broadcasterUserId: event?.broadcaster_user_id,
-      })
 
       // stream.online: ライブ配信開始
       if (eventType === "stream.online") {
@@ -117,7 +101,6 @@ export async function POST(request: NextRequest) {
         })
 
         if (!user) {
-          console.log(`[Twitch EventSub] No user found with twitchUserId: ${broadcasterId}`)
           return new NextResponse("OK", { status: 200 })
         }
 
@@ -146,10 +129,7 @@ export async function POST(request: NextRequest) {
         // キャッシュ無効化
         if (user.handle) {
           revalidateTag(`user-${user.handle}`, 'max')
-          console.log(`[Twitch EventSub] Invalidated cache for user ${user.handle}`)
         }
-
-        console.log(`[Twitch EventSub] Updated live status for user ${user.id}: LIVE`)
       }
 
       // stream.offline: ライブ配信終了
@@ -162,7 +142,6 @@ export async function POST(request: NextRequest) {
         })
 
         if (!user) {
-          console.log(`[Twitch EventSub] No user found with twitchUserId: ${broadcasterId}`)
           return new NextResponse("OK", { status: 200 })
         }
 
@@ -183,18 +162,14 @@ export async function POST(request: NextRequest) {
         // キャッシュ無効化
         if (user.handle) {
           revalidateTag(`user-${user.handle}`, 'max')
-          console.log(`[Twitch EventSub] Invalidated cache for user ${user.handle}`)
         }
-
-        console.log(`[Twitch EventSub] Updated live status for user ${user.id}: OFFLINE`)
       }
 
       return new NextResponse("OK", { status: 200 })
     }
 
     return new NextResponse("Bad Request", { status: 400 })
-  } catch (error) {
-    console.error("[Twitch EventSub] Error processing notification:", error)
+  } catch {
     return new NextResponse("Internal Server Error", { status: 500 })
   }
 }

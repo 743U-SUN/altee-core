@@ -87,8 +87,7 @@ export async function getAdminStats(): Promise<AdminStats> {
         totalUsers,
       }
     }
-  } catch (error) {
-    console.error("統計データの取得に失敗しました:", error)
+  } catch {
     throw new Error("統計データの取得に失敗しました")
   }
 }

@@ -86,7 +86,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         })
 
         if (!dbUser) {
-          console.error('Database user not found during session callback:', user.id)
           session.user = {
             ...session.user,
             id: user.id,
@@ -114,8 +113,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           try {
             await updateUserImage(user.id, session.user.image)
             dbUser.image = session.user.image
-          } catch (error) {
-            console.error('Failed to update user image in session callback:', error)
+          } catch {
+            // 画像更新失敗は無視（フォールバック処理）
           }
         }
 
@@ -130,8 +129,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         return session
-      } catch (error) {
-        console.error('Session callback error:', error)
+      } catch {
         // エラーが発生した場合もセッションを返す（最小限の情報で）
         session.user = {
           ...session.user,

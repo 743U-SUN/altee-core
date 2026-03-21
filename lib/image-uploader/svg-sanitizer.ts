@@ -4,8 +4,10 @@ import 'server-only'
  * DOMPurifyインスタンスを取得（サーバー専用）
  */
 async function getDOMPurify() {
-  const { JSDOM } = await import('jsdom')
-  const createDOMPurify = (await import('dompurify')).default
+  const [{ JSDOM }, { default: createDOMPurify }] = await Promise.all([
+    import('jsdom'),
+    import('dompurify'),
+  ])
   const jsdomWindow = new JSDOM('').window
   return createDOMPurify(jsdomWindow as unknown as Window & typeof globalThis)
 }
