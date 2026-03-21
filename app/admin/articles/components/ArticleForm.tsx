@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,8 +15,12 @@ import { toast } from 'sonner'
 import { ArrowLeft, Save, Download } from 'lucide-react'
 import Link from 'next/link'
 import type { UploadedFile } from '@/types/image-upload'
-import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { PRESET_THUMBNAIL, PRESET_ARTICLE } from '@/lib/image-uploader/image-processing-presets'
+
+const ImageUploader = dynamic(
+  () => import('@/components/image-uploader/image-uploader').then((m) => ({ default: m.ImageUploader })),
+  { ssr: false }
+)
 import { createExportDataFromForm, createExportDataFromArticle } from '@/lib/markdown-export'
 import { downloadMarkdownFile } from '@/lib/markdown-export.client'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'

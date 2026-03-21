@@ -23,12 +23,26 @@ export default async function EditPresetPage({
     redirect('/unauthorized')
   }
 
-  const preset = await prisma.sectionBackgroundPreset.findUnique({
+  const presetRaw = await prisma.sectionBackgroundPreset.findUnique({
     where: { id },
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      config: true,
+      isActive: true,
+      sortOrder: true,
+    },
   })
 
-  if (!preset) {
+  if (!presetRaw) {
     notFound()
+  }
+
+  // Date フィールドを除いた必要フィールドのみをクライアントコンポーネントへ渡す
+  const preset = {
+    ...presetRaw,
+    config: presetRaw.config as Record<string, unknown>,
   }
 
   return (

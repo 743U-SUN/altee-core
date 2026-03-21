@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { requireAuth, cachedAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import type { ThemeSettings } from "@/types/profile-sections"
@@ -82,42 +82,6 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
     }
 
     return { success: false, error: "プロフィールの更新に失敗しました" }
-  }
-}
-
-export async function getUserProfile(userId?: string) {
-  try {
-    const session = await cachedAuth()
-    const targetUserId = userId || session?.user?.id
-
-    if (!targetUserId) {
-      return { success: false, error: "ユーザーが見つかりません" }
-    }
-
-    const isOwner = session?.user?.id === targetUserId
-
-    const userProfile = await prisma.userProfile.findUnique({
-      where: {
-        userId: targetUserId,
-      },
-      include: {
-        characterImage: true,
-        user: {
-          select: {
-            name: true,
-            // 非オーナーにはemailを返さない
-            ...(isOwner && { email: true }),
-            characterInfo: {
-              select: { characterName: true, iconImageKey: true }
-            },
-          },
-        },
-      },
-    })
-
-    return { success: true, data: userProfile }
-  } catch {
-    return { success: false, error: "プロフィールの取得に失敗しました" }
   }
 }
 

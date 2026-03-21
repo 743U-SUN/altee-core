@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { Item, ItemCategory, Brand, PcPartSpec } from '@prisma/client'
+import { Item, ItemCategory, PcPartSpec } from '@prisma/client'
 import {
   itemSchema,
   type ItemInput,
@@ -35,10 +35,15 @@ import { toast } from 'sonner'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 
+interface BrandOption {
+  id: string
+  name: string
+}
+
 interface ItemFormProps {
   item?: Item & { pcPartSpec?: PcPartSpec | null }
   categories: ItemCategory[]
-  brands: Brand[]
+  brands: BrandOption[]
 }
 
 export function ItemForm({ item, categories, brands }: ItemFormProps) {

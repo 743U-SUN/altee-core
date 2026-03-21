@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ExternalLink } from "lucide-react"
-import { getManagedProfileDetail } from "@/app/actions/admin/managed-profile-actions"
+import { getManagedProfileDetailQuery } from "@/lib/queries/managed-profile-queries"
+import { toBasicInfoDefaults } from "@/lib/validations/character"
 import { BasicInfoTab } from "./components/BasicInfoTab"
 import { requireAdmin } from "@/lib/auth"
 
@@ -22,12 +23,19 @@ export default async function ManagedProfileDetailPage({ params }: PageProps) {
   await requireAdmin()
   const { id } = await params
 
-  let profile
-  try {
-    profile = await getManagedProfileDetail(id)
-  } catch {
+  const profile = await getManagedProfileDetailQuery(id)
+  if (!profile) {
     notFound()
   }
+
+  // Date フィールドをシリアライズしてからクライアントコンポーネントへ渡す
+  const characterInfoInitialData = profile.characterInfo
+    ? toBasicInfoDefaults(profile.characterInfo)
+    : null
+
+  const createdAtFormatted = new Date(profile.createdAt).toLocaleDateString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+  })
 
   return (
     <div className="container mx-auto p-6 flex flex-col gap-6">
@@ -63,13 +71,13 @@ export default async function ManagedProfileDetailPage({ params }: PageProps) {
           </div>
           <div>
             <span className="text-muted-foreground">作成日:</span>{" "}
-            {new Date(profile.createdAt).toLocaleDateString("ja-JP")}
+            {createdAtFormatted}
           </div>
         </CardContent>
       </Card>
 
       {/* キャラクター基本情報フォーム */}
-      <BasicInfoTab userId={id} initialData={profile.characterInfo} />
+      <BasicInfoTab userId={id} initialData={characterInfoInitialData} />
     </div>
   )
 }

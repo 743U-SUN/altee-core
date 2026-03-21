@@ -21,13 +21,18 @@ export default async function DashboardNewsPage() {
   const session = await cachedAuth()
   if (!session?.user?.id) redirect('/auth/signin')
 
-  const [user, newsData, presets] = await Promise.all([
+  const [user, newsData, presets, newsSection] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        handle: true,
         profile: {
-          include: {
-            characterImage: true,
+          select: {
+            themePreset: true,
+            themeSettings: true,
+            characterImage: {
+              select: { storageKey: true },
+            },
           },
         },
         characterInfo: {
@@ -37,14 +42,13 @@ export default async function DashboardNewsPage() {
     }),
     getDashboardNews(session.user.id),
     getActivePresets(),
+    // ニュースセクション取得（なければ作成）- Promise.all で並列実行
+    getDashboardNewsSection(session.user.id),
   ])
 
   if (!user || !user.profile) {
     redirect('/dashboard/setup')
   }
-
-  // ニュースセクション取得（なければ作成）
-  const newsSection = await getDashboardNewsSection(session.user.id)
 
   const themePreset = user.profile.themePreset ?? 'claymorphic'
 

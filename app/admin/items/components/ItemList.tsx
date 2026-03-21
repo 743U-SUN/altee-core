@@ -20,6 +20,7 @@ export async function ItemList({
     getCategoriesAction(),
     prisma.brand.findMany({
       orderBy: { name: 'asc' },
+      select: { id: true, name: true },
     }),
   ])
 

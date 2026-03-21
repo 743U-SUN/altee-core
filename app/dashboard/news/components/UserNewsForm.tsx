@@ -1,6 +1,7 @@
 'use client'
 
-import { Suspense, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { Suspense, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,8 +20,12 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ImageUploader } from '@/components/image-uploader/image-uploader'
 import { PRESET_THUMBNAIL, PRESET_ARTICLE } from '@/lib/image-uploader/image-processing-presets'
+
+const ImageUploader = dynamic(
+  () => import('@/components/image-uploader/image-uploader').then((m) => ({ default: m.ImageUploader })),
+  { ssr: false }
+)
 import { MarkdownToolbar } from '@/components/editor/markdown-toolbar'
 import { UserNewsMarkdownPreview } from '@/components/editor/user-news-markdown-preview'
 import { Edit, Eye, ImageIcon, Save, ArrowLeft } from 'lucide-react'
@@ -40,7 +45,7 @@ interface UserNewsFormProps {
 export function UserNewsForm({ editData }: UserNewsFormProps) {
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   // 画像はフォームの外で独立管理
   const [thumbnail, setThumbnail] = useState<UploadedFile[]>(() => {
@@ -131,35 +136,34 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
     }, 0)
   }
 
-  const onSubmit = async (values: UserNewsFormValues) => {
-    setIsSubmitting(true)
-    try {
-      const formData = new FormData()
-      formData.append('title', values.title)
-      formData.append('slug', values.slug)
-      formData.append('excerpt', values.excerpt)
-      formData.append('content', values.content)
-      formData.append('published', String(values.published))
-      if (thumbnail.length > 0) formData.append('thumbnailId', thumbnail[0].id)
-      if (bodyImage.length > 0) formData.append('bodyImageId', bodyImage[0].id)
+  const onSubmit = (values: UserNewsFormValues) => {
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        formData.append('title', values.title)
+        formData.append('slug', values.slug)
+        formData.append('excerpt', values.excerpt)
+        formData.append('content', values.content)
+        formData.append('published', String(values.published))
+        if (thumbnail.length > 0) formData.append('thumbnailId', thumbnail[0].id)
+        if (bodyImage.length > 0) formData.append('bodyImageId', bodyImage[0].id)
 
-      if (editData) {
-        await updateUserNews(editData.id, formData)
-        toast.success('記事を更新しました')
-      } else {
-        await createUserNews(formData)
-        toast.success('記事を作成しました')
+        if (editData) {
+          await updateUserNews(editData.id, formData)
+          toast.success('記事を更新しました')
+        } else {
+          await createUserNews(formData)
+          toast.success('記事を作成しました')
+        }
+
+        router.push('/dashboard/news')
+        router.refresh()
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : '操作に失敗しました'
+        )
       }
-
-      router.push('/dashboard/news')
-      router.refresh()
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : '操作に失敗しました'
-      )
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -318,7 +322,7 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
                       <div className="flex items-center gap-2 mb-2">
                         <MarkdownToolbar
                           onInsert={handleMarkdownInsert}
-                          disabled={isSubmitting}
+                          disabled={isPending}
                         />
                         <Button
                           type="button"
@@ -328,7 +332,7 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
                           onClick={() =>
                             handleMarkdownInsert('[image]', 'insert')
                           }
-                          disabled={isSubmitting}
+                          disabled={isPending}
                           title="本文内画像を挿入"
                         >
                           <ImageIcon className="h-4 w-4 mr-1" />
@@ -395,9 +399,9 @@ export function UserNewsForm({ editData }: UserNewsFormProps) {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isPending}>
             <Save className="h-4 w-4 mr-1" />
-            {isSubmitting ? '保存中...' : '保存'}
+            {isPending ? '保存中...' : '保存'}
           </Button>
         </div>
       </form>

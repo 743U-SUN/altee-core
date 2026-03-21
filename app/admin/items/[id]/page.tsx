@@ -1,10 +1,11 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getItemByIdAction, getCategoriesAction } from '../actions'
 import { ItemForm } from '../components/ItemForm'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'アイテム編集 | 管理画面',
   description: 'アイテムを編集',
 }
@@ -22,6 +23,7 @@ export default async function EditItemPage({ params }: PageProps) {
     getCategoriesAction(),
     prisma.brand.findMany({
       orderBy: { name: 'asc' },
+      select: { id: true, name: true },
     }),
   ])
 

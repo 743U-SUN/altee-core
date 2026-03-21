@@ -16,13 +16,13 @@ export default async function TwitchPlatformPage() {
     redirect("/auth/signin")
   }
 
-  const twitchResult = await getUserTwitchSettings()
-  const twitchData = twitchResult.success && twitchResult.data ? twitchResult.data : null
+  // 全クエリを並列実行してウォーターフォールを解消
+  const [twitchResult, subStatusResult] = await Promise.all([
+    getUserTwitchSettings(),
+    getTwitchEventSubSubscriptionStatus(),
+  ])
 
-  // twitchUserIdが存在する場合のみsubscriptionステータスをサーバーで取得（waterfall解消）
-  const subStatusResult = twitchData?.twitchUserId
-    ? await getTwitchEventSubSubscriptionStatus()
-    : null
+  const twitchData = twitchResult.success && twitchResult.data ? twitchResult.data : null
 
   return (
     <div className="space-y-6">

@@ -26,7 +26,6 @@ import {
 } from '@/app/actions/admin/section-background-actions'
 import type { PresetInput } from '@/lib/validations/section-settings'
 import { PresetPreview } from './PresetPreview'
-import type { SectionBackgroundPreset } from '@prisma/client'
 
 // ===== フォームスキーマ =====
 
@@ -56,8 +55,17 @@ const formSchema = z.discriminatedUnion('category', [
 
 type FormValues = z.infer<typeof formSchema>
 
+interface SerializedPreset {
+  id: string
+  name: string
+  category: string
+  config: Record<string, unknown>
+  isActive: boolean
+  sortOrder: number
+}
+
 interface PresetFormProps {
-  preset?: SectionBackgroundPreset
+  preset?: SerializedPreset
 }
 
 /**
@@ -376,7 +384,7 @@ function GradientConfig({
 
 // ===== ヘルパー関数 =====
 
-function buildDefaultValues(preset?: SectionBackgroundPreset): FormValues {
+function buildDefaultValues(preset?: SerializedPreset): FormValues {
   if (!preset) {
     return {
       name: '',

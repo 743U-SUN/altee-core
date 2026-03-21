@@ -35,19 +35,17 @@ import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import { adminUpdateCharacterInfo } from "@/app/actions/admin/managed-profile-actions"
 import {
   basicInfoSchema,
-  toBasicInfoDefaults,
   GENDER_OPTIONS,
   AFFILIATION_TYPE_OPTIONS,
   SPECIES_OPTIONS,
   ELEMENT_OPTIONS,
   type BasicInfoInput,
 } from "@/lib/validations/character"
-import type { CharacterInfo } from "@prisma/client"
 import type { UploadedFile } from "@/types/image-upload"
 
 interface BasicInfoTabProps {
   userId: string
-  initialData: CharacterInfo | null
+  initialData: BasicInfoInput | null
 }
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -56,7 +54,23 @@ const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 export function BasicInfoTab({ userId, initialData }: BasicInfoTabProps) {
   const form = useForm<BasicInfoInput>({
     resolver: zodResolver(basicInfoSchema),
-    defaultValues: toBasicInfoDefaults(initialData),
+    defaultValues: initialData ?? {
+      iconImageKey: null,
+      characterName: null,
+      nameReading: null,
+      gender: null,
+      birthdayMonth: null,
+      birthdayDay: null,
+      species: null,
+      element: null,
+      debutDate: null,
+      fanName: null,
+      fanMark: null,
+      illustrator: null,
+      modeler: null,
+      affiliationType: null,
+      affiliation: null,
+    },
   })
 
   const affiliationType = form.watch("affiliationType")

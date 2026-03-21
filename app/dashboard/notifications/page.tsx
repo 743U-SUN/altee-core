@@ -21,21 +21,19 @@ export default async function NotificationsPage() {
     redirect('/auth/signin')
   }
 
-  // プロフィール未設定の場合はセットアップへリダイレクト
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { profile: { select: { userId: true } } },
-  })
+  // 全クエリを並列実行してウォーターフォールを解消
+  const [user, notificationResult, contactResult] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { profile: { select: { userId: true } } },
+    }),
+    getUserNotification(),
+    getUserContact(),
+  ])
 
   if (!user?.profile) {
     redirect('/dashboard/setup')
   }
-
-  // Server Componentでデータフェッチ
-  const [notificationResult, contactResult] = await Promise.all([
-    getUserNotification(),
-    getUserContact()
-  ])
   
   if (!notificationResult.success || !contactResult.success) {
     return (
@@ -49,8 +47,24 @@ export default async function NotificationsPage() {
     )
   }
 
-  const notification = notificationResult.data ?? null
-  const contact = contactResult.data ?? null
+  // Date フィールドをシリアライズしてからクライアントコンポーネントへ渡す
+  const notificationRaw = notificationResult.data ?? null
+  const notification = notificationRaw
+    ? {
+        ...notificationRaw,
+        createdAt: notificationRaw.createdAt.toISOString(),
+        updatedAt: notificationRaw.updatedAt.toISOString(),
+      }
+    : null
+
+  const contactRaw = contactResult.data ?? null
+  const contact = contactRaw
+    ? {
+        ...contactRaw,
+        createdAt: contactRaw.createdAt.toISOString(),
+        updatedAt: contactRaw.updatedAt.toISOString(),
+      }
+    : null
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">

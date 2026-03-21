@@ -1,15 +1,31 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { InlineEdit } from "@/components/inline-edit"
-import { ImageUploader } from "@/components/image-uploader/image-uploader"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { PRESET_AVATAR } from "@/lib/image-uploader/image-processing-presets"
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import type { UploadedFile } from "@/types/image-upload"
+
+const ImageUploader = dynamic(
+  () => import("@/components/image-uploader/image-uploader").then((m) => ({ default: m.ImageUploader })),
+  { ssr: false }
+)
 
 const CONSTRAINTS = {
   TITLE_MAX_LENGTH: 30,
@@ -260,8 +276,6 @@ export function NotificationFormBase({
   }
 
   const handleDelete = async () => {
-    if (!confirm(deleteConfirmMessage)) return
-
     setIsSubmitting(true)
     try {
       const result = await onDelete()
@@ -385,14 +399,31 @@ export function NotificationFormBase({
             {isSubmitting ? "保存中..." : "設定を保存"}
           </Button>
           {initialData && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-            >
-              設定を削除
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={isSubmitting}
+                >
+                  設定を削除
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>削除の確認</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {deleteConfirmMessage}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    削除する
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       )}

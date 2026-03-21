@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+@AGENTS.md
+
 Next.js 16 App Router + PostgreSQL + Prisma web application.
 
 ## Communication
@@ -73,6 +75,7 @@ RSC principles:
 - Keep `'use client'` boundaries as narrow as possible
 - `params`, `searchParams`, `cookies()`, `headers()` must be **awaited**
 - Never pass non-serializable values (Date, Function, Map, Set) to client components
+- Date handling at SC→CC boundary: convert to `.toISOString()` in SC → pass as string to CC → restore with `new Date()` in CC. Use `string` in type definitions
 - Async client components are invalid
 - Use `import 'server-only'` to protect server-only modules
 
@@ -91,6 +94,11 @@ Place in app/actions/ as `'use server'` files. Required checklist:
 4. Call `revalidatePath()` after writes
 5. Return `{ success, data?, error? }` pattern
 6. Never wrap `redirect()`/`notFound()` in try-catch (they throw internally)
+7. Validate ID params with `cuidSchema` (`lib/validations/shared.ts`)
+8. Set max limit on bulk operations (guideline: max 100)
+9. Use `lib/queries/` direct queries for read-only data, not Server Actions
+10. Verify `revalidatePath()` path matches actual route (watch for missing `@` in `/@handle`)
+11. Wrap compound operations (count+create, delete+reorder) in `prisma.$transaction()`
 
 → Details: docs/GUIDES/SECURITY-GUIDE.md
 
@@ -109,7 +117,7 @@ React 19 stable APIs (use alongside existing patterns based on complexity):
 - `useOptimistic()`: optimistic UI during actions → use when useSWR is not involved
 - `useFormStatus()`: submission status in child components
 - `ref` as prop directly (no forwardRef needed)
-- `'use cache'`: **stable** in Next.js 16 — declarative caching per function/component (requires `cacheComponents: true` in next.config.ts to enable)
+- `'use cache'`: **stable** in Next.js 16 — declarative caching per function/component (not yet enabled in this project)
 
 When to use which:
 - Client-centric forms (real-time validation, dynamic fields, conditional UI) → react-hook-form + Zod
@@ -125,8 +133,39 @@ When to use which:
 ## Performance
 
 - Avoid barrel imports (import from specific files)
-- `dynamic()` import for heavy components
 - Route-based code splitting
+- Modals, DnD, rich editors → must use `next/dynamic` for lazy loading
+- Never use `import *` (especially lucide-react, PrismJS — use named imports only)
+
+## Component & Route Checklist
+
+New component:
+- Only add `'use client'` when using useState/useEffect/hooks (audit periodically)
+- `import 'server-only'` — required for modules accessing DB/storage/auth
+- Validate URLs used in `href` with `isSafeUrl()` (`lib/validations/shared.ts`)
+- Check for existing similar components first → prefer shared abstractions
+
+New route:
+- `error.tsx` — Admin routes use `AdminErrorFallback` (never expose error.message)
+- `loading.tsx` — skeleton UI
+- Admin pages: call `requireAdmin()` in SC
+- `export const metadata` or `generateMetadata()`
+
+## Shared Utilities
+
+| Utility | Location | Purpose |
+|---------|----------|---------|
+| `cuidSchema` / `cuidArraySchema` | `lib/validations/shared.ts` | ID validation |
+| `queryHandleSchema` / `normalizeHandle()` | `lib/validations/shared.ts` | Handle validation & normalization |
+| `isSafeUrl()` | `lib/validations/shared.ts` | URL protocol validation (XSS prevention) |
+| `useEditableList()` | `components/user-profile/sections/editors/hooks/useEditableList.ts` | List CRUD (add/delete/move/toggle) |
+| `useDebounce()` | `hooks/use-debounce.ts` | Input debounce |
+| `useCustomIcons()` | `hooks/use-custom-icons.ts` | Custom icon SWR + resolution |
+| `formatFileSize()` | `lib/format-utils.ts` | File size display |
+| `AdminErrorFallback` | `components/admin/AdminErrorFallback.tsx` | Admin error boundary (no message exposure) |
+| `NotificationFormBase` | `app/dashboard/notifications/notification-form-base.tsx` | Notification/contact form base |
+| `AttributeForm` / `AttributePagination` | `app/admin/attributes/components/` | Attribute CRUD shared |
+| `ContentModal` | `components/notification/ContentModal.tsx` | Notification/contact modal shared |
 
 ## Testing
 
@@ -143,25 +182,18 @@ When to use which:
 
 ## Plan Review
 
-After creating an implementation plan, run parallel subagent reviews:
-
-- **architect**: Architectural issues, scalability, and design trade-offs
-- **planner**: Task breakdown validity, dependency order, and missing steps
-- **security-reviewer**: Security gaps (only when the plan involves auth, user input, or API changes)
-- **database-reviewer**: Schema/query concerns (only when the plan involves DB changes)
-
-If reviewers find issues, automatically revise the plan before presenting to user.
-
-> **Note**: If a skill (e.g., `nextjs-refactor-planner`) includes its own Plan Review phase, that fulfills this requirement. Do NOT run a duplicate review.
+After creating an implementation plan, run parallel subagent reviews with **architect**, **planner**, and conditionally **security-reviewer** (auth/input/API changes) and **database-reviewer** (DB changes). Auto-revise plan if issues found. Skip if the skill already includes its own review phase.
 
 ## Gotchas
 
 - `@handle` routing: `/@username` → `/[handle]` via next.config.ts rewrites
-- React Compiler enabled (`reactCompiler: true`) - no need for manual `useMemo`/`useCallback`
+- React Compiler enabled (`reactCompiler: true`) — never write `memo`/`useMemo`/`useCallback`
 - `output: 'standalone'` for Docker/VPS deployment
 - Dev server binds to `0.0.0.0:3000` (WSL2 compatibility)
 - Server Actions body size limit: 10MB (`serverActions.bodySizeLimit`)
 - Production DB changes: always use migrate (never db:push)
+- `revalidatePath` silently fails on typos — always verify path accuracy against actual routes
+- Never leave `console.log`/`console.error` in production code (auto-detected by hooks)
 
 ## References
 

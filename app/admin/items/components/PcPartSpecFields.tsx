@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import type { Brand } from '@prisma/client'
 import type { PcPartType } from '@prisma/client'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,8 +15,13 @@ import { PC_PART_TYPES, pcPartTypeLabels } from '@/lib/validations/pc-build'
 import { specFieldsByType } from '@/lib/validations/pc-part-specs'
 import type { PcPartSpecFormData } from '@/types/pc-part-spec'
 
+interface BrandOption {
+  id: string
+  name: string
+}
+
 interface PcPartSpecFieldsProps {
-  brands: Brand[]
+  brands: BrandOption[]
   value: PcPartSpecFormData | null
   onChange: (data: PcPartSpecFormData | null) => void
 }

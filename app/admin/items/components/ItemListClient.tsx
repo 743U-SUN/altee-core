@@ -1,6 +1,6 @@
 'use client'
 
-import { ItemCategory, Brand } from '@prisma/client'
+import { ItemCategory } from '@prisma/client'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -34,10 +34,15 @@ type ItemWithRelations = {
   amazonImageUrl: string | null
   createdAt: string
   category: ItemCategory
-  brand: Brand | null
+  brand: { id: string; name: string } | null
   _count: {
     userItems: number
   }
+}
+
+interface BrandOption {
+  id: string
+  name: string
 }
 
 interface ItemListClientProps {
@@ -46,7 +51,7 @@ interface ItemListClientProps {
   page: number
   totalPages: number
   categories: ItemCategory[]
-  brands: Brand[]
+  brands: BrandOption[]
   currentFilters: {
     search?: string
     categoryId?: string
