@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { cachedAuth } from '@/lib/auth'
-import { redirect, notFound } from 'next/navigation'
-import { getUserNewsById } from '@/app/actions/content/user-news-actions'
+import { requireAuth } from '@/lib/auth'
+import { notFound } from 'next/navigation'
+import { getDashboardNewsById } from '@/lib/queries/news-queries'
 import { UserNewsForm } from '../components/UserNewsForm'
 import type { UserNewsWithImages } from '@/types/user-news'
 
@@ -15,13 +15,11 @@ export default async function EditUserNewsPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const session = await cachedAuth()
-  if (!session?.user?.id) redirect('/auth/signin')
-
+  const session = await requireAuth()
   const { id } = await params
 
   try {
-    const result = await getUserNewsById(id)
+    const result = await getDashboardNewsById(id, session.user.id)
     const newsData = result.data as UserNewsWithImages
 
     return (

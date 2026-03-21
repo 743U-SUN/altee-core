@@ -1,6 +1,5 @@
 'use server';
 
-import { auth } from '@/auth';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { userSetupSchema, handleAvailabilityCheckSchema, type UserSetupSchema } from '@/lib/validations/user-setup';
@@ -20,13 +19,9 @@ type ActionResult<T = unknown> = {
  * ユーザーセットアップ完了処理
  */
 export async function completeUserSetup(data: UserSetupSchema): Promise<ActionResult> {
+  const session = await requireAuth();
+
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return { success: false, error: '認証が必要です' };
-    }
-
     // バリデーション
     const validation = userSetupSchema.safeParse(data);
     if (!validation.success) {
@@ -98,8 +93,7 @@ export async function completeUserSetup(data: UserSetupSchema): Promise<ActionRe
     revalidatePath('/dashboard/setup');
 
     return { success: true };
-  } catch (error) {
-    console.error('User setup error:', error);
+  } catch {
     return {
       success: false,
       error: 'セットアップ中にエラーが発生しました'
@@ -137,8 +131,7 @@ export async function checkHandleAvailability(handle: string): Promise<ActionRes
         suggestion: result.suggestion,
       },
     };
-  } catch (error) {
-    console.error('Handle availability check error:', error);
+  } catch {
     return {
       success: false,
       error: 'ハンドルの確認中にエラーが発生しました',

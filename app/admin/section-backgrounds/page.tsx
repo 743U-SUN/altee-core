@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/auth'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -14,11 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminSectionBackgroundsPage() {
-  const session = await cachedAuth()
-
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   const presets = await prisma.sectionBackgroundPreset.findMany({
     orderBy: { sortOrder: 'asc' },

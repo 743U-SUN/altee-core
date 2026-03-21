@@ -1,24 +1,25 @@
-import { cachedAuth } from '@/lib/auth'
-import { redirect, notFound } from "next/navigation"
-import { getCategory } from "@/app/actions/content/category-actions"
+import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
+import { notFound } from "next/navigation"
+import { getAdminCategory } from '@/lib/queries/article-queries'
 import { CategoryForm } from "../components/CategoryForm"
+
+export const metadata: Metadata = {
+  title: 'カテゴリ編集 | Admin',
+  robots: { index: false, follow: false },
+}
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 export default async function EditCategoryPage({ params }: PageProps) {
-  const session = await cachedAuth()
-  
-  // 最終権限チェック（Page層）
-  if (session?.user?.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   const { id } = await params
 
   try {
-    const category = await getCategory(id)
+    const category = await getAdminCategory(id)
     const serializedCategory = {
       ...category,
       createdAt: category.createdAt.toISOString(),

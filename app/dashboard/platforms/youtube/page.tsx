@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from "next/navigation"
-import { getUserYoutubeSettings, getMyRssFeedVideos } from "@/app/actions/social/youtube-actions"
+import { requireAuth } from '@/lib/auth'
+import { getDashboardYoutubeSettings } from '@/lib/queries/youtube-queries'
+import { getMyRssFeedVideos } from "@/app/actions/social/youtube-actions"
 import { YouTubeTabContent } from "../components/YouTubeTabContent"
 
 export const metadata: Metadata = {
@@ -10,15 +10,11 @@ export const metadata: Metadata = {
 }
 
 export default async function YouTubePlatformPage() {
-  const session = await cachedAuth()
-
-  if (!session?.user?.id) {
-    redirect("/auth/signin")
-  }
+  const session = await requireAuth()
 
   // YouTube設定とRSS Feedを並列で取得
   const [youtubeResult, rssFeedResult] = await Promise.all([
-    getUserYoutubeSettings(),
+    getDashboardYoutubeSettings(session.user.id),
     getMyRssFeedVideos()
   ])
 

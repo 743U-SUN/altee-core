@@ -25,8 +25,15 @@ export default async function VideosPage() {
   const [user, presets] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        profile: true,
+      select: {
+        id: true,
+        handle: true,
+        profile: {
+          select: {
+            themePreset: true,
+            themeSettings: true,
+          },
+        },
         characterInfo: {
           select: { characterName: true },
         },

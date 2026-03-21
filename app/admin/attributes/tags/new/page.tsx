@@ -1,14 +1,14 @@
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from "next/navigation"
+import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
 import { TagForm } from "../components/TagForm"
 
+export const metadata: Metadata = {
+  title: '新規タグ作成 | Admin',
+  robots: { index: false, follow: false },
+}
+
 export default async function NewTagPage() {
-  const session = await cachedAuth()
-  
-  // 最終権限チェック（Page層）
-  if (session?.user?.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   return <TagForm mode="create" />
 }

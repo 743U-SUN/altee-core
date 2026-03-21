@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { cachedAuth } from '@/lib/auth'
-import { redirect, notFound } from 'next/navigation'
+import { requireAdmin } from '@/lib/auth'
+import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { PresetForm } from '../components/PresetForm'
 
@@ -14,14 +14,10 @@ export default async function EditPresetPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const [session, { id }] = await Promise.all([
-    cachedAuth(),
+  const [, { id }] = await Promise.all([
+    requireAdmin(),
     params,
   ])
-
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
 
   const presetRaw = await prisma.sectionBackgroundPreset.findUnique({
     where: { id },

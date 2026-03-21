@@ -1,30 +1,30 @@
-import { cachedAuth } from '@/lib/auth'
-import { redirect, notFound } from "next/navigation"
+import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
+import { notFound } from "next/navigation"
 import { isRedirectError } from "next/dist/client/components/redirect-error"
 import { getArticle } from "@/app/actions/content/article-actions"
-import { getAllCategories } from "@/app/actions/content/category-actions"
-import { getAllTags } from "@/app/actions/content/tag-actions"
+import { getAdminAllCategories, getAdminAllTags } from '@/lib/queries/article-queries'
 import { ArticleForm } from "../components/ArticleForm"
+
+export const metadata: Metadata = {
+  title: '記事編集 | Admin',
+  robots: { index: false, follow: false },
+}
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 export default async function EditArticlePage({ params }: PageProps) {
-  const session = await cachedAuth()
-
-  // 最終権限チェック（3層目）
-  if (session?.user?.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   const { id } = await params
 
   try {
     const [articleRaw, categories, tags] = await Promise.all([
       getArticle(id),
-      getAllCategories(),
-      getAllTags(),
+      getAdminAllCategories(),
+      getAdminAllTags(),
     ])
 
     const article = {

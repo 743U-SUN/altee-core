@@ -27,22 +27,31 @@ export default async function ProfileEditorPage() {
   // ユーザーデータとプリセットを並列取得
   const [user, presets] = await Promise.all([
     prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      profile: {
-        include: {
-          characterImage: true, // キャラクター画像（9:16縦長）
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        handle: true,
+        image: true,
+        profile: {
+          select: {
+            themePreset: true,
+            themeSettings: true,
+            bannerImageKey: true,
+            characterBackgroundKey: true,
+            characterImage: {
+              select: { storageKey: true },
+            },
+          },
+        },
+        characterInfo: {
+          select: { characterName: true, iconImageKey: true },
+        },
+        userSections: {
+          where: { page: 'profile' },
+          orderBy: { sortOrder: 'asc' },
         },
       },
-      characterInfo: {
-        select: { characterName: true, iconImageKey: true },
-      },
-      userSections: {
-        where: { page: 'profile' },
-        orderBy: { sortOrder: 'asc' },
-      },
-    },
-  }),
+    }),
     getActivePresets(),
   ])
 

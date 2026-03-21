@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/auth'
 import { MediaUploadForm } from './components/MediaUploadForm'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -12,12 +11,7 @@ export const metadata: Metadata = {
 }
 
 export default async function MediaUploadPage() {
-  const session = await cachedAuth()
-
-  // 3層認証アーキテクチャ：Page層での最終権限チェック
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   return (
     <div className="container mx-auto p-6 space-y-6">

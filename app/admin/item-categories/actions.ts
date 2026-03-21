@@ -7,6 +7,7 @@ import {
   type ItemCategoryInput,
 } from '@/lib/validations/item'
 import { revalidatePath } from 'next/cache'
+import { cuidSchema } from '@/lib/validations/shared'
 
 // ===== カテゴリ一覧取得 =====
 
@@ -28,8 +29,7 @@ export async function getCategoriesAction() {
     })
 
     return { success: true, data: categories }
-  } catch (error) {
-    console.error('Failed to fetch categories:', error)
+  } catch {
     return {
       success: false,
       error: 'カテゴリの取得に失敗しました',
@@ -41,9 +41,10 @@ export async function getCategoriesAction() {
 
 export async function getCategoryByIdAction(id: string) {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(id)
   try {
     const category = await prisma.itemCategory.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         parent: true,
         children: true,
@@ -64,8 +65,7 @@ export async function getCategoryByIdAction(id: string) {
     }
 
     return { success: true, data: category }
-  } catch (error) {
-    console.error('Failed to fetch category:', error)
+  } catch {
     return {
       success: false,
       error: 'カテゴリの取得に失敗しました',
@@ -124,7 +124,6 @@ export async function createCategoryAction(input: ItemCategoryInput) {
     revalidatePath('/admin/item-categories')
     return { success: true, data: category }
   } catch (error) {
-    console.error('Failed to create category:', error)
     if (error instanceof Error) {
       return {
         success: false,
@@ -145,13 +144,14 @@ export async function updateCategoryAction(
   input: ItemCategoryInput
 ) {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(id)
   try {
     // バリデーション
     const validated = itemCategorySchema.parse(input)
 
     // カテゴリの存在確認
     const existingCategory = await prisma.itemCategory.findUnique({
-      where: { id },
+      where: { id: validatedId },
     })
 
     if (!existingCategory) {
@@ -178,7 +178,7 @@ export async function updateCategoryAction(
     // 親カテゴリの検証
     if (validated.parentId) {
       // 自分自身を親にできない
-      if (validated.parentId === id) {
+      if (validated.parentId === validatedId) {
         return {
           success: false,
           error: '自分自身を親カテゴリにすることはできません',
@@ -198,7 +198,7 @@ export async function updateCategoryAction(
       }
 
       // 循環参照チェック（子カテゴリを親にできない）
-      const isDescendant = await checkIsDescendant(id, validated.parentId)
+      const isDescendant = await checkIsDescendant(validatedId, validated.parentId)
       if (isDescendant) {
         return {
           success: false,
@@ -209,7 +209,7 @@ export async function updateCategoryAction(
 
     // カテゴリ更新
     const category = await prisma.itemCategory.update({
-      where: { id },
+      where: { id: validatedId },
       data: {
         name: validated.name,
         slug: validated.slug,
@@ -225,7 +225,6 @@ export async function updateCategoryAction(
     revalidatePath('/admin/item-categories')
     return { success: true, data: category }
   } catch (error) {
-    console.error('Failed to update category:', error)
     if (error instanceof Error) {
       return {
         success: false,
@@ -243,10 +242,11 @@ export async function updateCategoryAction(
 
 export async function deleteCategoryAction(id: string) {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(id)
   try {
     // カテゴリの存在確認
     const category = await prisma.itemCategory.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         _count: {
           select: {
@@ -282,13 +282,12 @@ export async function deleteCategoryAction(id: string) {
 
     // カテゴリ削除
     await prisma.itemCategory.delete({
-      where: { id },
+      where: { id: validatedId },
     })
 
     revalidatePath('/admin/item-categories')
     return { success: true }
-  } catch (error) {
-    console.error('Failed to delete category:', error)
+  } catch {
     return {
       success: false,
       error: 'カテゴリの削除に失敗しました',

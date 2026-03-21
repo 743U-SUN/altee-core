@@ -2,8 +2,24 @@ import 'server-only'
 import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
+import { queryHandleSchema, normalizeHandle, cuidSchema } from '@/lib/validations/shared'
 import type { UserSection } from '@/types/profile-sections'
+
+/**
+ * ダッシュボード用: IDでニュース記事取得（所有者チェック付き）
+ */
+export async function getDashboardNewsById(id: string, userId: string) {
+  const validatedId = cuidSchema.parse(id)
+  const news = await prisma.userNews.findFirst({
+    where: { id: validatedId, userId },
+    include: {
+      thumbnail: { select: { storageKey: true } },
+      bodyImage: { select: { storageKey: true } },
+    },
+  })
+  if (!news) throw new Error('記事が見つかりません')
+  return { success: true as const, data: news }
+}
 
 /**
  * ダッシュボード用: ログインユーザーのニュース一覧取得

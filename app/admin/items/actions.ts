@@ -13,6 +13,8 @@ import { validateSpecs } from '@/lib/validations/pc-part-specs'
 import type { PcPartSpecFormData } from '@/types/pc-part-spec'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { cuidSchema } from '@/lib/validations/shared'
+import { generateSlug } from '@/lib/utils/slug'
 
 // ===== カテゴリ一覧取得（アイテムフォーム用） =====
 
@@ -24,8 +26,7 @@ export async function getCategoriesAction() {
     })
 
     return { success: true, data: categories }
-  } catch (error) {
-    console.error('Failed to fetch categories:', error)
+  } catch {
     return {
       success: false,
       error: 'カテゴリの取得に失敗しました',
@@ -98,8 +99,7 @@ export async function getItemsAction(filters: GetItemsFilters = {}) {
         totalPages: Math.ceil(total / perPage),
       },
     }
-  } catch (error) {
-    console.error('Failed to fetch items:', error)
+  } catch {
     return {
       success: false,
       error: 'アイテムの取得に失敗しました',
@@ -111,9 +111,10 @@ export async function getItemsAction(filters: GetItemsFilters = {}) {
 
 export async function getItemByIdAction(id: string) {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(id)
   try {
     const item = await prisma.item.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         category: true,
         brand: true,
@@ -134,8 +135,7 @@ export async function getItemByIdAction(id: string) {
     }
 
     return { success: true, data: item }
-  } catch (error) {
-    console.error('Failed to fetch item:', error)
+  } catch {
     return {
       success: false,
       error: 'アイテムの取得に失敗しました',
@@ -193,10 +193,8 @@ export async function createItemAction(input: ItemInput, pcPartSpec?: PcPartSpec
       const uploadResult = await downloadAndUploadItemImage(imageUrl, validated.asin)
       if (uploadResult.success) {
         imageStorageKey = uploadResult.storageKey
-      } else {
-        console.error('画像アップロード失敗:', uploadResult.error)
-        // 画像アップロード失敗してもアイテム作成は続行
       }
+      // 画像アップロード失敗してもアイテム作成は続行
     }
 
     // アイテム作成
@@ -240,7 +238,9 @@ export async function createItemAction(input: ItemInput, pcPartSpec?: PcPartSpec
     revalidatePath('/admin/items')
     return { success: true, data: item }
   } catch (error) {
-    console.error('Failed to create item:', error)
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0]?.message || '入力データが無効です' }
+    }
     return {
       success: false,
       error: 'アイテムの作成に失敗しました',
@@ -252,6 +252,7 @@ export async function createItemAction(input: ItemInput, pcPartSpec?: PcPartSpec
 
 export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?: PcPartSpecFormData | null) {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(id)
   try {
     // "null" 文字列を null に変換
     const normalizedInput = {
@@ -264,7 +265,7 @@ export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?
 
     // アイテム存在確認・カテゴリ・ブランド・ASIN重複チェックを並列実行
     const [existingItem, category, brand, duplicateByAsin] = await Promise.all([
-      prisma.item.findUnique({ where: { id } }),
+      prisma.item.findUnique({ where: { id: validatedId } }),
       prisma.itemCategory.findUnique({ where: { id: validated.categoryId } }),
       validated.brandId ? prisma.brand.findUnique({ where: { id: validated.brandId } }) : null,
       validated.asin ? prisma.item.findUnique({ where: { asin: validated.asin } }) : null,
@@ -316,14 +317,13 @@ export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?
       if (uploadResult.success) {
         imageStorageKey = uploadResult.storageKey || null
       } else {
-        console.error('画像アップロード失敗:', uploadResult.error)
         imageStorageKey = null
       }
     }
 
     // アイテム更新
     const item = await prisma.item.update({
-      where: { id },
+      where: { id: validatedId },
       data: {
         name: validated.name,
         description: validated.description || null,
@@ -349,9 +349,9 @@ export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?
         }
       }
       await prisma.pcPartSpec.upsert({
-        where: { itemId: id },
+        where: { itemId: validatedId },
         create: {
-          itemId: id,
+          itemId: validatedId,
           partType: pcPartSpec.partType,
           chipMakerId: pcPartSpec.chipMakerId || null,
           tdp: pcPartSpec.tdp,
@@ -368,13 +368,15 @@ export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?
       })
     } else {
       // pcPartSpec が null → 既存のスペックを削除
-      await prisma.pcPartSpec.deleteMany({ where: { itemId: id } })
+      await prisma.pcPartSpec.deleteMany({ where: { itemId: validatedId } })
     }
 
     revalidatePath('/admin/items')
     return { success: true, data: item }
   } catch (error) {
-    console.error('Failed to update item:', error)
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0]?.message || '入力データが無効です' }
+    }
     return {
       success: false,
       error: 'アイテムの更新に失敗しました',
@@ -386,10 +388,11 @@ export async function updateItemAction(id: string, input: ItemInput, pcPartSpec?
 
 export async function deleteItemAction(id: string) {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(id)
   try {
     // アイテムの存在確認
     const item = await prisma.item.findUnique({
-      where: { id },
+      where: { id: validatedId },
       include: {
         _count: {
           select: {
@@ -421,13 +424,15 @@ export async function deleteItemAction(id: string) {
 
     // アイテム削除
     await prisma.item.delete({
-      where: { id },
+      where: { id: validatedId },
     })
 
     revalidatePath('/admin/items')
     return { success: true }
   } catch (error) {
-    console.error('Failed to delete item:', error)
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors[0]?.message || '入力データが無効です' }
+    }
     return {
       success: false,
       error: 'アイテムの削除に失敗しました',
@@ -487,7 +492,7 @@ export async function importItemsFromCSVAction(
           const brand = await prisma.brand.create({
             data: {
               name: row.brandName,
-              slug: row.brandName.toLowerCase().replace(/\s+/g, '-'),
+              slug: generateSlug(row.brandName),
             },
           })
           brandId = brand.id
@@ -543,8 +548,7 @@ async function deleteItemImageFromR2(imageStorageKey: string): Promise<void> {
     await prisma.mediaFile.deleteMany({
       where: { storageKey: `altee-images/${imageStorageKey}` }
     })
-  } catch (error) {
-    console.error('アイテム画像削除エラー:', error)
+  } catch {
     // 削除失敗しても続行（エラーを投げない）
   }
 }
@@ -635,8 +639,7 @@ async function downloadAndUploadItemImage(imageUrl: string, asin: string): Promi
     })
 
     return { success: true, storageKey }
-  } catch (error) {
-    console.error('アイテム画像ダウンロード・アップロードエラー:', error)
+  } catch {
     return { success: false, error: '画像の保存に失敗しました' }
   }
 }
@@ -650,9 +653,10 @@ export async function refreshItemImage(itemId: string): Promise<{
   error?: string
 }> {
   await requireAdmin()
+  const validatedId = cuidSchema.parse(itemId)
   try {
     const item = await prisma.item.findUnique({
-      where: { id: itemId }
+      where: { id: validatedId }
     })
 
     if (!item) {
@@ -684,16 +688,15 @@ export async function refreshItemImage(itemId: string): Promise<{
 
     // アイテム情報を更新
     await prisma.item.update({
-      where: { id: itemId },
+      where: { id: validatedId },
       data: { imageStorageKey: uploadResult.storageKey }
     })
 
     revalidatePath('/admin/items')
-    revalidatePath(`/admin/items/${itemId}`)
+    revalidatePath(`/admin/items/${validatedId}`)
 
     return { success: true, message: '画像を更新しました' }
-  } catch (error) {
-    console.error('アイテム画像更新エラー:', error)
+  } catch {
     return { success: false, error: '画像の更新に失敗しました' }
   }
 }

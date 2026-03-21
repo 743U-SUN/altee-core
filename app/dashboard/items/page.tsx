@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireAuth } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getUserItems } from "@/app/actions/content/item-actions"
-import { getUserPcBuild } from "@/app/actions/content/pc-build-actions"
+import { getDashboardUserItems, getDashboardUserPcBuild } from "@/lib/queries/item-queries"
 import type { UserItemWithDetails } from "@/types/item"
 import { UserItemListSection } from "./components/UserItemListSection"
 import { PcBuildManagementSection } from "./components/PcBuildManagementSection"
@@ -16,16 +14,12 @@ export const metadata: Metadata = {
 }
 
 export default async function UserItemsPage() {
-  const session = await cachedAuth()
-
-  if (!session?.user?.id) {
-    redirect('/auth/signin')
-  }
+  const session = await requireAuth()
 
   // 並行データ取得
   const [userItems, pcBuildResult, categories, brands] = await Promise.all([
-    getUserItems(),
-    getUserPcBuild(),
+    getDashboardUserItems(session.user.id),
+    getDashboardUserPcBuild(session.user.id),
     prisma.itemCategory.findMany({
       select: { id: true, name: true },
       orderBy: { name: 'asc' },

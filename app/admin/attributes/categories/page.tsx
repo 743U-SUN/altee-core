@@ -1,27 +1,28 @@
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from "next/navigation"
-import { getCategories } from "@/app/actions/content/category-actions"
+import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
+import { getAdminCategories } from '@/lib/queries/article-queries'
 import { CategoryList } from "./components/CategoryList"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: 'カテゴリ管理 | Admin',
+  robots: { index: false, follow: false },
+}
 
 interface PageProps {
   searchParams: Promise<{ page?: string }>
 }
 
 export default async function CategoriesPage({ searchParams }: PageProps) {
-  const session = await cachedAuth()
-  
-  if (session?.user?.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   const { page } = await searchParams
   const currentPage = parseInt(page || '1', 10)
 
   try {
-    const { categories, pagination } = await getCategories(currentPage, 20)
+    const { categories, pagination } = await getAdminCategories(currentPage, 20)
 
     return (
       <div className="space-y-6">
@@ -67,7 +68,7 @@ export default async function CategoriesPage({ searchParams }: PageProps) {
             </Button>
           </Link>
         </div>
-        
+
         <div className="text-center py-12">
           <p className="text-muted-foreground">
             データの取得中にエラーが発生しました。ページを再読み込みしてください。

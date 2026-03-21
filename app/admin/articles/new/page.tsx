@@ -1,20 +1,19 @@
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from "next/navigation"
-import { getAllCategories } from "@/app/actions/content/category-actions"
-import { getAllTags } from "@/app/actions/content/tag-actions"
+import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
+import { getAdminAllCategories, getAdminAllTags } from '@/lib/queries/article-queries'
 import { ArticleForm } from "../components/ArticleForm"
 
-export default async function NewArticlePage() {
-  const session = await cachedAuth()
+export const metadata: Metadata = {
+  title: '新規記事作成 | Admin',
+  robots: { index: false, follow: false },
+}
 
-  // 最終権限チェック（3層目）
-  if (session?.user?.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+export default async function NewArticlePage() {
+  await requireAdmin()
 
   const [categories, tags] = await Promise.all([
-    getAllCategories(),
-    getAllTags(),
+    getAdminAllCategories(),
+    getAdminAllTags(),
   ])
 
   return (

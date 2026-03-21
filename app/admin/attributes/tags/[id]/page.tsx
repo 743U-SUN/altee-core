@@ -1,24 +1,25 @@
-import { cachedAuth } from '@/lib/auth'
-import { redirect, notFound } from "next/navigation"
-import { getTag } from "@/app/actions/content/tag-actions"
+import type { Metadata } from 'next'
+import { requireAdmin } from '@/lib/auth'
+import { notFound } from "next/navigation"
+import { getAdminTag } from '@/lib/queries/article-queries'
 import { TagForm } from "../components/TagForm"
+
+export const metadata: Metadata = {
+  title: 'タグ編集 | Admin',
+  robots: { index: false, follow: false },
+}
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 export default async function EditTagPage({ params }: PageProps) {
-  const session = await cachedAuth()
-  
-  // 最終権限チェック（Page層）
-  if (session?.user?.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   const { id } = await params
 
   try {
-    const tag = await getTag(id)
+    const tag = await getAdminTag(id)
     const serializedTag = {
       ...tag,
       createdAt: tag.createdAt.toISOString(),

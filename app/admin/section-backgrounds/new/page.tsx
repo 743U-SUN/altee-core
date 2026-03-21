@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { cachedAuth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/auth'
 import { PresetForm } from '../components/PresetForm'
 
 export const metadata: Metadata = {
@@ -9,11 +8,7 @@ export const metadata: Metadata = {
 }
 
 export default async function NewPresetPage() {
-  const session = await cachedAuth()
-
-  if (!session?.user?.id || session.user.role !== 'ADMIN') {
-    redirect('/unauthorized')
-  }
+  await requireAdmin()
 
   return (
     <div className="container mx-auto p-6 space-y-6">
