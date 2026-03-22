@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink } from "lucide-react"
 import { ItemImage } from "@/components/items/item-image"
-import { UserItemForPublicPage } from '@/types/item'
+import type { SerializedUserItemForPublicPage } from '@/types/item'
 
 interface UserPublicItemCardProps {
-  userItem: UserItemForPublicPage
+  userItem: SerializedUserItemForPublicPage
 }
 
 export function UserPublicItemCard({ userItem }: UserPublicItemCardProps) {

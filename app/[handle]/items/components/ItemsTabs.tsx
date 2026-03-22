@@ -5,13 +5,13 @@ import { useQueryState } from 'nuqs'
 import { Package, Monitor } from 'lucide-react'
 import { UserPublicItemList } from './UserPublicItemList'
 import { PcSpecsView } from './PcSpecsView'
-import type { UserItemForPublicPage } from '@/types/item'
-import type { PcBuildWithParts } from '@/types/pc-build'
+import type { SerializedUserItemForPublicPage } from '@/types/item'
+import type { SerializedPcBuildWithParts } from '@/types/pc-build'
 import type { ReactNode } from 'react'
 
 interface ItemsTabsProps {
-  userItems: UserItemForPublicPage[]
-  pcBuild: PcBuildWithParts | null
+  userItems: SerializedUserItemForPublicPage[]
+  pcBuild: SerializedPcBuildWithParts | null
   userName: string
 }
 

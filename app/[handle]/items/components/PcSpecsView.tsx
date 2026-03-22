@@ -2,10 +2,10 @@ import Image from 'next/image'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PcPartsList } from './PcPartsList'
-import type { PcBuildWithParts } from '@/types/pc-build'
+import type { SerializedPcBuildWithParts } from '@/types/pc-build'
 
 interface PcSpecsViewProps {
-  pcBuild: PcBuildWithParts | null
+  pcBuild: SerializedPcBuildWithParts | null
   userName: string
 }
 

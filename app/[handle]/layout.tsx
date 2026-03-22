@@ -1,5 +1,5 @@
 import { resolveAvatarUrl } from '@/lib/avatar-utils'
-import { getUserByHandle, handleExists } from '@/lib/handle-utils'
+import { getUserByHandle } from '@/lib/handle-utils'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { isReservedHandle } from '@/lib/reserved-handles'
 import { notFound } from 'next/navigation'
@@ -61,8 +61,8 @@ interface HandleLayoutProps {
 }
 
 /**
- * generateMetadata: getUserByHandle は React.cache() 済みなので
- * layout 本体とリクエスト単位でデデュプリケーションされる
+ * generateMetadata: getUserByHandle は 'use cache' (cross-request) 済みなので
+ * layout 本体とキャッシュヒットによりデデュプリケーションされる
  */
 export async function generateMetadata({
   params,
@@ -94,64 +94,52 @@ export async function generateMetadata({
   }
 }
 
-/**
- * ヘッダー部分を非同期Server Componentとして分離
- * Suspenseでラップすることでページ本体のレンダリングをブロックしない
- */
-async function ProfileHeaderWrapper({ handle }: { handle: string }) {
-  const targetUser = await getUserByHandle(handle)
-  if (!targetUser || !targetUser.profile) return null
 
-  const themeSettings = resolveThemeSettings(targetUser.profile.themeSettings)
+type TargetUser = NonNullable<Awaited<ReturnType<typeof getUserByHandle>>>
+
+interface HandleLayoutContentProps {
+  handle: string
+  children: ReactNode
+  targetUser: TargetUser
+}
+
+/**
+ * HandleLayoutContent: Suspense 内でテーマ適用
+ * ユーザーデータは Suspense 外の HandleLayout で取得済みのものを受け取る
+ */
+function HandleLayoutContent({ handle, children, targetUser }: HandleLayoutContentProps) {
+  const themePreset = targetUser.profile!.themePreset || 'claymorphic'
+  const themeSettings = resolveThemeSettings(targetUser.profile!.themeSettings)
+  const backgroundStyle = calculateBackgroundStyle(themeSettings)
+
   const avatarImageUrl = resolveAvatarUrl(
     targetUser.characterInfo?.iconImageKey,
     targetUser.image
   )
 
   return (
-    <ProfileHeader
-      handle={handle}
-      avatarImageUrl={avatarImageUrl}
-      characterName={
-        targetUser.characterInfo?.characterName ?? targetUser.name
-      }
-      visibility={themeSettings.visibility}
-      namecard={themeSettings.namecard}
-      isEditable={false}
-      inDashboard={false}
-      isManaged={targetUser.accountType === 'MANAGED'}
-    />
-  )
-}
-
-/**
- * HandleLayoutContent: Suspense 内でフルデータ取得 + テーマ適用
- * getUserByHandle は React.cache() でリクエスト内 dedup される
- */
-async function HandleLayoutContent({ handle, children }: { handle: string; children: ReactNode }) {
-  const targetUser = await getUserByHandle(handle)
-  if (!targetUser || !targetUser.profile) notFound()
-
-  const themePreset = targetUser.profile.themePreset || 'claymorphic'
-  const themeSettings = resolveThemeSettings(targetUser.profile.themeSettings)
-  const backgroundStyle = calculateBackgroundStyle(themeSettings)
-
-  return (
     <UserThemeProvider themePreset={themePreset} themeSettings={themeSettings}>
       <ProfileLayout
         header={
-          <Suspense fallback={null}>
-            <ProfileHeaderWrapper handle={handle} />
-          </Suspense>
+          <ProfileHeader
+            handle={handle}
+            avatarImageUrl={avatarImageUrl}
+            characterName={
+              targetUser.characterInfo?.characterName ?? targetUser.name
+            }
+            visibility={themeSettings.visibility}
+            namecard={themeSettings.namecard}
+            isEditable={false}
+            inDashboard={false}
+            isManaged={targetUser.accountType === 'MANAGED'}
+          />
         }
         bottomNav={
-          <Suspense fallback={null}>
-            <MobileBottomNav
-              handle={handle}
-              inDashboard={false}
-              visibility={themeSettings.visibility}
-            />
-          </Suspense>
+          <MobileBottomNav
+            handle={handle}
+            inDashboard={false}
+            visibility={themeSettings.visibility}
+          />
         }
         floatingElements={
           <FloatingElements
@@ -205,15 +193,18 @@ export default async function HandleLayout({
     notFound()
   }
 
-  // 軽量な存在チェック（Suspense 前で正しい HTTP 404 を保証）
-  const exists = await handleExists(handle)
-  if (!exists) {
+  // Suspense 外でユーザー取得 → 正しい HTTP 404 を保証
+  // getUserByHandle は 'use cache' (cross-request) 済みなのでキャッシュヒット時はDBアクセスなし
+  const targetUser = await getUserByHandle(handle)
+  if (!targetUser || !targetUser.profile) {
     notFound()
   }
 
   return (
     <Suspense fallback={<HandleLayoutSkeleton />}>
-      <HandleLayoutContent handle={handle}>{children}</HandleLayoutContent>
+      <HandleLayoutContent handle={handle} targetUser={targetUser}>
+        {children}
+      </HandleLayoutContent>
     </Suspense>
   )
 }

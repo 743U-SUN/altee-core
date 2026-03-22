@@ -24,3 +24,23 @@ export type ItemForUserPage = Item & {
 export type UserItemForPublicPage = UserItem & {
   item: ItemForUserPage
 }
+
+// SC→CC 境界用: Date フィールドを string に変換済み（シリアライズ安全）
+// ItemCategory の Date フィールドを string に変換
+type SerializedItemCategory = Omit<ItemCategory, 'createdAt' | 'updatedAt'> & {
+  createdAt: string
+  updatedAt: string
+}
+
+export type SerializedItemForUserPage = Omit<Item, 'createdAt' | 'updatedAt'> & {
+  createdAt: string
+  updatedAt: string
+  category: SerializedItemCategory
+  brand?: { id: string; name: string } | null
+}
+
+export type SerializedUserItemForPublicPage = Omit<UserItem, 'createdAt' | 'updatedAt'> & {
+  createdAt: string
+  updatedAt: string
+  item: SerializedItemForUserPage
+}

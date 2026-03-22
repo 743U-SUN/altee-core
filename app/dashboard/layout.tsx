@@ -17,25 +17,17 @@ export const metadata: Metadata = {
 
 async function DashboardLayoutContent({
   children,
+  userId,
 }: {
   children: React.ReactNode
+  userId: string
 }) {
-  const session = await cachedAuth();
-
-  if (!session?.user) {
-    redirect('/auth/signin');
-  }
-
-  if (!session.user.isActive) {
-    redirect('/auth/suspended');
-  }
-
   const user = await getUserNavData();
 
   return (
     <DashboardLayoutClient
       user={user}
-      sidebarContent={<DashboardSidebarContent userId={session.user.id} />}
+      sidebarContent={<DashboardSidebarContent userId={userId} />}
       sidebarRoutes={[
         { path: '/dashboard/character', content: <CharacterSidebarContent /> },
       ]}
@@ -79,9 +71,22 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  const session = await cachedAuth();
+
+  // 認証チェック（Suspense 前に完了させる）
+  if (!session?.user) {
+    redirect('/auth/signin');
+  }
+
+  if (!session.user.isActive) {
+    redirect('/auth/suspended');
+  }
+
   return (
     <Suspense fallback={<DashboardLayoutSkeleton />}>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <DashboardLayoutContent userId={session.user.id}>
+        {children}
+      </DashboardLayoutContent>
     </Suspense>
   )
 }

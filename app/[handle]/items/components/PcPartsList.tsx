@@ -4,10 +4,10 @@ import { ExternalLink } from 'lucide-react'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { pcPartTypeLabels } from '@/lib/validations/pc-build'
 import { partTypeIconComponents } from '@/constants/pc-build'
-import type { PcBuildPartWithItem } from '@/types/pc-build'
+import type { SerializedPcBuildPartWithItem } from '@/types/pc-build'
 
 interface PcPartsListProps {
-  parts: PcBuildPartWithItem[]
+  parts: SerializedPcBuildPartWithItem[]
 }
 
 export function PcPartsList({ parts }: PcPartsListProps) {

@@ -20,23 +20,6 @@ async function AdminLayoutContent({
 }: {
   children: React.ReactNode
 }) {
-  const session = await cachedAuth();
-
-  // 認証チェック
-  if (!session?.user?.email) {
-    redirect('/auth/signin');
-  }
-
-  // アクティブユーザーチェック
-  if (!session.user.isActive) {
-    redirect('/auth/suspended');
-  }
-
-  // 管理者権限チェック
-  if (session.user.role !== 'ADMIN') {
-    redirect('/unauthorized');
-  }
-
   // 統計データとユーザー情報を並列取得
   const [stats, user] = await Promise.all([
     getAdminStats(),
@@ -90,6 +73,23 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  const session = await cachedAuth();
+
+  // 認証チェック（Suspense 前に完了させる）
+  if (!session?.user?.email) {
+    redirect('/auth/signin');
+  }
+
+  // アクティブユーザーチェック
+  if (!session.user.isActive) {
+    redirect('/auth/suspended');
+  }
+
+  // 管理者権限チェック
+  if (session.user.role !== 'ADMIN') {
+    redirect('/unauthorized');
+  }
+
   return (
     <Suspense fallback={<AdminLayoutSkeleton />}>
       <AdminLayoutContent>{children}</AdminLayoutContent>

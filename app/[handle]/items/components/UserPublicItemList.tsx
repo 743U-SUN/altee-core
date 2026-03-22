@@ -1,8 +1,8 @@
-import { UserItemForPublicPage } from '@/types/item'
+import type { SerializedUserItemForPublicPage } from '@/types/item'
 import { UserPublicItemCard } from './UserPublicItemCard'
 
 interface UserPublicItemListProps {
-  userItems: UserItemForPublicPage[]
+  userItems: SerializedUserItemForPublicPage[]
   userName: string
 }
 
