@@ -37,7 +37,7 @@ app/actions/    Server Actions (admin, auth, content, media, social, user)
 app/demo/       Manual test pages (Server Actions & UI verification)
 components/     Shared UI (shadcn/ui based)
 lib/            Utilities
-lib/queries/    Data access layer (server-only + React.cache)
+lib/queries/    Data access layer (server-only, 'use cache' + React.cache)
 hooks/          Custom hooks
 types/          Type definitions
 constants/      Constants
@@ -50,7 +50,7 @@ services/       External API wrappers (YouTube, Twitch, Niconico)
 ## Key Files
 
 - `auth.ts` - NextAuth v5 configuration
-- `middleware.ts` - Route protection and @handle rewriting
+- `proxy.ts` - Route protection and @handle rewriting
 - `prisma/schema.prisma` - Database schema (source of truth)
 - `lib/prisma.ts` - Prisma client singleton
 - `lib/auth.ts` - requireAuth / requireAdmin / cachedAuth (React.cache wrapping auth)
@@ -67,7 +67,10 @@ Data fetching:
 - Static → server components + Server Actions
 - Interactive → client components + Server Actions + useSWR
 - Mutations → Server Actions + useSWR.mutate (optimistic updates)
-- Data access layer: lib/queries/ with `import 'server-only'` + `React.cache()`
+- Data access layer: lib/queries/ with `import 'server-only'`
+- Public queries → `'use cache'` + `cacheLife()` + `cacheTag()` (cross-request caching)
+- Dashboard/admin queries → `React.cache()` (request-level dedup, cookies dependency)
+- Cache invalidation → `updateTag()` in Server Actions (instant expire) + `revalidatePath()` for dashboard
 - Parallel fetching: `Promise.all()` to avoid waterfalls
 
 RSC principles:
@@ -78,6 +81,7 @@ RSC principles:
 - Date handling at SC→CC boundary: convert to `.toISOString()` in SC → pass as string to CC → restore with `new Date()` in CC. Use `string` in type definitions
 - Async client components are invalid
 - Use `import 'server-only'` to protect server-only modules
+- `'use cache'` scopes cannot use `cookies()`/`headers()`/`searchParams` directly — read outside and pass values as arguments
 
 UI / State:
 - shadcn/ui + lucide-react, minimize custom UI
@@ -91,7 +95,7 @@ Place in app/actions/ as `'use server'` files. Required checklist:
 1. Re-verify auth with `requireAuth()` / `requireAdmin()`
 2. Validate input server-side with Zod
 3. Verify resource ownership (IDOR prevention)
-4. Call `revalidatePath()` after writes
+4. Call `revalidatePath()` or `updateTag()`/`revalidateTag()` after writes
 5. Return `{ success, data?, error? }` pattern
 6. Never wrap `redirect()`/`notFound()` in try-catch (they throw internally)
 7. Validate ID params with `cuidSchema` (`lib/validations/shared.ts`)
@@ -117,7 +121,7 @@ React 19 stable APIs (use alongside existing patterns based on complexity):
 - `useOptimistic()`: optimistic UI during actions → use when useSWR is not involved
 - `useFormStatus()`: submission status in child components
 - `ref` as prop directly (no forwardRef needed)
-- `'use cache'`: **stable** in Next.js 16 — declarative caching per function/component (not yet enabled in this project)
+- `'use cache'`: **stable** in Next.js 16 — declarative caching per function/component/route (enabled via `cacheComponents: true`)
 
 When to use which:
 - Client-centric forms (real-time validation, dynamic fields, conditional UI) → react-hook-form + Zod
@@ -125,9 +129,17 @@ When to use which:
 - Optimistic updates with SWR cache → useSWR.mutate
 - Optimistic UI without SWR → useOptimistic
 
+Caching strategy (`'use cache'` vs `React.cache()`):
+- Same data used by `generateMetadata()` + page in one request → `'use cache'` handles both (cross-request cache hit)
+- Public data (profiles, FAQ, news, items, videos) → `'use cache'` + `cacheLife()` + `cacheTag()`
+- Auth-dependent data (dashboard, admin) → `React.cache()` (cookies dependency, cannot use `'use cache'`)
+- Both can coexist in the same file, but `React.cache` is isolated inside `'use cache'` scope (separate dedup contexts)
+- Invalidation: `updateTag('tag')` for targeted public cache, `revalidatePath()` for dashboard routes
+- Cache tags: `{resource}-{normalizeHandle(handle)}` pattern (e.g., `faq-${handle}`, `profile-${handle}`)
+
 ## Security
 
-- 3-layer auth: Middleware (route-level) → Layout (state checks/redirects) → Page/Server Actions (permission checks)
+- 3-layer auth: Proxy (route-level) → Layout (state checks/redirects) → Page/Server Actions (permission checks)
 - → Details: docs/GUIDES/SECURITY-GUIDE.md
 
 ## Performance
@@ -136,6 +148,8 @@ When to use which:
 - Route-based code splitting
 - Modals, DnD, rich editors → must use `next/dynamic` for lazy loading
 - Never use `import *` (especially lucide-react, PrismJS — use named imports only)
+- Maximize PPR static shell: isolate per-request data fetches (auth, counters, etc.) into individual `<Suspense>` boundaries instead of page top-level → grows static shell for faster initial render
+- PPR diagnostics: use `/next-browser` skill's `ppr lock/unlock` to visualize static/dynamic boundaries
 
 ## Component & Route Checklist
 
@@ -190,10 +204,13 @@ After creating an implementation plan, run parallel subagent reviews with **arch
 - React Compiler enabled (`reactCompiler: true`) — never write `memo`/`useMemo`/`useCallback`
 - `output: 'standalone'` for Docker/VPS deployment
 - Dev server binds to `0.0.0.0:3000` (WSL2 compatibility)
+- Dev server lock file: `.next/dev/lock` stores PID/port — second `next dev` shows actionable error (16.2+)
+- `browserToTerminal` levels: `'error'` (default) / `'warn'` / `true` (all output) / `false` — currently set to `true`
 - Server Actions body size limit: 10MB (`serverActions.bodySizeLimit`)
 - Production DB changes: always use migrate (never db:push)
 - `revalidatePath` silently fails on typos — always verify path accuracy against actual routes
 - Never leave `console.log`/`console.error` in production code (auto-detected by hooks)
+- `cacheComponents: true` enables `'use cache'` + PPR + Activity-based navigation (component state preserved on back/forward)
 
 ## References
 
