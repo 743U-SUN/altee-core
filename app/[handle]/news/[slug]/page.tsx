@@ -3,6 +3,19 @@ import { getPublicNewsArticle } from '@/lib/queries/news-queries'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { NewsArticleContent } from '../components/NewsArticleContent'
 
+/** OG description 用マークダウン簡易ストリップ */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/!\[.*?\]\(.*?\)/g, '')   // 画像 ![alt](url)
+    .replace(/\[([^\]]*)\]\(.*?\)/g, '$1') // リンク [text](url) → text
+    .replace(/#{1,6}\s*/g, '')          // 見出し #
+    .replace(/[*_~`]+/g, '')            // 強調・コード
+    .replace(/^\s*[-*+]\s+/gm, '')      // 箇条書き
+    .replace(/^\s*\d+\.\s+/gm, '')      // 番号付きリスト
+    .replace(/\n+/g, ' ')              // 改行をスペースに
+    .trim()
+}
+
 interface NewsArticlePageProps {
   params: Promise<{ handle: string; slug: string }>
 }
@@ -21,10 +34,10 @@ export async function generateMetadata({ params }: NewsArticlePageProps) {
 
   return {
     title: `${article.title} | @${handle}`,
-    description: article.content.slice(0, 160),
+    description: stripMarkdown(article.content).slice(0, 160),
     openGraph: {
       title: article.title,
-      description: article.content.slice(0, 160),
+      description: stripMarkdown(article.content).slice(0, 160),
       ...(thumbnailUrl && {
         images: [{ url: thumbnailUrl, width: 1200, height: 630 }],
       }),

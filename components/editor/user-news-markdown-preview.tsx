@@ -1,8 +1,9 @@
 'use client'
 
-import { lazy, useMemo } from 'react'
+import { lazy } from 'react'
 import remarkGfm from 'remark-gfm'
 import { YouTubeEmbed } from '@next/third-parties/google'
+import type { Components } from 'react-markdown'
 
 const ReactMarkdown = lazy(() => import('react-markdown'))
 
@@ -105,15 +106,31 @@ function preprocessContent(
   return segments
 }
 
+/** ReactMarkdown の code レンダラー (モジュールレベル定数で React Compiler と競合しない) */
+const markdownComponents: Components = {
+  code(props) {
+    const { children, className: codeClassName } = props
+    const match = /language-(\w+)/.exec(codeClassName || '')
+    return match ? (
+      <pre className="rounded-md overflow-hidden bg-gray-900 p-4 text-sm leading-relaxed">
+        <code className={codeClassName}>{children}</code>
+      </pre>
+    ) : (
+      <code
+        className={`${codeClassName || ''} bg-gray-100 px-1 py-0.5 rounded text-sm`}
+      >
+        {children}
+      </code>
+    )
+  },
+}
+
 export function UserNewsMarkdownPreview({
   content,
   bodyImageUrl,
   className = '',
 }: UserNewsMarkdownPreviewProps) {
-  const segments = useMemo(
-    () => preprocessContent(content, bodyImageUrl),
-    [content, bodyImageUrl]
-  )
+  const segments = preprocessContent(content, bodyImageUrl)
 
   return (
     <div
@@ -135,23 +152,7 @@ export function UserNewsMarkdownPreview({
           <ReactMarkdown
             key={`md-${index}`}
             remarkPlugins={[remarkGfm]}
-            components={{
-              code(props) {
-                const { children, className: codeClassName } = props
-                const match = /language-(\w+)/.exec(codeClassName || '')
-                return match ? (
-                  <pre className="rounded-md overflow-hidden bg-gray-900 p-4 text-sm leading-relaxed">
-                    <code className={codeClassName}>{children}</code>
-                  </pre>
-                ) : (
-                  <code
-                    className={`${codeClassName || ''} bg-gray-100 px-1 py-0.5 rounded text-sm`}
-                  >
-                    {children}
-                  </code>
-                )
-              },
-            }}
+            components={markdownComponents}
             disallowedElements={[
               'script',
               'iframe',

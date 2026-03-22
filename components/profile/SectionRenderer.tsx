@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { Suspense } from 'react'
 import type {
   UserSection,
   SectionBackgroundPreset,
@@ -29,20 +29,15 @@ export function SectionRenderer({
   presets = [],
   isEditable = false,
 }: SectionRendererProps) {
-  const sortedSections = useMemo(
-    () =>
-      sections
-        .filter((section) => section.isVisible)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    [sections]
-  )
+  const sortedSections = sections
+    .filter((section) => section.isVisible)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
 
   return (
     <div className="w-full">
       {sortedSections.map((section) => {
         const definition = getSectionDefinition(section.sectionType)
         if (!definition) {
-          console.warn(`Unknown section type: ${section.sectionType}`)
           return null
         }
 

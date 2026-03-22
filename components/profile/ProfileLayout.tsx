@@ -1,6 +1,5 @@
 'use client'
 
-import { memo } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +17,7 @@ interface ProfileLayoutProps {
  * - フルブリードセクション対応（各SectionBandが幅・パディングを管理）
  * - MobileBottomNav / FloatingElements対応
  */
-export const ProfileLayout = memo(function ProfileLayout({
+export function ProfileLayout({
   children,
   header,
   bottomNav,
@@ -46,4 +45,4 @@ export const ProfileLayout = memo(function ProfileLayout({
       {floatingElements ? floatingElements : null}
     </div>
   )
-})
+}

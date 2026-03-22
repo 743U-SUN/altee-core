@@ -1,15 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Home, ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {
-    useEffect(() => {
-        console.log('404 Page - Resource not found')
-    }, [])
-
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
             <div className="max-w-md w-full space-y-8 text-center">
