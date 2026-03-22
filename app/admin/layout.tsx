@@ -52,7 +52,9 @@ function AdminLayoutSkeleton() {
         ))}
       </div>
       <div className="flex-1">
-        <div className="h-14 border-b px-4 flex items-center">
+        <div className="h-14 border-b px-4 flex items-center gap-2">
+          {/* モバイル用サイドバートリガー相当 */}
+          <Skeleton className="h-8 w-8 rounded-md lg:hidden" />
           <Skeleton className="h-6 w-24" />
         </div>
         <div className="container mx-auto p-6 space-y-6">

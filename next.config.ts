@@ -16,17 +16,12 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [
-      {
-        source: '/:path*{/}?',
-        headers: [
-          {
-            key: 'X-Accel-Buffering',
-            value: 'no',
-          },
-        ],
-      },
-    ]
+    // X-Accel-Buffering: streaming が必要なルートのみに絞る（nginx 環境でのメモリ増加を防ぐ）
+    const streamingRoutes = ['/@:handle/:path*', '/@:handle', '/admin/:path*', '/dashboard/:path*']
+    return streamingRoutes.map((source) => ({
+      source,
+      headers: [{ key: 'X-Accel-Buffering', value: 'no' }],
+    }))
   },
   async rewrites() {
     return [

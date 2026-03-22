@@ -40,26 +40,35 @@ async function DashboardLayoutContent({
 function DashboardLayoutSkeleton() {
   return (
     <div className="flex min-h-screen">
-      {/* サイドバー */}
+      {/* ファーストサイドバー */}
       <div className="hidden lg:block w-[350px] border-r p-4 space-y-4">
         <Skeleton className="h-8 w-32" />
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-10 w-full rounded-md" />
         ))}
       </div>
-      {/* メイン */}
-      <div className="flex-1">
-        <div className="h-14 border-b px-4 flex items-center">
-          <Skeleton className="h-6 w-24" />
-        </div>
-        <div className="p-6 space-y-4">
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-5 w-64" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-lg" />
-            ))}
+      {/* メイン + セカンドサイドバー */}
+      <div className="flex flex-1">
+        <div className="flex-1">
+          <div className="h-14 border-b px-4 flex items-center gap-2">
+            {/* モバイル用サイドバートリガー相当 */}
+            <Skeleton className="h-8 w-8 rounded-md lg:hidden" />
+            <Skeleton className="h-6 w-24" />
           </div>
+          <div className="p-6 space-y-4">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-5 w-64" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* セカンドサイドバー（プロフィール編集・FAQ・キャラクター管理ページで表示） */}
+        <div className="hidden lg:block w-[350px] border-l p-4 space-y-4">
+          <Skeleton className="h-64 w-full rounded-lg" />
+          <Skeleton className="h-8 w-full rounded-md" />
         </div>
       </div>
     </div>

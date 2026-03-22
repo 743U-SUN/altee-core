@@ -2,8 +2,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AuthErrorLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md border rounded-lg bg-white p-6 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md border rounded-lg bg-card p-6 space-y-6">
         {/* Icon + Header */}
         <div className="text-center space-y-3">
           <Skeleton className="h-12 w-12 rounded-full mx-auto" />
