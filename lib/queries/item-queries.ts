@@ -1,5 +1,6 @@
 import 'server-only'
 import { cache } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
 
@@ -50,10 +51,14 @@ export const getDashboardUserPcBuild = cache(async (userId: string) => {
 
 /**
  * 公開ページ用：ハンドルからユーザーの公開アイテムを取得
+ * 'use cache' でクロスリクエストキャッシュ
  */
-export const getUserPublicItemsByHandle = cache(async (handle: string) => {
+export async function getUserPublicItemsByHandle(handle: string) {
+  'use cache'
   const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
+  cacheLife('minutes')
+  cacheTag(`items-${normalized}`)
 
   try {
     const user = await prisma.user.findUnique({
@@ -94,4 +99,4 @@ export const getUserPublicItemsByHandle = cache(async (handle: string) => {
       error: '公開アイテムの取得に失敗しました',
     }
   }
-})
+}

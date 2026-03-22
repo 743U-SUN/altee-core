@@ -1,9 +1,9 @@
 import 'server-only'
-import { cache } from 'react';
-import { prisma } from '@/lib/prisma';
-import { handleSchema } from '@/lib/validations/user-setup';
-import { isReservedHandle } from '@/lib/reserved-handles';
-import { normalizeHandle } from '@/lib/validations/shared';
+import { cacheLife, cacheTag } from 'next/cache'
+import { prisma } from '@/lib/prisma'
+import { handleSchema } from '@/lib/validations/user-setup'
+import { isReservedHandle } from '@/lib/reserved-handles'
+import { normalizeHandle } from '@/lib/validations/shared'
 
 /**
  * Handle重複チェック結果の型
@@ -91,28 +91,25 @@ async function generateHandleSuggestion(baseHandle: string): Promise<string> {
 
 /**
  * Handleからユーザー情報を取得
- * React.cache()でリクエスト単位のデデュプリケーションを実装
- * @param handle 検索するhandle
- * @returns ユーザー情報（存在しない場合はnull）
+ * 'use cache' でクロスリクエストキャッシュ（公開プロフィール用）
  */
-export const getUserByHandle = cache(async (handle: string) => {
-  try {
-    // @プレフィックスを削除して正規化
-    const normalizedHandle = handle.startsWith('@')
-      ? handle.slice(1).toLowerCase()
-      : handle.toLowerCase();
+export async function getUserByHandle(handle: string) {
+  'use cache'
+  const normalized = normalizeHandle(handle)
+  cacheLife('minutes')
+  cacheTag(`profile-${normalized}`, `faq-${normalized}`, `news-${normalized}`)
 
-    // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
-    if (isReservedHandle(normalizedHandle)) {
-      return null;
+  try {
+    if (isReservedHandle(normalized)) {
+      return null
     }
 
     const user = await prisma.user.findUnique({
-      where: { handle: normalizedHandle },
+      where: { handle: normalized },
       include: {
         profile: {
           include: {
-            characterImage: true, // キャラクター画像（9:16縦長）
+            characterImage: true,
           },
         },
         characterInfo: {
@@ -139,13 +136,13 @@ export const getUserByHandle = cache(async (handle: string) => {
           take: 3,
         },
       },
-    });
+    })
 
-    return user;
+    return user
   } catch {
-    return null;
+    return null
   }
-});
+}
 
 /**
  * Handleが存在するかチェック（簡易版）

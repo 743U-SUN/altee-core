@@ -1,4 +1,3 @@
-import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { getPublicNewsArticle } from '@/lib/queries/news-queries'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
@@ -8,15 +7,9 @@ interface NewsArticlePageProps {
   params: Promise<{ handle: string; slug: string }>
 }
 
-const getCachedArticle = cache(
-  async (handle: string, slug: string) => {
-    return getPublicNewsArticle(handle, slug)
-  }
-)
-
 export async function generateMetadata({ params }: NewsArticlePageProps) {
   const { handle, slug } = await params
-  const article = await getCachedArticle(handle, slug)
+  const article = await getPublicNewsArticle(handle, slug)
 
   if (!article) {
     return { title: 'Not Found' }
@@ -43,7 +36,7 @@ export default async function NewsArticlePage({
   params,
 }: NewsArticlePageProps) {
   const { handle, slug } = await params
-  const article = await getCachedArticle(handle, slug)
+  const article = await getPublicNewsArticle(handle, slug)
 
   if (!article) notFound()
 

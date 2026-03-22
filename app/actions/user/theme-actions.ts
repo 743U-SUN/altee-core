@@ -3,7 +3,8 @@
 import { z } from 'zod'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
+import { normalizeHandle } from '@/lib/validations/shared'
 import type { ThemeSettings, BackgroundSettings } from '@/types/profile-sections'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { hasTheme } from '@/lib/themes/registry'
@@ -135,6 +136,8 @@ export async function updateUserThemeSettings(settings: {
 
     if (session.user.handle) {
       revalidatePath(`/@${session.user.handle}`)
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
     }
     revalidatePath('/dashboard/profile-editor')
 
@@ -212,6 +215,8 @@ export async function updateThemeBackground(
 
     if (session.user.handle) {
       revalidatePath(`/@${session.user.handle}`)
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
     }
     revalidatePath('/dashboard/profile-editor')
 

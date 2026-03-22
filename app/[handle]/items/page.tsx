@@ -1,4 +1,4 @@
-import { cache, Suspense } from 'react'
+import { Suspense } from 'react'
 import { getUserPublicItemsByHandle } from '@/lib/queries/item-queries'
 import { getPublicPcBuildByHandle } from '@/app/actions/content/pc-build-actions'
 import { ItemsTabs } from './components/ItemsTabs'
@@ -8,19 +8,13 @@ interface UserItemsPageProps {
   params: Promise<{ handle: string }>
 }
 
-// React.cache()でリクエスト単位のデデュプリケーション
-const getPageData = cache(async (handle: string) => {
+export default async function UserItemsPage({ params }: UserItemsPageProps) {
+  const { handle } = await params
+
   const [itemsResult, pcBuildResult] = await Promise.all([
     getUserPublicItemsByHandle(handle),
     getPublicPcBuildByHandle(handle),
   ])
-  return { itemsResult, pcBuildResult }
-})
-
-export default async function UserItemsPage({ params }: UserItemsPageProps) {
-  const { handle } = await params
-
-  const { itemsResult, pcBuildResult } = await getPageData(handle)
 
   if (!itemsResult.success || !itemsResult.data) {
     notFound()
@@ -53,7 +47,7 @@ export default async function UserItemsPage({ params }: UserItemsPageProps) {
 export async function generateMetadata({ params }: UserItemsPageProps) {
   const { handle } = await params
 
-  const { itemsResult } = await getPageData(handle)
+  const itemsResult = await getUserPublicItemsByHandle(handle)
 
   if (!itemsResult.success || !itemsResult.data) {
     return {

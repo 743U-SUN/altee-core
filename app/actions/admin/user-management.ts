@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { UserRole, AccountType } from "@prisma/client"
-import { cuidSchema, cuidArraySchema } from "@/lib/validations/shared"
+import { cuidSchema, cuidArraySchema, normalizeHandle } from "@/lib/validations/shared"
 import { handleSchema } from "@/lib/validations/user-setup"
 import { isReservedHandle } from "@/lib/reserved-handles"
 
@@ -190,7 +190,7 @@ export async function toggleUserActive(userId: string) {
   try {
     const currentUser = await prisma.user.findUnique({
       where: { id: validatedUserId },
-      select: { isActive: true, name: true },
+      select: { isActive: true, name: true, handle: true },
     })
 
     if (!currentUser) {
@@ -209,6 +209,14 @@ export async function toggleUserActive(userId: string) {
     })
 
     revalidatePath('/admin/users')
+    if (currentUser?.handle) {
+      const h = normalizeHandle(currentUser.handle)
+      updateTag(`profile-${h}`)
+      updateTag(`faq-${h}`)
+      updateTag(`news-${h}`)
+      updateTag(`items-${h}`)
+      updateTag(`videos-${h}`)
+    }
     return updatedUser
   } catch {
     throw new Error("ユーザー状態の更新に失敗しました")
@@ -230,7 +238,7 @@ export async function deleteUser(userId: string, reason: string) {
     // ユーザーが存在するかチェック
     const user = await prisma.user.findUnique({
       where: { id: validatedUserId },
-      select: { name: true, email: true },
+      select: { name: true, email: true, handle: true },
     })
 
     if (!user) {
@@ -241,6 +249,15 @@ export async function deleteUser(userId: string, reason: string) {
     await prisma.user.delete({
       where: { id: validatedUserId },
     })
+
+    if (user.handle) {
+      const h = normalizeHandle(user.handle)
+      updateTag(`profile-${h}`)
+      updateTag(`faq-${h}`)
+      updateTag(`news-${h}`)
+      updateTag(`items-${h}`)
+      updateTag(`videos-${h}`)
+    }
 
     return { success: true, deletedUser: user }
   } catch {
@@ -460,7 +477,19 @@ export async function updateUserHandle(
     // 旧ハンドルと新ハンドルのキャッシュを両方無効化
     if (currentUser.handle) {
       revalidatePath(`/@${currentUser.handle}`)
+      const oldH = normalizeHandle(currentUser.handle)
+      updateTag(`profile-${oldH}`)
+      updateTag(`faq-${oldH}`)
+      updateTag(`news-${oldH}`)
+      updateTag(`items-${oldH}`)
+      updateTag(`videos-${oldH}`)
     }
+    const newH = normalizeHandle(normalizedHandle)
+    updateTag(`profile-${newH}`)
+    updateTag(`faq-${newH}`)
+    updateTag(`news-${newH}`)
+    updateTag(`items-${newH}`)
+    updateTag(`videos-${newH}`)
     revalidatePath(`/@${normalizedHandle}`)
     revalidatePath('/admin/users')
 

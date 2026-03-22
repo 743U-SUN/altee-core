@@ -1,5 +1,6 @@
 import 'server-only'
 import { cache } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
 import type { FaqActionResult } from '@/types/faq'
@@ -21,13 +22,14 @@ export const getDashboardFaqCategories = cache(async (userId: string) => {
 
 /**
  * 公開FAQ取得（ハンドルから）
- * ユーザー検索とFAQカテゴリ取得を1クエリに統合
+ * 'use cache' でクロスリクエストキャッシュ
  */
-export const getPublicFaqByHandle = cache(async (
-  handle: string
-): Promise<FaqActionResult> => {
+export async function getPublicFaqByHandle(handle: string): Promise<FaqActionResult> {
+  'use cache'
   const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
+  cacheLife('minutes')
+  cacheTag(`faq-${normalized}`)
 
   try {
     const user = await prisma.user.findUnique({
@@ -56,4 +58,4 @@ export const getPublicFaqByHandle = cache(async (
   } catch {
     return { success: false, error: 'FAQの取得に失敗しました' }
   }
-})
+}

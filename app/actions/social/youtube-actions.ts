@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
 import { fetchYoutubeVideoMetadata, getYoutubeThumbnailUrl, fetchYoutubeRssFeed } from "@/services/youtube/youtube-api"
 import { subscribeToYoutubePush, unsubscribeFromYoutubePush } from "@/services/youtube/youtube-pubsubhubbub"
@@ -13,7 +13,7 @@ import {
   YOUTUBE_CHANNEL_ID_PATTERN,
   YOUTUBE_VIDEO_ID_PATTERN
 } from "@/services/youtube/constants"
-import { cuidSchema } from "@/lib/validations/shared"
+import { cuidSchema, normalizeHandle } from "@/lib/validations/shared"
 
 // =============================================================================
 // バリデーションスキーマ
@@ -121,6 +121,11 @@ export async function updateYoutubeChannel(data: z.infer<typeof youtubeChannelSc
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`videos-${h}`)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true }
   } catch (error) {
@@ -226,6 +231,11 @@ export async function addRecommendedVideo(videoUrl: string) {
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`videos-${h}`)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true, data: video }
   } catch (error) {
@@ -277,6 +287,11 @@ export async function deleteRecommendedVideo(id: string) {
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`videos-${h}`)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true }
   } catch {
@@ -317,6 +332,11 @@ export async function reorderRecommendedVideos(data: z.infer<typeof reorderVideo
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`videos-${h}`)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true }
   } catch (error) {
@@ -341,6 +361,11 @@ export async function toggleRecommendedVideosVisibility(isVisible: boolean) {
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`videos-${h}`)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true }
   } catch {
@@ -462,6 +487,11 @@ export async function updateYouTubeLatestSection(
 
     revalidatePath('/dashboard/videos')
     revalidatePath(`/@${session.user.handle}`)
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`videos-${h}`)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true }
   } catch (error) {

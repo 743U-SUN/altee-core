@@ -1,4 +1,3 @@
-import { cache } from 'react'
 import {
   getPublicNewsByHandle,
   getPublicNewsSection,
@@ -9,10 +8,6 @@ import { NewsListContent } from './components/NewsListContent'
 interface NewsPageProps {
   params: Promise<{ handle: string }>
 }
-
-const getCachedNews = cache(async (handle: string) => {
-  return getPublicNewsByHandle(handle)
-})
 
 export async function generateMetadata({ params }: NewsPageProps) {
   const { handle } = await params
@@ -31,7 +26,7 @@ export default async function NewsPage({ params }: NewsPageProps) {
   const { handle } = await params
 
   const [news, newsSection, presets] = await Promise.all([
-    getCachedNews(handle),
+    getPublicNewsByHandle(handle),
     getPublicNewsSection(handle),
     getActivePresets(),
   ])

@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
+import { normalizeHandle } from "@/lib/validations/shared"
 import {
   basicInfoSchema,
   activitySettingsSchema,
@@ -68,6 +69,10 @@ export async function updateBasicInfo(data: z.infer<typeof basicInfoSchema>) {
     })
 
     revalidatePath("/dashboard/character")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -125,6 +130,10 @@ export async function updateActivitySettings(data: z.infer<typeof activitySettin
     })
 
     revalidatePath("/dashboard/character/activity")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -156,6 +165,10 @@ export async function updateGameSettings(data: z.infer<typeof gameSettingsSchema
     })
 
     revalidatePath("/dashboard/character/game")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -185,6 +198,10 @@ export async function updateCollabSettings(data: z.infer<typeof collabSettingsSc
     })
 
     revalidatePath("/dashboard/character/collab")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -1,5 +1,5 @@
 import 'server-only'
-import { cache } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { SectionBackgroundPreset } from '@/types/profile-sections'
 import { presetConfigSchema } from '@/lib/validations/section-settings'
@@ -9,9 +9,13 @@ const FALLBACK_CONFIG = { color: '#000000' } as const
 
 /**
  * アクティブな背景プリセットを取得
- * React.cache() で同一リクエスト内の重複 fetch を防止
+ * 'use cache' でクロスリクエストキャッシュ（全ユーザー共有）
  */
-export const getActivePresets = cache(async (): Promise<SectionBackgroundPreset[]> => {
+export async function getActivePresets(): Promise<SectionBackgroundPreset[]> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag('presets')
+
   const presets = await prisma.sectionBackgroundPreset.findMany({
     where: { isActive: true },
     orderBy: { sortOrder: 'asc' },
@@ -31,4 +35,4 @@ export const getActivePresets = cache(async (): Promise<SectionBackgroundPreset[
       sortOrder: p.sortOrder,
     }
   })
-})
+}

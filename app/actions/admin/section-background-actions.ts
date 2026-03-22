@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { generateCssString } from '@/lib/sections/background-utils'
 import {
   presetInputSchema,
@@ -79,6 +79,7 @@ export async function createPresetAction(input: PresetInput) {
     })
 
     revalidatePath('/admin/section-backgrounds')
+    updateTag('presets')
     return { success: true as const, data: preset }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -124,6 +125,7 @@ export async function updatePresetAction(id: string, input: PresetInput) {
     })
 
     revalidatePath('/admin/section-backgrounds')
+    updateTag('presets')
     return { success: true as const, data: preset }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -156,6 +158,7 @@ export async function deletePresetAction(id: string) {
 
     revalidatePath('/admin/section-backgrounds')
     revalidatePath('/', 'layout')
+    updateTag('presets')
     return { success: true as const }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -180,6 +183,7 @@ export async function togglePresetActiveAction(id: string, isActive: boolean) {
 
     revalidatePath('/admin/section-backgrounds')
     revalidatePath('/', 'layout')
+    updateTag('presets')
     return { success: true as const }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -210,6 +214,7 @@ export async function updatePresetSortOrderAction(
     )
 
     revalidatePath('/admin/section-backgrounds')
+    updateTag('presets')
     return { success: true as const }
   } catch {
     return { success: false as const, error: '並び替えに失敗しました' }

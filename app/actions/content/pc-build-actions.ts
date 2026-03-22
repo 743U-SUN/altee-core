@@ -2,8 +2,9 @@
 
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { after } from 'next/server'
+import { normalizeHandle } from '@/lib/validations/shared'
 import { z } from 'zod'
 import { pcBuildSchema, pcPartSchema, PC_PART_TYPES } from '@/lib/validations/pc-build'
 import { checkBuildCompatibility, type PartWithSpecs } from '@/lib/pc-compatibility'
@@ -220,6 +221,10 @@ export async function upsertUserPcBuild(data: PcBuildInput) {
       },
     })
 
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`items-${h}`)
+    }
     revalidateUserPaths(session.user.handle)
 
     return { success: true, data: pcBuild }
@@ -270,6 +275,10 @@ export async function addPcBuildPart(data: PcPartInput) {
       })
     })
 
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`items-${h}`)
+    }
     revalidateUserPaths(session.user.handle)
 
     return { success: true, data: part }
@@ -310,6 +319,10 @@ export async function updatePcBuildPart(partId: string, data: PcPartInput) {
       },
     })
 
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`items-${h}`)
+    }
     revalidateUserPaths(session.user.handle)
 
     return { success: true, data: updated }
@@ -339,6 +352,10 @@ export async function deletePcBuildPart(partId: string) {
 
     await prisma.userPcBuildPart.delete({ where: { id: validatedPartId } })
 
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`items-${h}`)
+    }
     revalidateUserPaths(session.user.handle)
 
     return { success: true }
@@ -381,6 +398,10 @@ export async function reorderPcBuildParts(partIds: string[]) {
       )
     )
 
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`items-${h}`)
+    }
     revalidateUserPaths(session.user.handle)
 
     return { success: true }

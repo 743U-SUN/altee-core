@@ -3,9 +3,9 @@
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
-import { cuidSchema } from "@/lib/validations/shared"
+import { cuidSchema, normalizeHandle } from "@/lib/validations/shared"
 import { FAQ_LIMITS, type FaqActionResult } from "@/types/faq"
 import type { SectionSettings } from "@/types/profile-sections"
 import { sectionSettingsSchema } from "@/lib/validations/section-settings"
@@ -126,6 +126,11 @@ export async function createFaqCategory(data: z.infer<typeof createFaqCategorySc
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true, data: category }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -168,6 +173,11 @@ export async function updateFaqCategory(categoryId: string, data: z.infer<typeof
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true, data: updatedCategory }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -201,6 +211,11 @@ export async function deleteFaqCategory(categoryId: string): Promise<FaqActionRe
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     return { success: false, error: "FAQカテゴリーの削除に失敗しました" }
@@ -239,6 +254,11 @@ export async function reorderFaqCategories(data: z.infer<typeof reorderCategorie
     )
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -296,6 +316,11 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true, data: question }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -333,6 +358,11 @@ export async function updateFaqQuestion(questionId: string, data: z.infer<typeof
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true, data: updatedQuestion }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -366,6 +396,11 @@ export async function deleteFaqQuestion(questionId: string): Promise<FaqActionRe
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     return { success: false, error: "FAQ質問の削除に失敗しました" }
@@ -412,6 +447,11 @@ export async function updateFaqCategorySettings(
     })
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true, data: updatedCategory }
   } catch (error) {
     return { success: false, error: 'スタイルの更新に失敗しました' }
@@ -462,6 +502,11 @@ export async function reorderFaqQuestions(categoryId: string, data: z.infer<type
     )
 
     revalidatePath("/dashboard/faqs")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`faq-${h}`)
+      updateTag(`profile-${h}`)
+    }
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {

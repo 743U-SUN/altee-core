@@ -2,8 +2,8 @@
 
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
-import { revalidatePath } from 'next/cache'
-import { cuidSchema } from '@/lib/validations/shared'
+import { revalidatePath, updateTag } from 'next/cache'
+import { cuidSchema, normalizeHandle } from '@/lib/validations/shared'
 
 /** Admin: ユーザーのニュース記事一覧を取得 */
 export async function adminGetUserNewsList(userId: string) {
@@ -31,11 +31,22 @@ export async function adminToggleNewsHidden(newsId: string) {
 
   if (!news) throw new Error('記事が見つかりません')
 
+  // 対象ユーザーの handle を取得
+  const targetUser = await prisma.user.findUnique({
+    where: { id: news.userId },
+    select: { handle: true },
+  })
+
   const updated = await prisma.userNews.update({
     where: { id: validatedNewsId },
     data: { adminHidden: !news.adminHidden },
   })
 
   revalidatePath(`/admin/users/${news.userId}`)
+  if (targetUser?.handle) {
+    const h = normalizeHandle(targetUser.handle)
+    updateTag(`news-${h}`)
+    updateTag(`profile-${h}`)
+  }
   return { success: true, data: updated }
 }

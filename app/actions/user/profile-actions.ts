@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
+import { normalizeHandle } from "@/lib/validations/shared"
 import type { ThemeSettings } from "@/types/profile-sections"
 import { deleteImageAction } from "@/app/actions/media/image-upload-actions"
 
@@ -71,6 +72,10 @@ export async function updateUserProfile(data: z.infer<typeof updateProfileSchema
 
     // キャッシュを再検証
     revalidatePath("/dashboard/profile-editor")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true, data: result }
   } catch (error) {
@@ -148,6 +153,10 @@ export async function updateThemeSettings(
     })
 
     revalidatePath("/dashboard/profile-editor")
+    if (session.user.handle) {
+      const h = normalizeHandle(session.user.handle)
+      updateTag(`profile-${h}`)
+    }
 
     return { success: true }
   } catch {

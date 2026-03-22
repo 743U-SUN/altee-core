@@ -1,4 +1,3 @@
-import { cache } from 'react'
 import { getPublicFaqByHandle } from '@/lib/queries/faq-queries'
 import { getActivePresets } from '@/lib/sections/preset-queries'
 import { FAQPublicContent } from './components/FAQPublicContent'
@@ -7,11 +6,6 @@ import type { FaqCategoryWithQuestions } from '@/types/faq'
 interface FAQsPageProps {
   params: Promise<{ handle: string }>
 }
-
-// リクエスト単位のデータフェッチの重複排除（generateMetadataとページ本体で共有）
-const getCachedFaq = cache(async (handle: string) => {
-  return getPublicFaqByHandle(handle)
-})
 
 export async function generateMetadata({ params }: FAQsPageProps) {
   const { handle } = await params
@@ -30,7 +24,7 @@ export default async function FAQsPage({ params }: FAQsPageProps) {
   const { handle } = await params
 
   const [result, presets] = await Promise.all([
-    getCachedFaq(handle),
+    getPublicFaqByHandle(handle),
     getActivePresets(),
   ])
   const categories = (result.success ? result.data : []) as FaqCategoryWithQuestions[]

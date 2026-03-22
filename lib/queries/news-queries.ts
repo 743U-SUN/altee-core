@@ -1,5 +1,5 @@
 import 'server-only'
-import { cache } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { queryHandleSchema, normalizeHandle, cuidSchema } from '@/lib/validations/shared'
@@ -90,25 +90,20 @@ export async function getDashboardNewsSection(userId: string): Promise<UserSecti
 const slugSchema = z.string().min(1).max(200)
 
 /**
- * 公開ページ用: ハンドルからアクティブなユーザーを取得（キャッシュ付き）
- * getPublicNewsByHandle / getPublicNewsSection で同一ハンドルの重複クエリを防止
+ * 公開ニュース一覧取得（ハンドル指定、認証不要）
+ * 'use cache' でクロスリクエストキャッシュ
  */
-const getPublicUserByHandle = cache(async (handle: string) => {
+export async function getPublicNewsByHandle(handle: string) {
+  'use cache'
   const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
+  cacheLife('minutes')
+  cacheTag(`news-${normalized}`)
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { handle: normalized },
     select: { id: true, isActive: true },
   })
-})
-
-/**
- * 公開ニュース一覧取得（ハンドル指定、認証不要）
- */
-export const getPublicNewsByHandle = cache(async (handle: string) => {
-  const user = await getPublicUserByHandle(handle)
-
   if (!user || !user.isActive) return []
 
   return prisma.userNews.findMany({
@@ -122,14 +117,23 @@ export const getPublicNewsByHandle = cache(async (handle: string) => {
       thumbnail: { select: { storageKey: true } },
     },
   })
-})
+}
 
 /**
  * 公開ニュースセクション取得（ハンドル指定、認証不要）
+ * 'use cache' でクロスリクエストキャッシュ
  */
-export const getPublicNewsSection = cache(async (handle: string): Promise<UserSection | null> => {
-  const user = await getPublicUserByHandle(handle)
+export async function getPublicNewsSection(handle: string): Promise<UserSection | null> {
+  'use cache'
+  const validatedHandle = queryHandleSchema.parse(handle)
+  const normalized = normalizeHandle(validatedHandle)
+  cacheLife('minutes')
+  cacheTag(`news-${normalized}`)
 
+  const user = await prisma.user.findUnique({
+    where: { handle: normalized },
+    select: { id: true, isActive: true },
+  })
   if (!user || !user.isActive) return null
 
   const section = await prisma.userSection.findFirst({
@@ -142,18 +146,21 @@ export const getPublicNewsSection = cache(async (handle: string): Promise<UserSe
   })
 
   return section ? toUserSection(section) : null
-})
+}
 
 /**
  * 公開ニュース個別記事取得（ハンドル+slug、認証不要）
+ * 'use cache' でクロスリクエストキャッシュ
  */
-export const getPublicNewsArticle = cache(async (handle: string, slug: string) => {
-  // Finding B: decode BEFORE validation so the validated value matches what's stored in DB
+export async function getPublicNewsArticle(handle: string, slug: string) {
+  'use cache'
+  // decode BEFORE validation so the validated value matches what's stored in DB
   const decodedSlug = decodeURIComponent(slug)
   const validatedSlug = slugSchema.parse(decodedSlug)
-
   const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
+  cacheLife('minutes')
+  cacheTag(`news-article-${normalized}-${validatedSlug}`, `news-${normalized}`)
 
   const user = await prisma.user.findUnique({
     where: { handle: normalized },
@@ -180,4 +187,4 @@ export const getPublicNewsArticle = cache(async (handle: string, slug: string) =
   })
 
   return news ? { ...news, characterName: user.characterInfo?.characterName ?? null } : null
-})
+}
