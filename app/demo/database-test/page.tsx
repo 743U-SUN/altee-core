@@ -1,12 +1,11 @@
+import { connection } from 'next/server'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { testConnection, createTestUser, createTestItem, getAllUsers, getAllItems, deleteAllTestUsers, deleteAllTestItems } from './actions'
 
-// 動的レンダリングを強制
-export const dynamic = 'force-dynamic'
-
 export default async function DatabaseTestPage() {
+  await connection()
   // 初期データ取得
   const users = await getAllUsers()
   const items = await getAllItems()

@@ -1,5 +1,5 @@
 import { resolveAvatarUrl } from '@/lib/avatar-utils'
-import { getUserByHandle } from '@/lib/handle-utils'
+import { getUserByHandle, handleExists } from '@/lib/handle-utils'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { isReservedHandle } from '@/lib/reserved-handles'
 import { notFound } from 'next/navigation'
@@ -9,6 +9,7 @@ import { UserThemeProvider } from '@/components/theme-provider/UserThemeProvider
 import { ProfileHeader } from '@/components/user-profile/ProfileHeader'
 import { MobileBottomNav } from '@/components/user-profile/MobileBottomNav'
 import { FloatingElements } from '@/components/user-profile/FloatingElements'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   DEFAULT_THEME_SETTINGS,
   type ThemeSettings,
@@ -123,28 +124,16 @@ async function ProfileHeaderWrapper({ handle }: { handle: string }) {
   )
 }
 
-export default async function HandleLayout({
-  children,
-  params,
-}: HandleLayoutProps) {
-  const { handle } = await params
-
-  // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
-  if (isReservedHandle(handle)) {
-    notFound()
-  }
-
-  // ページ対象のユーザー情報を取得（React.cache()でデデュプリケーション済み）
+/**
+ * HandleLayoutContent: Suspense 内でフルデータ取得 + テーマ適用
+ * getUserByHandle は React.cache() でリクエスト内 dedup される
+ */
+async function HandleLayoutContent({ handle, children }: { handle: string; children: ReactNode }) {
   const targetUser = await getUserByHandle(handle)
-  if (!targetUser || !targetUser.profile) {
-    notFound()
-  }
+  if (!targetUser || !targetUser.profile) notFound()
 
-  // テーマ設定を取得（デフォルト値にフォールバック）
   const themePreset = targetUser.profile.themePreset || 'claymorphic'
   const themeSettings = resolveThemeSettings(targetUser.profile.themeSettings)
-
-  // 背景スタイルを計算
   const backgroundStyle = calculateBackgroundStyle(themeSettings)
 
   return (
@@ -176,5 +165,55 @@ export default async function HandleLayout({
         {children}
       </ProfileLayout>
     </UserThemeProvider>
+  )
+}
+
+/**
+ * HandleLayoutSkeleton: PPR static shell 用の静的スケルトン
+ * テーマ未確定のため中立的な bg-background を使用
+ */
+function HandleLayoutSkeleton() {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* プロフィールヘッダー相当 */}
+      <div className="w-full p-6 space-y-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-20 w-20 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+      </div>
+      {/* コンテンツ領域 */}
+      <main className="flex-1 w-full p-6 space-y-4">
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </main>
+    </div>
+  )
+}
+
+export default async function HandleLayout({
+  children,
+  params,
+}: HandleLayoutProps) {
+  const { handle } = await params
+
+  // 予約済みhandleチェック（システムパスとの衝突を防ぐ）
+  if (isReservedHandle(handle)) {
+    notFound()
+  }
+
+  // 軽量な存在チェック（Suspense 前で正しい HTTP 404 を保証）
+  const exists = await handleExists(handle)
+  if (!exists) {
+    notFound()
+  }
+
+  return (
+    <Suspense fallback={<HandleLayoutSkeleton />}>
+      <HandleLayoutContent handle={handle}>{children}</HandleLayoutContent>
+    </Suspense>
   )
 }

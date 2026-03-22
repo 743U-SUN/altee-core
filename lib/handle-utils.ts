@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import { handleSchema } from '@/lib/validations/user-setup';
 import { isReservedHandle } from '@/lib/reserved-handles';
+import { normalizeHandle } from '@/lib/validations/shared';
 
 /**
  * Handle重複チェック結果の型
@@ -153,9 +154,9 @@ export const getUserByHandle = cache(async (handle: string) => {
  */
 export async function handleExists(handle: string): Promise<boolean> {
   try {
-    const normalizedHandle = handle.toLowerCase();
+    const normalized = normalizeHandle(handle);
     const user = await prisma.user.findUnique({
-      where: { handle: normalizedHandle },
+      where: { handle: normalized },
       select: { id: true },
     });
 

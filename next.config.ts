@@ -3,13 +3,30 @@ import { withSerwist } from "@serwist/turbopack";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  cacheComponents: true,
   turbopack: {}, // Silence Turbopack warning for Next.js 16
   reactCompiler: true,
+  logging: {
+    browserToTerminal: true,
+  },
   experimental: {
     optimizePackageImports: ['lucide-react'],
     serverActions: {
       bodySizeLimit: '10mb',
     },
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*{/}?',
+        headers: [
+          {
+            key: 'X-Accel-Buffering',
+            value: 'no',
+          },
+        ],
+      },
+    ]
   },
   async rewrites() {
     return [
