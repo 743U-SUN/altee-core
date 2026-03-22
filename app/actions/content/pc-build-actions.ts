@@ -3,7 +3,6 @@
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
-import { after } from 'next/server'
 import { invalidateUserCacheTags } from '@/lib/cache-utils'
 import { z } from 'zod'
 import { pcBuildSchema, pcPartSchema, PC_PART_TYPES } from '@/lib/validations/pc-build'
@@ -110,12 +109,10 @@ export async function searchPcPartCatalog(query: string, partType?: string): Pro
 // ===== ヘルパー =====
 
 function revalidateUserPaths(handle: string | null | undefined) {
-  after(() => {
-    revalidatePath('/dashboard/items')
-    if (handle) {
-      revalidatePath(`/@${handle}/items`)
-    }
-  })
+  revalidatePath('/dashboard/items')
+  if (handle) {
+    revalidatePath(`/@${handle}/items`)
+  }
 }
 
 // ===== ダッシュボード用 =====

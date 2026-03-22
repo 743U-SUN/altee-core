@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { cuidSchema } from '@/lib/validations/shared'
 import { invalidateUserCacheTags } from '@/lib/cache-utils'
 import { USER_NEWS_LIMITS } from '@/types/user-news'
 import type { SectionSettings } from '@/types/profile-sections'
@@ -79,8 +80,9 @@ export async function getUserNews() {
 export async function getUserNewsById(id: string) {
   const session = await requireAuth()
 
+  const validatedId = cuidSchema.parse(id)
   const news = await prisma.userNews.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id: validatedId, userId: session.user.id },
     include: {
       thumbnail: { select: { storageKey: true } },
       bodyImage: { select: { storageKey: true } },
@@ -166,9 +168,10 @@ export async function createUserNews(formData: FormData) {
 export async function updateUserNews(id: string, formData: FormData) {
   const session = await requireAuth()
 
+  const validatedId = cuidSchema.parse(id)
   // 所有者チェック
   const existing = await prisma.userNews.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id: validatedId, userId: session.user.id },
     select: { id: true },
   })
   if (!existing) throw new Error('記事が見つかりません')
@@ -196,10 +199,10 @@ export async function updateUserNews(id: string, formData: FormData) {
   const { title, slug, excerpt, content, thumbnailId, bodyImageId, published } =
     validatedFields.data
 
-  const uniqueSlug = await ensureUniqueSlug(session.user.id, slug, id)
+  const uniqueSlug = await ensureUniqueSlug(session.user.id, slug, validatedId)
 
   const news = await prisma.userNews.update({
-    where: { id },
+    where: { id: validatedId },
     data: {
       title,
       slug: uniqueSlug,
@@ -220,13 +223,14 @@ export async function updateUserNews(id: string, formData: FormData) {
 export async function deleteUserNews(id: string) {
   const session = await requireAuth()
 
+  const validatedId = cuidSchema.parse(id)
   const existing = await prisma.userNews.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id: validatedId, userId: session.user.id },
     select: { id: true },
   })
   if (!existing) throw new Error('記事が見つかりません')
 
-  await prisma.userNews.delete({ where: { id } })
+  await prisma.userNews.delete({ where: { id: validatedId } })
 
   revalidatePath('/dashboard/news')
   invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
@@ -258,14 +262,15 @@ export async function reorderUserNews(ids: string[]) {
 export async function toggleUserNewsPublished(id: string) {
   const session = await requireAuth()
 
+  const validatedId = cuidSchema.parse(id)
   const existing = await prisma.userNews.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id: validatedId, userId: session.user.id },
     select: { id: true, published: true },
   })
   if (!existing) throw new Error('記事が見つかりません')
 
   const news = await prisma.userNews.update({
-    where: { id },
+    where: { id: validatedId },
     data: { published: !existing.published },
   })
 
@@ -292,6 +297,9 @@ export async function updateNewsListSettings(
 
   try {
 
+    // バリデーション
+    const validatedSectionId = cuidSchema.parse(sectionId)
+
     // settingsのバリデーション（nullの場合はスキップ）
     if (settings !== null) {
       const parsed = sectionSettingsSchema.safeParse(settings)
@@ -301,7 +309,7 @@ export async function updateNewsListSettings(
     }
 
     const section = await prisma.userSection.findUnique({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       select: { userId: true },
     })
 
@@ -310,7 +318,7 @@ export async function updateNewsListSettings(
     }
 
     await prisma.userSection.update({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       data: { settings: settings as never },
     })
 

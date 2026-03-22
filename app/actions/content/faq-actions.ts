@@ -144,13 +144,14 @@ export async function updateFaqCategory(categoryId: string, data: z.infer<typeof
   try {
 
     // バリデーション
+    const validatedCategoryId = cuidSchema.parse(categoryId)
     const validatedData = updateFaqCategorySchema.parse(data)
 
     // 所有者確認
     const existingCategory = await prisma.faqCategory.findFirst({
-      where: { 
-        id: categoryId,
-        userId: session.user.id 
+      where: {
+        id: validatedCategoryId,
+        userId: session.user.id
       }
     })
 
@@ -160,7 +161,7 @@ export async function updateFaqCategory(categoryId: string, data: z.infer<typeof
 
     // カテゴリー更新
     const updatedCategory = await prisma.faqCategory.update({
-      where: { id: categoryId },
+      where: { id: validatedCategoryId },
       data: validatedData,
       include: {
         questions: {
@@ -186,11 +187,14 @@ export async function deleteFaqCategory(categoryId: string): Promise<FaqActionRe
 
   try {
 
+    // バリデーション
+    const validatedCategoryId = cuidSchema.parse(categoryId)
+
     // 所有者確認
     const existingCategory = await prisma.faqCategory.findFirst({
-      where: { 
-        id: categoryId,
-        userId: session.user.id 
+      where: {
+        id: validatedCategoryId,
+        userId: session.user.id
       }
     })
 
@@ -200,7 +204,7 @@ export async function deleteFaqCategory(categoryId: string): Promise<FaqActionRe
 
     // カテゴリー削除（関連する質問も自動削除される）
     await prisma.faqCategory.delete({
-      where: { id: categoryId }
+      where: { id: validatedCategoryId }
     })
 
     revalidatePath("/dashboard/faqs")
@@ -260,13 +264,14 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
   try {
 
     // バリデーション
+    const validatedCategoryId = cuidSchema.parse(categoryId)
     const validatedData = createFaqQuestionSchema.parse(data)
 
     // count+create をトランザクションで実行（TOCTOU防止）
     const question = await prisma.$transaction(async (tx) => {
       const category = await tx.faqCategory.findFirst({
         where: {
-          id: categoryId,
+          id: validatedCategoryId,
           userId: session.user.id
         }
       })
@@ -276,7 +281,7 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
       }
 
       const existingQuestionsCount = await tx.faqQuestion.count({
-        where: { categoryId }
+        where: { categoryId: validatedCategoryId }
       })
 
       if (existingQuestionsCount >= FAQ_LIMITS.QUESTION.MAX_COUNT_PER_CATEGORY) {
@@ -284,7 +289,7 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
       }
 
       const maxSortOrder = await tx.faqQuestion.aggregate({
-        where: { categoryId },
+        where: { categoryId: validatedCategoryId },
         _max: { sortOrder: true }
       })
 
@@ -292,7 +297,7 @@ export async function createFaqQuestion(categoryId: string, data: z.infer<typeof
 
       return tx.faqQuestion.create({
         data: {
-          categoryId,
+          categoryId: validatedCategoryId,
           question: validatedData.question,
           answer: validatedData.answer,
           sortOrder: newSortOrder,
@@ -318,11 +323,12 @@ export async function updateFaqQuestion(questionId: string, data: z.infer<typeof
   try {
 
     // バリデーション
+    const validatedQuestionId = cuidSchema.parse(questionId)
     const validatedData = updateFaqQuestionSchema.parse(data)
 
     // 所有者確認（カテゴリー経由）
     const existingQuestion = await prisma.faqQuestion.findFirst({
-      where: { id: questionId },
+      where: { id: validatedQuestionId },
       include: {
         category: true
       }
@@ -334,7 +340,7 @@ export async function updateFaqQuestion(questionId: string, data: z.infer<typeof
 
     // 質問更新
     const updatedQuestion = await prisma.faqQuestion.update({
-      where: { id: questionId },
+      where: { id: validatedQuestionId },
       data: validatedData
     })
 
@@ -355,9 +361,12 @@ export async function deleteFaqQuestion(questionId: string): Promise<FaqActionRe
 
   try {
 
+    // バリデーション
+    const validatedQuestionId = cuidSchema.parse(questionId)
+
     // 所有者確認（カテゴリー経由）
     const existingQuestion = await prisma.faqQuestion.findFirst({
-      where: { id: questionId },
+      where: { id: validatedQuestionId },
       include: {
         category: true
       }
@@ -369,7 +378,7 @@ export async function deleteFaqQuestion(questionId: string): Promise<FaqActionRe
 
     // 質問削除
     await prisma.faqQuestion.delete({
-      where: { id: questionId }
+      where: { id: validatedQuestionId }
     })
 
     revalidatePath("/dashboard/faqs")
@@ -389,6 +398,9 @@ export async function updateFaqCategorySettings(
 
   try {
 
+    // バリデーション
+    const validatedCategoryId = cuidSchema.parse(categoryId)
+
     // settingsのバリデーション（nullの場合はスキップ）
     if (settings !== null) {
       const parsed = sectionSettingsSchema.safeParse(settings)
@@ -400,7 +412,7 @@ export async function updateFaqCategorySettings(
     // 所有者確認
     const existingCategory = await prisma.faqCategory.findFirst({
       where: {
-        id: categoryId,
+        id: validatedCategoryId,
         userId: session.user.id,
       },
     })
@@ -410,7 +422,7 @@ export async function updateFaqCategorySettings(
     }
 
     const updatedCategory = await prisma.faqCategory.update({
-      where: { id: categoryId },
+      where: { id: validatedCategoryId },
       data: { settings: settings === null ? Prisma.JsonNull : (settings as Prisma.InputJsonValue) },
       include: {
         questions: {
@@ -434,13 +446,14 @@ export async function reorderFaqQuestions(categoryId: string, data: z.infer<type
   try {
 
     // バリデーション
+    const validatedCategoryId = cuidSchema.parse(categoryId)
     const validatedData = reorderQuestionsSchema.parse(data)
 
     // カテゴリー所有者確認
     const category = await prisma.faqCategory.findFirst({
-      where: { 
-        id: categoryId,
-        userId: session.user.id 
+      where: {
+        id: validatedCategoryId,
+        userId: session.user.id
       }
     })
 
@@ -450,8 +463,8 @@ export async function reorderFaqQuestions(categoryId: string, data: z.infer<type
 
     // 質問の所有者確認
     const userQuestions = await prisma.faqQuestion.findMany({
-      where: { 
-        categoryId,
+      where: {
+        categoryId: validatedCategoryId,
         id: { in: validatedData.questionIds }
       }
     })

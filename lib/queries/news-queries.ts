@@ -80,7 +80,6 @@ export const getDashboardNewsSection = cache(async (userId: string): Promise<Use
         sortOrder: 0,
         isVisible: true,
         data: {},
-        settings: null as never,
       },
     })
 
@@ -91,14 +90,15 @@ export const getDashboardNewsSection = cache(async (userId: string): Promise<Use
 const slugSchema = z.string().min(1).max(200)
 
 /**
- * ハンドルからユーザー基本情報を取得（リクエスト内重複排除用）
+ * ハンドルからユーザー基本情報を取得
+ * 'use cache' スコープ内から呼ばれるため cache() ラッパーなし（独立した dedup コンテキストになるため無効）
  */
-const getActiveUserByHandle = cache(async (normalized: string) => {
+async function getActiveUserByHandle(normalized: string) {
   return prisma.user.findUnique({
     where: { handle: normalized },
     select: { id: true, isActive: true },
   })
-})
+}
 
 /**
  * 公開ニュース一覧取得（ハンドル指定、認証不要）

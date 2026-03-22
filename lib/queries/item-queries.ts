@@ -3,9 +3,6 @@ import { cache } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
-import { z } from 'zod'
-
-const handleSchema = z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/, '不正なハンドルです')
 
 /**
  * ダッシュボード用: ログインユーザーのアイテム一覧取得
@@ -110,7 +107,7 @@ export async function getUserPublicItemsByHandle(handle: string) {
  */
 export async function getPublicPcBuildByHandle(handle: string) {
   'use cache'
-  const validatedHandle = handleSchema.parse(handle)
+  const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
   cacheLife('minutes')
   cacheTag(`items-${normalized}`)

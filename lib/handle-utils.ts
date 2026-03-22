@@ -106,7 +106,7 @@ export async function getUserByHandle(handle: string) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { handle: normalized },
+      where: { handle: normalized, isActive: true },
       include: {
         profile: {
           include: {

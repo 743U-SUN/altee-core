@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isSafeUrl } from '@/lib/validations/shared'
 
 // ItemType enum values
 export const ITEM_TYPES = [
@@ -91,6 +92,10 @@ export const itemSchema = z.object({
   customImageUrl: z
     .string()
     .url('正しいURLを入力してください')
+    .refine(
+      (val) => isSafeUrl(val),
+      { message: 'https または http の URL のみ使用できます' }
+    )
     .optional()
     .or(z.literal(''))
     .transform((val) => (val === '' ? undefined : val)),

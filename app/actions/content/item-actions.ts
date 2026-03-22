@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { cuidArraySchema } from '@/lib/validations/shared'
+import { cuidSchema, cuidArraySchema } from '@/lib/validations/shared'
 import { invalidateUserCacheTags } from '@/lib/cache-utils'
 import { userItemSchema, type UserItemInput } from '@/lib/validations/item'
 
@@ -206,9 +206,12 @@ export async function updateUserItem(
   const session = await requireAuth()
   const userId = session.user.id
   try {
+    // バリデーション
+    const validatedUserItemId = cuidSchema.parse(userItemId)
+
     // 所有権確認
     const userItem = await prisma.userItem.findUnique({
-      where: { id: userItemId },
+      where: { id: validatedUserItemId },
     })
 
     if (!userItem || userItem.userId !== userId) {
@@ -220,7 +223,7 @@ export async function updateUserItem(
 
     // 更新
     const updated = await prisma.userItem.update({
-      where: { id: userItemId },
+      where: { id: validatedUserItemId },
       data: {
         review: data.review,
         isPublic: data.isPublic,
@@ -258,9 +261,12 @@ export async function deleteUserItem(userItemId: string) {
   const session = await requireAuth()
   const userId = session.user.id
   try {
+    // バリデーション
+    const validatedUserItemId = cuidSchema.parse(userItemId)
+
     // 所有権確認
     const userItem = await prisma.userItem.findUnique({
-      where: { id: userItemId },
+      where: { id: validatedUserItemId },
     })
 
     if (!userItem || userItem.userId !== userId) {
@@ -272,7 +278,7 @@ export async function deleteUserItem(userItemId: string) {
 
     // 削除
     await prisma.userItem.delete({
-      where: { id: userItemId },
+      where: { id: validatedUserItemId },
     })
 
     revalidatePath('/dashboard/items')

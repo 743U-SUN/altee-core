@@ -246,9 +246,12 @@ export async function deleteRecommendedVideo(id: string) {
   const session = await requireAuth()
 
   try {
+    // バリデーション
+    const validatedId = cuidSchema.parse(id)
+
     // 所有権チェック
     const video = await prisma.youTubeRecommendedVideo.findUnique({
-      where: { id },
+      where: { id: validatedId },
     })
 
     if (!video || video.userId !== session.user.id) {
@@ -258,7 +261,7 @@ export async function deleteRecommendedVideo(id: string) {
     // 削除 + sortOrder再採番をトランザクションで実行
     await prisma.$transaction(async (tx) => {
       await tx.youTubeRecommendedVideo.delete({
-        where: { id },
+        where: { id: validatedId },
       })
 
       const remainingVideos = await tx.youTubeRecommendedVideo.findMany({
@@ -422,11 +425,12 @@ export async function updateYouTubeLatestSection(
 
   try {
     // バリデーション
+    const validatedSectionId = cuidSchema.parse(sectionId)
     const validated = youtubeChannelSchema.parse(newData)
 
     // セクション取得 + 所有権チェック
     const section = await prisma.userSection.findUnique({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       select: { userId: true, data: true, sectionType: true },
     })
 
@@ -445,7 +449,7 @@ export async function updateYouTubeLatestSection(
 
     // セクションデータ更新
     await prisma.userSection.update({
-      where: { id: sectionId },
+      where: { id: validatedSectionId },
       data: {
         data: {
           channelId: validated.channelId,

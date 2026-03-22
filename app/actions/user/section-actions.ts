@@ -382,7 +382,7 @@ export async function reorderSections(
     // 全セクションの所有者確認
     const sections = await prisma.userSection.findMany({
       where: { id: { in: validatedIds } },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, page: true },
     })
 
     if (
@@ -402,8 +402,10 @@ export async function reorderSections(
       )
     )
 
+    const hasVideosSections = sections.some((s) => s.page === 'videos')
+
     revalidatePath(`/@${session.user.handle}`)
-    invalidateUserCacheTags(session.user.handle, ['profile'])
+    invalidateUserCacheTags(session.user.handle, hasVideosSections ? ['profile', 'videos'] : ['profile'])
 
     return { success: true }
   } catch (error) {
