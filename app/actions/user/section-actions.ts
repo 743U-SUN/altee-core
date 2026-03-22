@@ -342,7 +342,7 @@ export async function deleteSection(
     // セクションの所有者確認 + データ取得（画像クリーンアップ用）
     const section = await prisma.userSection.findUnique({
       where: { id: validatedSectionId },
-      select: { userId: true, sectionType: true, data: true },
+      select: { userId: true, sectionType: true, data: true, page: true },
     })
 
     if (!section || section.userId !== session.user.id) {
@@ -374,6 +374,9 @@ export async function deleteSection(
     if (session.user.handle) {
       const h = normalizeHandle(session.user.handle)
       updateTag(`profile-${h}`)
+      if (section.page === 'videos') {
+        updateTag(`videos-${h}`)
+      }
     }
 
     return { success: true }
@@ -535,6 +538,9 @@ export async function moveSectionOrder(
     if (session.user.handle) {
       const h = normalizeHandle(session.user.handle)
       updateTag(`profile-${h}`)
+      if (section.page === 'videos') {
+        updateTag(`videos-${h}`)
+      }
     }
 
     return { success: true }

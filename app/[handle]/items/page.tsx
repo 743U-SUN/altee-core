@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
-import { getUserPublicItemsByHandle } from '@/lib/queries/item-queries'
-import { getPublicPcBuildByHandle } from '@/app/actions/content/pc-build-actions'
+import { getUserPublicItemsByHandle, getPublicPcBuildByHandle } from '@/lib/queries/item-queries'
 import { ItemsTabs } from './components/ItemsTabs'
 import { notFound } from 'next/navigation'
 import type { UserItemForPublicPage } from '@/types/item'

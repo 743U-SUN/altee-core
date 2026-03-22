@@ -2,11 +2,11 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { handleSchema, characterNameSchema } from "@/lib/validations/user-setup"
 import { basicInfoSchema } from "@/lib/validations/character"
 import { z } from "zod"
-import { cuidSchema } from "@/lib/validations/shared"
+import { cuidSchema, normalizeHandle } from "@/lib/validations/shared"
 
 // ===== ヘルパー =====
 
@@ -17,7 +17,7 @@ import { cuidSchema } from "@/lib/validations/shared"
 async function requireManagedUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, accountType: true },
+    select: { id: true, accountType: true, handle: true },
   })
 
   if (!user) {
@@ -205,12 +205,20 @@ export async function deleteManagedProfile(userId: string) {
   const validatedUserId = cuidSchema.parse(userId)
 
   try {
-    await requireManagedUser(validatedUserId)
+    const user = await requireManagedUser(validatedUserId)
 
     await prisma.user.delete({
       where: { id: validatedUserId },
     })
 
+    if (user.handle) {
+      const h = normalizeHandle(user.handle)
+      updateTag(`profile-${h}`)
+      updateTag(`faq-${h}`)
+      updateTag(`news-${h}`)
+      updateTag(`items-${h}`)
+      updateTag(`videos-${h}`)
+    }
     revalidatePath("/admin/managed-profiles")
 
     return { success: true }
@@ -257,7 +265,7 @@ export async function adminUpdateCharacterInfo(
   const validatedUserId = cuidSchema.parse(userId)
 
   try {
-    await requireManagedUser(validatedUserId)
+    const user = await requireManagedUser(validatedUserId)
 
     const validated = basicInfoSchema.parse(data)
 
@@ -274,6 +282,10 @@ export async function adminUpdateCharacterInfo(
       update: characterData,
     })
 
+    if (user.handle) {
+      const h = normalizeHandle(user.handle)
+      updateTag(`profile-${h}`)
+    }
     revalidatePath("/admin/managed-profiles")
 
     return { success: true }

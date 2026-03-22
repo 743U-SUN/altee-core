@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
@@ -8,7 +9,7 @@ import type { UserSection } from '@/types/profile-sections'
 /**
  * ダッシュボード用: IDでニュース記事取得（所有者チェック付き）
  */
-export async function getDashboardNewsById(id: string, userId: string) {
+export const getDashboardNewsById = cache(async (id: string, userId: string) => {
   const validatedId = cuidSchema.parse(id)
   const news = await prisma.userNews.findFirst({
     where: { id: validatedId, userId },
@@ -19,12 +20,12 @@ export async function getDashboardNewsById(id: string, userId: string) {
   })
   if (!news) throw new Error('記事が見つかりません')
   return { success: true as const, data: news }
-}
+})
 
 /**
  * ダッシュボード用: ログインユーザーのニュース一覧取得
  */
-export async function getDashboardNews(userId: string) {
+export const getDashboardNews = cache(async (userId: string) => {
   return prisma.userNews.findMany({
     where: { userId },
     orderBy: { sortOrder: 'asc' },
@@ -33,7 +34,7 @@ export async function getDashboardNews(userId: string) {
       bodyImage: { select: { storageKey: true } },
     },
   })
-}
+})
 
 /**
  * Prisma の JsonValue 型を UserSection の settings 型に変換
@@ -58,7 +59,7 @@ function toUserSection(row: {
  * ダッシュボード用: ニュースセクション取得（なければ作成）
  * findFirst + create をトランザクションでラップして重複作成を防止
  */
-export async function getDashboardNewsSection(userId: string): Promise<UserSection> {
+export const getDashboardNewsSection = cache(async (userId: string): Promise<UserSection> => {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.userSection.findFirst({
       where: {
@@ -85,9 +86,19 @@ export async function getDashboardNewsSection(userId: string): Promise<UserSecti
 
     return toUserSection(created)
   })
-}
+})
 
 const slugSchema = z.string().min(1).max(200)
+
+/**
+ * ハンドルからユーザー基本情報を取得（リクエスト内重複排除用）
+ */
+const getActiveUserByHandle = cache(async (normalized: string) => {
+  return prisma.user.findUnique({
+    where: { handle: normalized },
+    select: { id: true, isActive: true },
+  })
+})
 
 /**
  * 公開ニュース一覧取得（ハンドル指定、認証不要）
@@ -100,10 +111,7 @@ export async function getPublicNewsByHandle(handle: string) {
   cacheLife('minutes')
   cacheTag(`news-${normalized}`)
 
-  const user = await prisma.user.findUnique({
-    where: { handle: normalized },
-    select: { id: true, isActive: true },
-  })
+  const user = await getActiveUserByHandle(normalized)
   if (!user || !user.isActive) return []
 
   return prisma.userNews.findMany({
@@ -130,10 +138,7 @@ export async function getPublicNewsSection(handle: string): Promise<UserSection 
   cacheLife('minutes')
   cacheTag(`news-${normalized}`)
 
-  const user = await prisma.user.findUnique({
-    where: { handle: normalized },
-    select: { id: true, isActive: true },
-  })
+  const user = await getActiveUserByHandle(normalized)
   if (!user || !user.isActive) return null
 
   const section = await prisma.userSection.findFirst({
@@ -160,7 +165,7 @@ export async function getPublicNewsArticle(handle: string, slug: string) {
   const validatedHandle = queryHandleSchema.parse(handle)
   const normalized = normalizeHandle(validatedHandle)
   cacheLife('minutes')
-  cacheTag(`news-article-${normalized}-${validatedSlug}`, `news-${normalized}`)
+  cacheTag(`news-${normalized}`)
 
   const user = await prisma.user.findUnique({
     where: { handle: normalized },

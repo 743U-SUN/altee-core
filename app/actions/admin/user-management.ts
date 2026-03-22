@@ -310,6 +310,12 @@ export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
   }
 
   try {
+    // ハンドルを取得してキャッシュ無効化のために使用
+    const users = await prisma.user.findMany({
+      where: { id: { in: validatedIds } },
+      select: { handle: true },
+    })
+
     await prisma.user.updateMany({
       where: {
         id: { in: validatedIds }
@@ -318,6 +324,18 @@ export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
         role: newRole
       }
     })
+
+    for (const user of users) {
+      if (user.handle) {
+        const h = normalizeHandle(user.handle)
+        updateTag(`profile-${h}`)
+        updateTag(`faq-${h}`)
+        updateTag(`news-${h}`)
+        updateTag(`items-${h}`)
+        updateTag(`videos-${h}`)
+      }
+    }
+    revalidatePath('/admin/users')
   } catch {
     throw new Error("一括ロール変更に失敗しました")
   }
@@ -332,6 +350,12 @@ export async function bulkToggleUserActive(userIds: string[], isActive: boolean)
   const validatedIds = cuidArraySchema.parse(userIds)
 
   try {
+    // ハンドルを取得してキャッシュ無効化のために使用
+    const users = await prisma.user.findMany({
+      where: { id: { in: validatedIds } },
+      select: { handle: true },
+    })
+
     await prisma.user.updateMany({
       where: {
         id: { in: validatedIds }
@@ -340,6 +364,18 @@ export async function bulkToggleUserActive(userIds: string[], isActive: boolean)
         isActive
       }
     })
+
+    for (const user of users) {
+      if (user.handle) {
+        const h = normalizeHandle(user.handle)
+        updateTag(`profile-${h}`)
+        updateTag(`faq-${h}`)
+        updateTag(`news-${h}`)
+        updateTag(`items-${h}`)
+        updateTag(`videos-${h}`)
+      }
+    }
+    revalidatePath('/admin/users')
   } catch {
     throw new Error("一括状態変更に失敗しました")
   }

@@ -18,8 +18,6 @@ const searchCatalogSchema = z.object({
   partType: z.enum(PC_PART_TYPES).optional(),
 })
 
-const handleSchema = z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/, '不正なハンドルです')
-
 const reorderSchema = z.array(z.string().cuid()).max(50, 'パーツ数の上限を超えています')
 
 // ===== 互換性チェック =====
@@ -118,42 +116,6 @@ function revalidateUserPaths(handle: string | null | undefined) {
       revalidatePath(`/@${handle}/items`)
     }
   })
-}
-
-// ===== 公開ページ用 =====
-
-/**
- * ハンドルからユーザーの公開PCビルドを取得
- */
-export async function getPublicPcBuildByHandle(handle: string) {
-  try {
-    const validatedHandle = handleSchema.parse(handle)
-
-    // リレーション経由の単一クエリで取得
-    const pcBuild = await prisma.userPcBuild.findFirst({
-      where: {
-        user: { handle: validatedHandle },
-        isPublic: true,
-      },
-      include: {
-        parts: {
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            item: {
-              include: {
-                brand: true,
-                category: true,
-              },
-            },
-          },
-        },
-      },
-    })
-
-    return { success: true, data: pcBuild }
-  } catch {
-    return { success: false, error: 'PCビルドの取得に失敗しました' }
-  }
 }
 
 // ===== ダッシュボード用 =====

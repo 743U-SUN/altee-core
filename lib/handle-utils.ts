@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { handleSchema } from '@/lib/validations/user-setup'
 import { isReservedHandle } from '@/lib/reserved-handles'
-import { normalizeHandle } from '@/lib/validations/shared'
+import { normalizeHandle, queryHandleSchema } from '@/lib/validations/shared'
 
 /**
  * Handle重複チェック結果の型
@@ -95,9 +95,10 @@ async function generateHandleSuggestion(baseHandle: string): Promise<string> {
  */
 export async function getUserByHandle(handle: string) {
   'use cache'
-  const normalized = normalizeHandle(handle)
+  const validatedHandle = queryHandleSchema.parse(handle)
+  const normalized = normalizeHandle(validatedHandle)
   cacheLife('minutes')
-  cacheTag(`profile-${normalized}`, `faq-${normalized}`, `news-${normalized}`)
+  cacheTag(`profile-${normalized}`)
 
   try {
     if (isReservedHandle(normalized)) {

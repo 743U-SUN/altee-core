@@ -3,6 +3,9 @@ import { cache } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { queryHandleSchema, normalizeHandle } from '@/lib/validations/shared'
+import { z } from 'zod'
+
+const handleSchema = z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/, '不正なハンドルです')
 
 /**
  * ダッシュボード用: ログインユーザーのアイテム一覧取得
@@ -98,5 +101,43 @@ export async function getUserPublicItemsByHandle(handle: string) {
       success: false as const,
       error: '公開アイテムの取得に失敗しました',
     }
+  }
+}
+
+/**
+ * 公開ページ用：ハンドルからユーザーの公開PCビルドを取得
+ * 'use cache' でクロスリクエストキャッシュ
+ */
+export async function getPublicPcBuildByHandle(handle: string) {
+  'use cache'
+  const validatedHandle = handleSchema.parse(handle)
+  const normalized = normalizeHandle(validatedHandle)
+  cacheLife('minutes')
+  cacheTag(`items-${normalized}`)
+
+  try {
+    const pcBuild = await prisma.userPcBuild.findFirst({
+      where: {
+        user: { handle: normalized },
+        isPublic: true,
+      },
+      include: {
+        parts: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            item: {
+              include: {
+                brand: true,
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    return { success: true as const, data: pcBuild }
+  } catch {
+    return { success: false as const, error: 'PCビルドの取得に失敗しました' }
   }
 }

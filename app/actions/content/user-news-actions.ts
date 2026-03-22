@@ -339,6 +339,7 @@ export async function updateNewsListSettings(
     if (session.user.handle) {
       const h = normalizeHandle(session.user.handle)
       updateTag(`news-${h}`)
+      updateTag(`profile-${h}`)
     }
     return { success: true }
   } catch {
