@@ -69,6 +69,26 @@ function serializePcBuild(
   }
 }
 
+export async function generateMetadata({ params }: UserItemsPageProps) {
+  const { handle } = await params
+
+  const itemsResult = await getUserPublicItemsByHandle(handle)
+
+  if (!itemsResult.success || !itemsResult.data) {
+    return {
+      title: 'ユーザーが見つかりません',
+    }
+  }
+
+  const userItems = itemsResult.data
+  const userName = `@${handle}`
+
+  return {
+    title: `${userName}さんのアイテム`,
+    description: `${userName}さんが公開しているアイテム情報とレビューを確認できます。${userItems?.length || 0}個のアイテムが公開されています。`,
+  }
+}
+
 export default async function UserItemsPage({ params }: UserItemsPageProps) {
   const { handle } = await params
 
@@ -90,6 +110,7 @@ export default async function UserItemsPage({ params }: UserItemsPageProps) {
 
   return (
     <div className="space-y-6">
+      {/* ItemsTabs は useQueryState (nuqs) を使うため Suspense が必要 */}
       <Suspense
         fallback={
           <div className="animate-pulse space-y-4">
@@ -106,24 +127,4 @@ export default async function UserItemsPage({ params }: UserItemsPageProps) {
       </Suspense>
     </div>
   )
-}
-
-export async function generateMetadata({ params }: UserItemsPageProps) {
-  const { handle } = await params
-
-  const itemsResult = await getUserPublicItemsByHandle(handle)
-
-  if (!itemsResult.success || !itemsResult.data) {
-    return {
-      title: 'ユーザーが見つかりません',
-    }
-  }
-
-  const userItems = itemsResult.data
-  const userName = `@${handle}`
-
-  return {
-    title: `${userName}さんのアイテム`,
-    description: `${userName}さんが公開しているアイテム情報とレビューを確認できます。${userItems?.length || 0}個のアイテムが公開されています。`,
-  }
 }

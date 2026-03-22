@@ -3,13 +3,11 @@ import { getUserByHandle } from '@/lib/handle-utils'
 import { getPublicUrl } from '@/lib/image-uploader/get-public-url'
 import { isReservedHandle } from '@/lib/reserved-handles'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import { ProfileLayout } from '@/components/profile/ProfileLayout'
 import { UserThemeProvider } from '@/components/theme-provider/UserThemeProvider'
 import { ProfileHeader } from '@/components/user-profile/ProfileHeader'
 import { MobileBottomNav } from '@/components/user-profile/MobileBottomNav'
 import { FloatingElements } from '@/components/user-profile/FloatingElements'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   DEFAULT_THEME_SETTINGS,
   type ThemeSettings,
@@ -104,8 +102,8 @@ interface HandleLayoutContentProps {
 }
 
 /**
- * HandleLayoutContent: Suspense 内でテーマ適用
- * ユーザーデータは Suspense 外の HandleLayout で取得済みのものを受け取る
+ * HandleLayoutContent: 同期 Server Component — Suspense は不要
+ * ユーザーデータは HandleLayout で取得済みのものを受け取る
  */
 function HandleLayoutContent({ handle, children, targetUser }: HandleLayoutContentProps) {
   const themePreset = targetUser.profile!.themePreset || 'claymorphic'
@@ -156,32 +154,6 @@ function HandleLayoutContent({ handle, children, targetUser }: HandleLayoutConte
   )
 }
 
-/**
- * HandleLayoutSkeleton: PPR static shell 用の静的スケルトン
- * テーマ未確定のため中立的な bg-background を使用
- */
-function HandleLayoutSkeleton() {
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* プロフィールヘッダー相当 */}
-      <div className="w-full p-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-20 w-20 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-        </div>
-      </div>
-      {/* コンテンツ領域 */}
-      <main className="flex-1 w-full p-6 space-y-4">
-        <Skeleton className="h-48 w-full rounded-lg" />
-        <Skeleton className="h-48 w-full rounded-lg" />
-      </main>
-    </div>
-  )
-}
-
 export default async function HandleLayout({
   children,
   params,
@@ -193,18 +165,16 @@ export default async function HandleLayout({
     notFound()
   }
 
-  // Suspense 外でユーザー取得 → 正しい HTTP 404 を保証
   // getUserByHandle は 'use cache' (cross-request) 済みなのでキャッシュヒット時はDBアクセスなし
+  // notFound() は Suspense 外で呼ぶ（CLAUDE.md ルール準拠）
   const targetUser = await getUserByHandle(handle)
   if (!targetUser || !targetUser.profile) {
     notFound()
   }
 
   return (
-    <Suspense fallback={<HandleLayoutSkeleton />}>
-      <HandleLayoutContent handle={handle} targetUser={targetUser}>
-        {children}
-      </HandleLayoutContent>
-    </Suspense>
+    <HandleLayoutContent handle={handle} targetUser={targetUser}>
+      {children}
+    </HandleLayoutContent>
   )
 }
