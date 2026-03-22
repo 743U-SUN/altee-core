@@ -13,7 +13,7 @@ const SYSTEM_ROUTES = [
   'sw',         // Service worker
 ] as const
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
   // 認証保護パス

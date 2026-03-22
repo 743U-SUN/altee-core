@@ -4,8 +4,6 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Share2, ChevronDown, HelpCircle, Settings } from "lucide-react";
 
-export const runtime = "edge";
-
 /**
  * Claymorphic Theme Variables
  * Copied from app/demo/items/page.tsx to ensure consistency

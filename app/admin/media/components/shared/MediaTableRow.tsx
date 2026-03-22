@@ -20,11 +20,11 @@ import Image from "next/image"
 import Link from "next/link"
 import { uploadTypeLabels } from "./upload-type-labels"
 import { formatFileSize } from "@/lib/format-utils"
+import { getPublicUrl } from "@/lib/image-uploader/get-public-url"
 import type { AdminMediaFileView } from "@/types/media"
 
 interface MediaTableRowProps {
   file: AdminMediaFileView
-  storageUrl: string
   isSelected: boolean
   onSelectChange: (checked: boolean) => void
   onDelete: (fileId: string) => void
@@ -33,12 +33,12 @@ interface MediaTableRowProps {
 
 export function MediaTableRow({
   file,
-  storageUrl,
   isSelected,
   onSelectChange,
   onDelete,
   isDeleting
 }: MediaTableRowProps) {
+  const imageUrl = getPublicUrl(file.storageKey)
   return (
     <TableRow>
       <TableCell>
@@ -50,11 +50,11 @@ export function MediaTableRow({
       <TableCell>
         <div
           className="relative h-12 w-12 bg-muted rounded overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => window.open(`${storageUrl}/${file.storageKey}`, '_blank')}
+          onClick={() => window.open(imageUrl, '_blank')}
           title="クリックして画像を表示"
         >
           <Image
-            src={`${storageUrl}/${file.storageKey}`}
+            src={imageUrl}
             alt={file.originalName}
             fill
             sizes="48px"

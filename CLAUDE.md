@@ -68,9 +68,7 @@ Data fetching:
 - Interactive → client components + Server Actions + useSWR
 - Mutations → Server Actions + useSWR.mutate (optimistic updates)
 - Data access layer: lib/queries/ with `import 'server-only'`
-- Public queries → `'use cache'` + `cacheLife()` + `cacheTag()` (cross-request caching)
-- Dashboard/admin queries → `React.cache()` (request-level dedup, cookies dependency)
-- Cache invalidation → `updateTag()` in Server Actions (instant expire) + `revalidatePath()` for dashboard
+- Caching → see "Caching strategy" section below
 - Parallel fetching: `Promise.all()` to avoid waterfalls
 
 RSC principles:
@@ -82,6 +80,7 @@ RSC principles:
 - Async client components are invalid
 - Use `import 'server-only'` to protect server-only modules
 - `'use cache'` scopes cannot use `cookies()`/`headers()`/`searchParams` directly — read outside and pass values as arguments
+- Never call `redirect()` / `notFound()` inside `<Suspense>` — call before the boundary (streaming causes skeleton flash or error.tsx catch)
 
 UI / State:
 - shadcn/ui + lucide-react, minimize custom UI
@@ -95,7 +94,7 @@ Place in app/actions/ as `'use server'` files. Required checklist:
 1. Re-verify auth with `requireAuth()` / `requireAdmin()`
 2. Validate input server-side with Zod
 3. Verify resource ownership (IDOR prevention)
-4. Call `revalidatePath()` or `updateTag()`/`revalidateTag()` after writes
+4. Call `invalidateUserCacheTags()` (`lib/cache-utils.ts`) for public cache, `revalidatePath()` for dashboard routes
 5. Return `{ success, data?, error? }` pattern
 6. Never wrap `redirect()`/`notFound()` in try-catch (they throw internally)
 7. Validate ID params with `cuidSchema` (`lib/validations/shared.ts`)
@@ -134,7 +133,7 @@ Caching strategy (`'use cache'` vs `React.cache()`):
 - Public data (profiles, FAQ, news, items, videos) → `'use cache'` + `cacheLife()` + `cacheTag()`
 - Auth-dependent data (dashboard, admin) → `React.cache()` (cookies dependency, cannot use `'use cache'`)
 - Both can coexist in the same file, but `React.cache` is isolated inside `'use cache'` scope (separate dedup contexts)
-- Invalidation: `updateTag('tag')` for targeted public cache, `revalidatePath()` for dashboard routes
+- Invalidation: `invalidateUserCacheTags()` for user content cache, `revalidatePath()` for dashboard routes, raw `updateTag()` only for system-wide tags (e.g., `presets`)
 - Cache tags: `{resource}-{normalizeHandle(handle)}` pattern (e.g., `faq-${handle}`, `profile-${handle}`)
 
 ## Security
@@ -180,10 +179,11 @@ New route:
 | `NotificationFormBase` | `app/dashboard/notifications/notification-form-base.tsx` | Notification/contact form base |
 | `AttributeForm` / `AttributePagination` | `app/admin/attributes/components/` | Attribute CRUD shared |
 | `ContentModal` | `components/notification/ContentModal.tsx` | Notification/contact modal shared |
+| `invalidateUserCacheTags()` / `invalidateAllUserCacheTags()` | `lib/cache-utils.ts` | Cache invalidation in Server Actions |
 
 ## Testing
 
-- No automated test runner — manual verification via `app/demo/*` pages (19 pages)
+- No automated test runner — manual verification via `app/demo/*` pages (18 pages)
 - Demo pages are accessed directly at `/demo/*`
 - Use MCP Playwright browser tools for interactive testing against localhost:3000
 - Use `/testing` skill for structured browser testing workflow

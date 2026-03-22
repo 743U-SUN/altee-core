@@ -3,8 +3,6 @@
 import React from "react";
 import { Star, Heart, Zap, Coffee } from "lucide-react";
 
-export const runtime = "edge";
-
 /**
  * Claymorphic Theme Variables
  */

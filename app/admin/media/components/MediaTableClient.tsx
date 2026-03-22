@@ -23,7 +23,6 @@ interface MediaTableClientProps {
   containerName?: string
   uploadType?: MediaType
   month?: string
-  storageUrl: string
 }
 
 export function MediaTableClient({
@@ -33,7 +32,6 @@ export function MediaTableClient({
   containerName,
   uploadType,
   month,
-  storageUrl
 }: MediaTableClientProps) {
   const {
     selectedFiles,
@@ -107,7 +105,6 @@ export function MediaTableClient({
               <MediaTableRow
                 key={file.id}
                 file={file}
-                storageUrl={storageUrl}
                 isSelected={selectedFiles.has(file.id)}
                 onSelectChange={(checked) => handleSelectFile(file.id, checked)}
                 onDelete={handleDeleteFile}
