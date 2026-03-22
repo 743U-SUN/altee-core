@@ -2,14 +2,15 @@
 
 import { requireAuth, cachedAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { revalidatePath, updateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import type { UserSection, SectionSettings } from '@/types/profile-sections'
 import { nanoid } from 'nanoid'
 import { SECTION_REGISTRY } from '@/lib/sections'
 import { deleteImageAction } from '@/app/actions/media/image-upload-actions'
 import { sectionSettingsSchema } from '@/lib/validations/section-settings'
 import { unsubscribeFromYoutubePush } from '@/services/youtube/youtube-pubsubhubbub'
-import { cuidSchema, cuidArraySchema, normalizeHandle } from '@/lib/validations/shared'
+import { cuidSchema, cuidArraySchema } from '@/lib/validations/shared'
+import { invalidateUserCacheTags } from '@/lib/cache-utils'
 
 const VALID_PAGES = ['profile', 'videos'] as const
 type SectionPage = (typeof VALID_PAGES)[number]
@@ -258,13 +259,7 @@ export async function createSection(
     })
 
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-      if (page === 'videos') {
-        updateTag(`videos-${h}`)
-      }
-    }
+    invalidateUserCacheTags(session.user.handle, page === 'videos' ? ['profile', 'videos'] : ['profile'])
 
     return { success: true, section: section as UserSection }
   } catch (error) {
@@ -314,13 +309,7 @@ export async function updateSection(
     if (section.page === 'videos') {
       revalidatePath('/dashboard/videos')
     }
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-      if (section.page === 'videos') {
-        updateTag(`videos-${h}`)
-      }
-    }
+    invalidateUserCacheTags(session.user.handle, section.page === 'videos' ? ['profile', 'videos'] : ['profile'])
 
     return { success: true }
   } catch (error) {
@@ -371,13 +360,7 @@ export async function deleteSection(
     })
 
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-      if (section.page === 'videos') {
-        updateTag(`videos-${h}`)
-      }
-    }
+    invalidateUserCacheTags(session.user.handle, section.page === 'videos' ? ['profile', 'videos'] : ['profile'])
 
     return { success: true }
   } catch (error) {
@@ -420,10 +403,7 @@ export async function reorderSections(
     )
 
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['profile'])
 
     return { success: true }
   } catch (error) {
@@ -467,10 +447,7 @@ export async function updateSectionSettings(
     })
 
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['profile'])
 
     return { success: true }
   } catch (error) {
@@ -535,13 +512,7 @@ export async function moveSectionOrder(
     ])
 
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-      if (section.page === 'videos') {
-        updateTag(`videos-${h}`)
-      }
-    }
+    invalidateUserCacheTags(session.user.handle, section.page === 'videos' ? ['profile', 'videos'] : ['profile'])
 
     return { success: true }
   } catch (error) {

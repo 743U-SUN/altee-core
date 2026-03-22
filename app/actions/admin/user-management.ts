@@ -2,9 +2,10 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { UserRole, AccountType } from "@prisma/client"
-import { cuidSchema, cuidArraySchema, normalizeHandle } from "@/lib/validations/shared"
+import { cuidSchema, cuidArraySchema } from "@/lib/validations/shared"
+import { invalidateAllUserCacheTags } from "@/lib/cache-utils"
 import { handleSchema } from "@/lib/validations/user-setup"
 import { isReservedHandle } from "@/lib/reserved-handles"
 
@@ -209,14 +210,7 @@ export async function toggleUserActive(userId: string) {
     })
 
     revalidatePath('/admin/users')
-    if (currentUser?.handle) {
-      const h = normalizeHandle(currentUser.handle)
-      updateTag(`profile-${h}`)
-      updateTag(`faq-${h}`)
-      updateTag(`news-${h}`)
-      updateTag(`items-${h}`)
-      updateTag(`videos-${h}`)
-    }
+    invalidateAllUserCacheTags(currentUser?.handle)
     return updatedUser
   } catch {
     throw new Error("ユーザー状態の更新に失敗しました")
@@ -250,14 +244,7 @@ export async function deleteUser(userId: string, reason: string) {
       where: { id: validatedUserId },
     })
 
-    if (user.handle) {
-      const h = normalizeHandle(user.handle)
-      updateTag(`profile-${h}`)
-      updateTag(`faq-${h}`)
-      updateTag(`news-${h}`)
-      updateTag(`items-${h}`)
-      updateTag(`videos-${h}`)
-    }
+    invalidateAllUserCacheTags(user.handle)
 
     return { success: true, deletedUser: user }
   } catch {
@@ -326,14 +313,7 @@ export async function bulkUpdateUserRole(userIds: string[], newRole: UserRole) {
     })
 
     for (const user of users) {
-      if (user.handle) {
-        const h = normalizeHandle(user.handle)
-        updateTag(`profile-${h}`)
-        updateTag(`faq-${h}`)
-        updateTag(`news-${h}`)
-        updateTag(`items-${h}`)
-        updateTag(`videos-${h}`)
-      }
+      invalidateAllUserCacheTags(user.handle)
     }
     revalidatePath('/admin/users')
   } catch {
@@ -366,14 +346,7 @@ export async function bulkToggleUserActive(userIds: string[], isActive: boolean)
     })
 
     for (const user of users) {
-      if (user.handle) {
-        const h = normalizeHandle(user.handle)
-        updateTag(`profile-${h}`)
-        updateTag(`faq-${h}`)
-        updateTag(`news-${h}`)
-        updateTag(`items-${h}`)
-        updateTag(`videos-${h}`)
-      }
+      invalidateAllUserCacheTags(user.handle)
     }
     revalidatePath('/admin/users')
   } catch {
@@ -513,19 +486,9 @@ export async function updateUserHandle(
     // 旧ハンドルと新ハンドルのキャッシュを両方無効化
     if (currentUser.handle) {
       revalidatePath(`/@${currentUser.handle}`)
-      const oldH = normalizeHandle(currentUser.handle)
-      updateTag(`profile-${oldH}`)
-      updateTag(`faq-${oldH}`)
-      updateTag(`news-${oldH}`)
-      updateTag(`items-${oldH}`)
-      updateTag(`videos-${oldH}`)
     }
-    const newH = normalizeHandle(normalizedHandle)
-    updateTag(`profile-${newH}`)
-    updateTag(`faq-${newH}`)
-    updateTag(`news-${newH}`)
-    updateTag(`items-${newH}`)
-    updateTag(`videos-${newH}`)
+    invalidateAllUserCacheTags(currentUser?.handle)
+    invalidateAllUserCacheTags(normalizedHandle)
     revalidatePath(`/@${normalizedHandle}`)
     revalidatePath('/admin/users')
 

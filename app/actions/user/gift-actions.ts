@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { normalizeHandle } from "@/lib/validations/shared"
+import { invalidateUserCacheTags } from "@/lib/cache-utils"
 import { UserRole } from "@prisma/client"
 import { GIFT_CONSTRAINTS } from "@/types/gift"
 
@@ -109,10 +109,7 @@ export async function updateUserGift(data: z.infer<typeof giftSchema>) {
 
     revalidatePath("/dashboard/notifications")
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['profile'])
 
     return { success: true, data: gift }
 
@@ -154,10 +151,7 @@ export async function deleteUserGift() {
 
     revalidatePath("/dashboard/notifications")
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['profile'])
 
     return { success: true }
 

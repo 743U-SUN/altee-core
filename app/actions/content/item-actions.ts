@@ -2,9 +2,10 @@
 
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
-import { revalidatePath, updateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { cuidArraySchema, normalizeHandle } from '@/lib/validations/shared'
+import { cuidArraySchema } from '@/lib/validations/shared'
+import { invalidateUserCacheTags } from '@/lib/cache-utils'
 import { userItemSchema, type UserItemInput } from '@/lib/validations/item'
 
 // 公開用読み取り関数は lib/queries/item-queries.ts に移動済み
@@ -175,10 +176,7 @@ export async function createUserItem(data: UserItemInput) {
 
     revalidatePath('/dashboard/items')
     revalidatePath(`/@${session.user.handle}/items`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`items-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['items'])
 
     return {
       success: true,
@@ -239,10 +237,7 @@ export async function updateUserItem(
 
     revalidatePath('/dashboard/items')
     revalidatePath(`/@${session.user.handle}/items`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`items-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['items'])
 
     return {
       success: true,
@@ -282,10 +277,7 @@ export async function deleteUserItem(userItemId: string) {
 
     revalidatePath('/dashboard/items')
     revalidatePath(`/@${session.user.handle}/items`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`items-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['items'])
 
     return { success: true }
   } catch {
@@ -324,10 +316,7 @@ export async function reorderUserItems(
 
     revalidatePath('/dashboard/items')
     revalidatePath(`/@${session.user.handle}/items`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`items-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['items'])
 
     return { success: true }
   } catch {

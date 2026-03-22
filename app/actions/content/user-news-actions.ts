@@ -2,9 +2,9 @@
 
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
-import { revalidatePath, updateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { normalizeHandle } from '@/lib/validations/shared'
+import { invalidateUserCacheTags } from '@/lib/cache-utils'
 import { USER_NEWS_LIMITS } from '@/types/user-news'
 import type { SectionSettings } from '@/types/profile-sections'
 import { sectionSettingsSchema } from '@/lib/validations/section-settings'
@@ -158,11 +158,7 @@ export async function createUserNews(formData: FormData) {
   }
 
   revalidatePath('/dashboard/news')
-  if (session.user.handle) {
-    const h = normalizeHandle(session.user.handle)
-    updateTag(`news-${h}`)
-    updateTag(`profile-${h}`)
-  }
+  invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
   return { success: true, data: news }
 }
 
@@ -216,11 +212,7 @@ export async function updateUserNews(id: string, formData: FormData) {
   })
 
   revalidatePath('/dashboard/news')
-  if (session.user.handle) {
-    const h = normalizeHandle(session.user.handle)
-    updateTag(`news-${h}`)
-    updateTag(`profile-${h}`)
-  }
+  invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
   return { success: true, data: news }
 }
 
@@ -237,11 +229,7 @@ export async function deleteUserNews(id: string) {
   await prisma.userNews.delete({ where: { id } })
 
   revalidatePath('/dashboard/news')
-  if (session.user.handle) {
-    const h = normalizeHandle(session.user.handle)
-    updateTag(`news-${h}`)
-    updateTag(`profile-${h}`)
-  }
+  invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
   return { success: true }
 }
 
@@ -262,11 +250,7 @@ export async function reorderUserNews(ids: string[]) {
   )
 
   revalidatePath('/dashboard/news')
-  if (session.user.handle) {
-    const h = normalizeHandle(session.user.handle)
-    updateTag(`news-${h}`)
-    updateTag(`profile-${h}`)
-  }
+  invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
   return { success: true }
 }
 
@@ -286,11 +270,7 @@ export async function toggleUserNewsPublished(id: string) {
   })
 
   revalidatePath('/dashboard/news')
-  if (session.user.handle) {
-    const h = normalizeHandle(session.user.handle)
-    updateTag(`news-${h}`)
-    updateTag(`profile-${h}`)
-  }
+  invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
   return { success: true, data: news }
 }
 
@@ -336,11 +316,7 @@ export async function updateNewsListSettings(
 
     revalidatePath(`/@${session.user.handle}/news`)
     revalidatePath('/dashboard/news')
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`news-${h}`)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['news', 'profile'])
     return { success: true }
   } catch {
     return { success: false, error: 'スタイルの更新に失敗しました' }

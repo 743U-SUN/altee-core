@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { normalizeHandle } from "@/lib/validations/shared"
+import { invalidateUserCacheTags } from "@/lib/cache-utils"
 import { UserRole } from "@prisma/client"
 import { CONTACT_CONSTRAINTS } from "@/types/contacts"
 
@@ -111,10 +111,7 @@ export async function updateUserContact(data: z.infer<typeof contactSchema>) {
 
     revalidatePath("/dashboard/notifications")
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['profile'])
     return { success: true, data: contact }
 
   } catch (error) {
@@ -156,10 +153,7 @@ export async function deleteUserContact() {
 
     revalidatePath("/dashboard/notifications")
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['profile'])
     return { success: true }
 
   } catch {

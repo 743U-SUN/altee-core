@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { normalizeHandle } from "@/lib/validations/shared"
+import { invalidateUserCacheTags } from "@/lib/cache-utils"
 import { getTwitchUserId, createTwitchEventSub, deleteTwitchEventSub, getTwitchEventSubStatus } from "@/services/twitch/twitch-api"
 
 const TWITCH_USERNAME_PATTERN = /^[a-zA-Z0-9_]{4,25}$/
@@ -50,11 +50,7 @@ export async function updateTwitchChannel(data: z.infer<typeof twitchChannelSche
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`videos-${h}`)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['videos', 'profile'])
 
     return { success: true, data: { twitchUserId: userIdResult.userId } }
   } catch (error) {
@@ -83,11 +79,7 @@ export async function updateLivePriority(priority: z.infer<typeof livePrioritySc
 
     revalidatePath("/dashboard/platforms")
     revalidatePath(`/@${session.user.handle}`)
-    if (session.user.handle) {
-      const h = normalizeHandle(session.user.handle)
-      updateTag(`videos-${h}`)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(session.user.handle, ['videos', 'profile'])
 
     return { success: true }
   } catch (error) {

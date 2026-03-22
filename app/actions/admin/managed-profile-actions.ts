@@ -2,11 +2,12 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth"
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { handleSchema, characterNameSchema } from "@/lib/validations/user-setup"
 import { basicInfoSchema } from "@/lib/validations/character"
 import { z } from "zod"
-import { cuidSchema, normalizeHandle } from "@/lib/validations/shared"
+import { cuidSchema } from "@/lib/validations/shared"
+import { invalidateAllUserCacheTags, invalidateUserCacheTags } from "@/lib/cache-utils"
 
 // ===== ヘルパー =====
 
@@ -211,14 +212,7 @@ export async function deleteManagedProfile(userId: string) {
       where: { id: validatedUserId },
     })
 
-    if (user.handle) {
-      const h = normalizeHandle(user.handle)
-      updateTag(`profile-${h}`)
-      updateTag(`faq-${h}`)
-      updateTag(`news-${h}`)
-      updateTag(`items-${h}`)
-      updateTag(`videos-${h}`)
-    }
+    invalidateAllUserCacheTags(user.handle)
     revalidatePath("/admin/managed-profiles")
 
     return { success: true }
@@ -282,10 +276,7 @@ export async function adminUpdateCharacterInfo(
       update: characterData,
     })
 
-    if (user.handle) {
-      const h = normalizeHandle(user.handle)
-      updateTag(`profile-${h}`)
-    }
+    invalidateUserCacheTags(user.handle, ['profile'])
     revalidatePath("/admin/managed-profiles")
 
     return { success: true }
