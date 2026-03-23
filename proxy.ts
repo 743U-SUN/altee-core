@@ -16,6 +16,32 @@ const SYSTEM_ROUTES = [
 export function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
+  // メンテナンスモード
+  if (process.env.MAINTENANCE_MODE === 'true') {
+    // メンテナンスページ自体と静的アセットはスキップ
+    if (pathname !== '/maintenance' && !pathname.startsWith('/_next') && !pathname.startsWith('/pwa/')) {
+      // バイパス cookie があればスキップ
+      const bypass = req.cookies.get('maintenance_bypass')
+      if (bypass?.value !== process.env.MAINTENANCE_BYPASS_SECRET) {
+        // シークレットパラメータでバイパス cookie を付与
+        const bypassParam = req.nextUrl.searchParams.get('bypass')
+        if (bypassParam && bypassParam === process.env.MAINTENANCE_BYPASS_SECRET) {
+          const url = new URL(pathname, req.url)
+          const res = NextResponse.redirect(url)
+          res.cookies.set('maintenance_bypass', bypassParam, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 86400,
+          })
+          return res
+        }
+
+        return NextResponse.rewrite(new URL('/maintenance', req.url))
+      }
+    }
+  }
+
   // 認証保護パス
   const protectedPaths = ['/admin', '/dashboard']
   const isProtectedPath = protectedPaths.some(path =>
